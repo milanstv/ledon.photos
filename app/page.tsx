@@ -5,63 +5,58 @@ export default function Home() {
         <div className="text-3xl font-bold tracking-tight">LEDON.</div>
 
         <nav className="hidden gap-10 text-xs font-medium uppercase tracking-[0.35em] md:flex">
-          <a href="#gallery">Gallery</a>
-          <a href="#about">About</a>
+          <a href="#motorcycles">Motorcycles</a>
+          <a href="#motorsport">Motorsport</a>
+          <a href="#details">Details</a>
           <a href="#contact">Contact</a>
         </nav>
       </header>
 
-      <section className="relative h-screen overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/images/hero.jpg')] bg-cover bg-center opacity-100" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/25 via-black/5 to-transparent" />
-      </section>
+      <FullScreenSection
+        image="/images/hero.jpg"
+        align="left"
+        title="LEDON."
+        subtitle="Motorcycle Photography."
+        text="Based in Slovakia."
+      />
 
-      <section id="gallery">
-        <CategoryBanner title="Motorcycles." image="/images/motorcycles.jpg" />
+      <FullScreenSection
+        id="motorcycles"
+        image="/images/motorcycles.jpg"
+        align="right"
+        title="Motorcycles."
+        subtitle="Roads. Passes. Machines."
+        link="View Gallery →"
+      />
 
-        <CategoryBanner title="Motorsport." image="/images/motorsport.jpg" />
+      <FullScreenSection
+        id="motorsport"
+        image="/images/motorsport.jpg"
+        align="left"
+        title="Motorsport."
+        subtitle="Speed. Precision. Motion."
+        link="View Gallery →"
+      />
 
-        <CategoryBanner title="Details." image="/images/details.jpg" />
-      </section>
+      <FullScreenSection
+        id="details"
+        image="/images/details.jpg"
+        align="right"
+        title="Details."
+        subtitle="Shapes. Materials. Character."
+        link="View Gallery →"
+      />
 
-      <section
-        id="about"
-        className="grid border-t border-white/10 md:grid-cols-2"
-      >
-        <div className="min-h-[320px] bg-[url('/images/about.jpg')] bg-cover bg-center opacity-100" />
+      <FullScreenSection
+        id="contact"
+        image="/images/about.jpg"
+        align="left"
+        title="Contact."
+        subtitle="Instagram."
+        text="Email."
+      />
 
-        <div className="flex items-center bg-[#111111] px-8 py-20 md:px-10">
-          <div>
-            <h2 className="mb-8 text-4xl font-light tracking-tight">LEDON.</h2>
-
-            <p className="text-xl text-white/80">Motorcycle Photography.</p>
-            <p className="mt-3 text-xl text-white/80">Based in Slovakia.</p>
-          </div>
-        </div>
-      </section>
-
-      <section id="contact" className="border-t border-white/10 px-8 py-20 md:px-10">
-        <h2 className="mb-10 text-3xl font-light">Contact.</h2>
-
-        <div className="flex flex-wrap gap-6">
-          <a
-            href="https://www.instagram.com/ledon.photos"
-            target="_blank"
-            className="border border-white/30 px-8 py-4 text-xs uppercase tracking-[0.3em] transition hover:border-white hover:bg-white hover:text-black"
-          >
-            Instagram
-          </a>
-
-          <a
-            href="mailto:info@ledon.photos"
-            className="border border-white/30 px-8 py-4 text-xs uppercase tracking-[0.3em] transition hover:border-white hover:bg-white hover:text-black"
-          >
-            Email
-          </a>
-        </div>
-      </section>
-
-      <footer className="flex justify-between border-t border-white/10 px-8 py-8 text-xs text-white/40 md:px-10">
+      <footer className="flex justify-between border-t border-white/10 bg-[#0e0e0e] px-8 py-8 text-xs text-white/40 md:px-10">
         <span>LEDON.</span>
         <span>© 2026 LEDON.</span>
       </footer>
@@ -69,33 +64,58 @@ export default function Home() {
   );
 }
 
-function CategoryBanner({
-  title,
+function FullScreenSection({
+  id,
   image,
+  align,
+  title,
+  subtitle,
+  text,
+  link,
 }: {
-  title: string;
+  id?: string;
   image: string;
+  align: "left" | "right";
+  title: string;
+  subtitle?: string;
+  text?: string;
+  link?: string;
 }) {
   return (
-    <section className="grid min-h-[460px] border-t border-white/10 md:grid-cols-2">
-      <div className="relative min-h-[360px] overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-100 transition duration-700 hover:scale-105"
-          style={{ backgroundImage: `url(${image})` }}
-        />
-        <div className="absolute inset-0 bg-black/5" />
-      </div>
+    <section id={id} className="relative h-screen overflow-hidden">
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${image})` }}
+      />
 
-      <div className="flex items-center bg-[#111111] px-8 py-20 md:px-10">
-        <div>
-          <h2 className="mb-10 text-5xl font-light tracking-tight">{title}</h2>
+      <div className="absolute inset-0 bg-black/25" />
 
-          <a
-            className="text-xs uppercase tracking-[0.3em] text-white/75 transition hover:text-white"
-            href="#"
-          >
-            View Gallery →
-          </a>
+      <div
+        className={`relative z-10 flex h-full items-center px-8 md:px-10 ${
+          align === "right" ? "justify-end text-right" : "justify-start text-left"
+        }`}
+      >
+        <div className="max-w-xl">
+          <h1 className="mb-6 text-5xl font-light tracking-tight md:text-7xl">
+            {title}
+          </h1>
+
+          {subtitle && (
+            <p className="text-lg uppercase tracking-[0.28em] text-white/80 md:text-xl">
+              {subtitle}
+            </p>
+          )}
+
+          {text && <p className="mt-4 text-lg text-white/70 md:text-xl">{text}</p>}
+
+          {link && (
+            <a
+              href="#"
+              className="mt-10 inline-block text-xs uppercase tracking-[0.35em] text-white/75 transition hover:text-white"
+            >
+              {link}
+            </a>
+          )}
         </div>
       </div>
     </section>
