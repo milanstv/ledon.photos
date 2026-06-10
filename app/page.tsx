@@ -13,7 +13,7 @@ export default function Home() {
         </nav>
       </header>
 
-      <section className="relative h-screen overflow-hidden">
+      <section id="home" className="relative h-screen overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: "url('/images/hero.jpg')" }}
