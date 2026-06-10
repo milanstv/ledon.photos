@@ -12,8 +12,8 @@ export default function Home() {
       </header>
 
       <section className="relative h-screen overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/images/hero.jpg')] bg-cover bg-center opacity-85" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/20 to-black/10" />
+        <div className="absolute inset-0 bg-[url('/images/hero.jpg')] bg-cover bg-center opacity-100" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/25 via-black/5 to-transparent" />
       </section>
 
       <section id="gallery">
@@ -28,14 +28,14 @@ export default function Home() {
         id="about"
         className="grid border-t border-white/10 md:grid-cols-2"
       >
-        <div className="min-h-[320px] bg-[url('/images/about.jpg')] bg-cover bg-center opacity-75" />
+        <div className="min-h-[320px] bg-[url('/images/about.jpg')] bg-cover bg-center opacity-100" />
 
-        <div className="flex items-center px-8 py-20 md:px-10">
+        <div className="flex items-center bg-[#111111] px-8 py-20 md:px-10">
           <div>
             <h2 className="mb-8 text-4xl font-light tracking-tight">LEDON.</h2>
 
-            <p className="text-xl text-white/75">Motorcycle Photography.</p>
-            <p className="mt-3 text-xl text-white/75">Based in Slovakia.</p>
+            <p className="text-xl text-white/80">Motorcycle Photography.</p>
+            <p className="mt-3 text-xl text-white/80">Based in Slovakia.</p>
           </div>
         </div>
       </section>
@@ -80,10 +80,10 @@ function CategoryBanner({
     <section className="grid min-h-[460px] border-t border-white/10 md:grid-cols-2">
       <div className="relative min-h-[360px] overflow-hidden">
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-80 transition duration-700 hover:scale-105"
+          className="absolute inset-0 bg-cover bg-center opacity-100 transition duration-700 hover:scale-105"
           style={{ backgroundImage: `url(${image})` }}
         />
-        <div className="absolute inset-0 bg-black/20" />
+        <div className="absolute inset-0 bg-black/5" />
       </div>
 
       <div className="flex items-center bg-[#111111] px-8 py-20 md:px-10">
@@ -91,7 +91,7 @@ function CategoryBanner({
           <h2 className="mb-10 text-5xl font-light tracking-tight">{title}</h2>
 
           <a
-            className="text-xs uppercase tracking-[0.3em] text-white/70 transition hover:text-white"
+            className="text-xs uppercase tracking-[0.3em] text-white/75 transition hover:text-white"
             href="#"
           >
             View Gallery →
