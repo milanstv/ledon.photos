@@ -21,7 +21,7 @@ export default function Home() {
       </header>
 
       <section className="relative flex h-screen items-center overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/images/hero.jpg')] bg-cover bg-center opacity-70" />
+              <div className="absolute inset-0 bg-[url('/images/hero.jpg')] bg-cover bg-center opacity-70" />
         <div className="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent" />
 
         <div className="relative z-10 px-10">
