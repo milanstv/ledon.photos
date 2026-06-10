@@ -2,7 +2,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#0e0e0e] text-white">
       <header className="fixed left-0 top-0 z-50 flex w-full items-center justify-between px-8 py-7 md:px-10">
-        <div className="text-3xl font-bold tracking-tight">LEDON.</div>
+        <div className="text-3,5xl font-bold tracking-tight">LEDON.</div>
 
         <nav className="hidden gap-10 text-xs font-medium uppercase tracking-[0.35em] md:flex">
           <a href="#home">Home</a>
