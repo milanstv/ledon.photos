@@ -49,7 +49,7 @@ export default function Home() {
 
       <FullScreenSection
         id="contact"
-        image="/images/about.jpg"
+        image="/images/contakt.jpg"
         align="left"
         title="Contact."
         subtitle="Instagram."
