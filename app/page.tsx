@@ -12,13 +12,13 @@ export default function Home() {
         </nav>
       </header>
 
-      <FullScreenSection
-        image="/images/hero.jpg"
-        align="left"
-        title="LEDON."
-        subtitle="Motorcycle Photography."
-        text="Based in Slovakia."
-      />
+      <section className="relative h-screen overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url('/images/hero.jpg')" }}
+        />
+        <div className="absolute inset-0 bg-black/10" />
+      </section>
 
       <FullScreenSection
         id="motorcycles"
@@ -88,7 +88,7 @@ function FullScreenSection({
         style={{ backgroundImage: `url(${image})` }}
       />
 
-      <div className="absolute inset-0 bg-black/25" />
+      <div className="absolute inset-0 bg-black/20" />
 
       <div
         className={`relative z-10 flex h-full items-center px-8 md:px-10 ${
@@ -96,9 +96,9 @@ function FullScreenSection({
         }`}
       >
         <div className="max-w-xl">
-          <h1 className="mb-6 text-5xl font-light tracking-tight md:text-7xl">
+          <h2 className="mb-6 text-5xl font-light tracking-tight md:text-7xl">
             {title}
-          </h1>
+          </h2>
 
           {subtitle && (
             <p className="text-lg uppercase tracking-[0.28em] text-white/80 md:text-xl">
