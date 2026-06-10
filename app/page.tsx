@@ -5,7 +5,7 @@ export default function Home() {
         <div className="text-3xl font-bold tracking-tight">LEDON.</div>
 
         <nav className="hidden gap-10 text-xs font-medium uppercase tracking-[0.35em] md:flex">
-          <a href="#motorcycles">Home</a>
+          <a href="#home">Home</a>
           <a href="#motorcycles">Motorcycles</a>
           <a href="#motorsport">Motorsport</a>
           <a href="#details">Details</a>
