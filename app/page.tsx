@@ -50,14 +50,29 @@ export default function Home() {
 
 <section
   id="contact"
-  className="flex min-h-screen items-center bg-black px-10"
+  className="border-t border-white/10 bg-[#0e0e0e] px-8 py-24 md:px-10"
 >
-  <div>
-    <h2 className="mb-10 text-6xl font-light">Contact.</h2>
+  <div className="flex flex-col justify-between gap-12 md:flex-row md:items-end">
+    <div>
+      <h2 className="mb-4 text-4xl font-light">Contact.</h2>
+      <p className="text-white/50">Get in touch.</p>
+    </div>
 
-    <div className="space-y-6 text-2xl text-white/70">
-      <p>Instagram</p>
-      <p>Email</p>
+    <div className="flex gap-4">
+      <a
+        href="https://www.instagram.com/ledon.photos"
+        target="_blank"
+        className="border border-white/25 px-8 py-4 text-xs uppercase tracking-[0.3em] text-white/80 transition hover:border-white hover:bg-white hover:text-black"
+      >
+        Instagram
+      </a>
+
+      <a
+        href="mailto:info@ledon.photos"
+        className="border border-white/25 px-8 py-4 text-xs uppercase tracking-[0.3em] text-white/80 transition hover:border-white hover:bg-white hover:text-black"
+      >
+        Email
+      </a>
     </div>
   </div>
 </section>
