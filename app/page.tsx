@@ -46,8 +46,10 @@ export default function Home() {
         title="Details."
         subtitle="Shapes. Materials. Character."
         link="View Gallery →"
-      />
+          />
 
+
+    {/* Kontakt  */}     
 <section
   id="contact"
   className="border-t border-white/10 bg-[#0e0e0e] px-8 py-24 md:px-10"
@@ -67,16 +69,17 @@ export default function Home() {
         Instagram
       </a>
 
-      <a
+        <a
         href="mailto:info@ledon.photos"
         className="border border-white/25 px-8 py-4 text-xs uppercase tracking-[0.3em] text-white/80 transition hover:border-white hover:bg-white hover:text-black"
-      >
+        >
         Email
       </a>
     </div>
   </div>
 </section>
-
+          {/* koniec kontakt */} 
+          
       <footer className="flex justify-between border-t border-white/10 bg-[#0e0e0e] px-8 py-8 text-xs text-white/40 md:px-10">
         <span>LEDON.</span>
         <span>© 2026 LEDON.</span>
