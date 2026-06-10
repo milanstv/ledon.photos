@@ -1,7 +1,7 @@
 export default function Home() {
   return (
     <main className="min-h-screen bg-[#0e0e0e] text-white">
-      <header className="fixed left-0 top-0 z-50 flex w-full items-center justify-between px-8 py-7 md:px-25">
+      <header className="fixed left-0 top-0 z-50 flex w-full items-center justify-between px-8 py-7 md:px-15">
         <div className="text-3xl font-bold tracking-tight">LEDON.</div>
 
         <nav className="hidden gap-10 text-xs font-medium uppercase tracking-[0.35em] md:flex">
