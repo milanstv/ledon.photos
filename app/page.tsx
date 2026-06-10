@@ -89,7 +89,7 @@ function FullScreenSection({
         style={{ backgroundImage: `url(${image})` }}
       />
 
-      <div className="absolute inset-0 bg-black/20" />
+      <div className="absolute inset-0 bg-black/5" />
 
       <div
         className={`relative z-10 flex h-full items-center px-8 md:px-10 ${
