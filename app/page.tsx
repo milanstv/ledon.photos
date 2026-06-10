@@ -97,7 +97,7 @@ function FullScreenSection({
         }`}
       >
         <div className="max-w-xl">
-          <h2 className="mb-6 text-5xl font-light tracking-tight md:text-7xl">
+          <h2 className="mb-6 text-5xl font-light tracking-tight md:text-6xl">
             {title}
           </h2>
 
