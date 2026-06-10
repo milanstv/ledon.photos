@@ -48,14 +48,19 @@ export default function Home() {
         link="View Gallery →"
       />
 
-      <FullScreenSection
-        id="contact"
-        image="/images/contact.jpg"
-        align="left"
-        title="Contact."
-        subtitle="Instagram."
-        text="Email."
-      />
+<section
+  id="contact"
+  className="flex min-h-screen items-center bg-black px-10"
+>
+  <div>
+    <h2 className="mb-10 text-6xl font-light">Contact.</h2>
+
+    <div className="space-y-6 text-2xl text-white/70">
+      <p>Instagram</p>
+      <p>Email</p>
+    </div>
+  </div>
+</section>
 
       <footer className="flex justify-between border-t border-white/10 bg-[#0e0e0e] px-8 py-8 text-xs text-white/40 md:px-10">
         <span>LEDON.</span>
