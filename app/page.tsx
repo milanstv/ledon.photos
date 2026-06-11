@@ -52,7 +52,7 @@ export default function Home() {
     {/* Kontakt  */}     
 <section
   id="contact"
-  className="border-t border-white/10 bg-[#0e0e0e] px-8 py-10 md:px-10"
+  className="border-t border-white/10 bg-[#0e0e0e] px-8 py-8 md:px-8"
 >
   <div className="flex flex-col justify-between gap-12 md:flex-row md:items-end">
     <div>
