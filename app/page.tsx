@@ -56,7 +56,7 @@ export default function Home() {
 >
   <div className="flex flex-col justify-between gap-12 md:flex-row md:items-end">
     <div>
-      <h2 className="mb-4 text-4xl font-light">Contact.</h2>
+      <h2 className="mb-4 text-3xl font-light">Contact.</h2>
       <p className="text-white/50">Get in touch.</p>
     </div>
 
