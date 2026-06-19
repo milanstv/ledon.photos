@@ -32,8 +32,8 @@ export default function Home() {
         link="View Gallery →"
           />
           <FullScreenSection
-        id="BabaGP"
-        image="/images/BabaGP.jpg"
+        id="Babagp"
+        image="/images/babagp.jpg"
         align="right"
         title="Baba GP"
         subtitle="Roads. Passes. Machines."
