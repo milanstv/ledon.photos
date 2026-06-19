@@ -33,7 +33,7 @@ export default function Home() {
           />
           <FullScreenSection
         id="BabaGP"
-        image="/images/motorcycles.jpg"
+        image="/images/BabaGP.jpg"
         align="right"
         title="Baba GP"
         subtitle="Roads. Passes. Machines."
