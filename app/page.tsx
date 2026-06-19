@@ -143,13 +143,15 @@ function FullScreenSection({
           {text && <p className="mt-4 text-lg text-white/70 md:text-xl">{text}</p>}
 
           {link && (
-            <a
-              href="#"
-              className="mt-10 inline-block text-xs uppercase tracking-[0.35em] text-white/75 transition hover:text-white"
-            >
-              {link}
-            </a>
-          )}
+  <a
+    href={link}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="mt-10 inline-block text-xs uppercase tracking-[0.35em] text-white/75 transition hover:text-white"
+  >
+    View Gallery →
+  </a>
+)}
         </div>
       </div>
     </section>
