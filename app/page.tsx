@@ -106,7 +106,8 @@ function FullScreenSection({
   title,
   subtitle,
   text,
-  link,
+  linkText,
+  href,
 }: {
   id?: string;
   image: string;
@@ -114,7 +115,8 @@ function FullScreenSection({
   title: string;
   subtitle?: string;
   text?: string;
-  link?: string;
+  linkText?: string;
+  href?: string;
 }) {
   return (
     <section id={id} className="relative h-screen overflow-hidden">
@@ -143,17 +145,16 @@ function FullScreenSection({
 
           {text && <p className="mt-4 text-lg text-white/70 md:text-xl">{text}</p>}
 
-                  
-          {link && (
-  <a
-    href={link}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="mt-10 inline-block text-xs uppercase tracking-[0.35em] text-white/75 transition hover:text-white"
-  >
-    View Gallery →
-  </a>
-)}
+          {href && (
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-10 inline-block text-xs uppercase tracking-[0.35em] text-white/75 transition hover:text-white"
+            >
+              {linkText ?? "View Gallery →"}
+            </a>
+          )}
         </div>
       </div>
     </section>
