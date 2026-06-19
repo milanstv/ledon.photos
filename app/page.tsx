@@ -32,7 +32,7 @@ export default function Home() {
         link="View Gallery →"
           />
           <FullScreenSection
-        id="Babagp"
+        id="babagp"
         image="/images/babagp.jpg"
         align="right"
         title="Baba GP"
