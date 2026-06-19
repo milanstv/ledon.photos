@@ -10,7 +10,7 @@ export default function Home() {
           <a href="#motorsport">Motorsport</a>
           <a href="#details">Details</a>
           <a href="#contact">Contact</a>
-          <a href="#contact">Baba GP</a>
+          
         </nav>
       </header>
 
