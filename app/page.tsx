@@ -7,7 +7,7 @@ export default function Home() {
         <nav className="hidden gap-10 text-xs font-medium uppercase tracking-[0.35em] md:flex">
           <a href="#home">Home</a>
           <a href="#motorcycles">Motorcycles</a>
-          <a href="#BabaGP">Baba GP</a>
+          <a href="#babagp">Baba GP</a>
           <a href="#motorsport">Motorsport</a>
           <a href="#details">Details</a>
           <a href="#contact">Contact</a>
