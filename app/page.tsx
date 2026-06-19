@@ -29,7 +29,7 @@ export default function Home() {
         align="right"
         title="Motorcycles."
         subtitle="Roads. Passes. Machines."
-        link="View Gallery →"
+        
           />
           <FullScreenSection
         id="babagp"
@@ -47,7 +47,7 @@ export default function Home() {
         align="left"
         title="Motorsport."
         subtitle="Speed. Precision. Motion."
-        link="View Gallery →"
+        
       />
 
       <FullScreenSection
@@ -56,7 +56,7 @@ export default function Home() {
         align="right"
         title="Details."
         subtitle="Shapes. Materials. Character."
-        link="View Gallery →"
+        
           />
 
 
