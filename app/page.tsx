@@ -37,7 +37,8 @@ export default function Home() {
         align="right"
         title="Baba GP"
         subtitle="Roads. Passes. Machines."
-        link="https://ledon.pixieset.com/babagp/"
+        linkText="View Gallery →"
+        href="https://ledon.pixieset.com/babagp/"
       />
 
       <FullScreenSection
@@ -142,6 +143,7 @@ function FullScreenSection({
 
           {text && <p className="mt-4 text-lg text-white/70 md:text-xl">{text}</p>}
 
+                  
           {link && (
   <a
     href={link}
