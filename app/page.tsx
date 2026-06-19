@@ -7,6 +7,7 @@ export default function Home() {
         <nav className="hidden gap-10 text-xs font-medium uppercase tracking-[0.35em] md:flex">
           <a href="#home">Home</a>
           <a href="#motorcycles">Motorcycles</a>
+          <a href="#BabaGP">Baba GP</a>
           <a href="#motorsport">Motorsport</a>
           <a href="#details">Details</a>
           <a href="#contact">Contact</a>
@@ -27,6 +28,14 @@ export default function Home() {
         image="/images/motorcycles.jpg"
         align="right"
         title="Motorcycles."
+        subtitle="Roads. Passes. Machines."
+        link="View Gallery →"
+          />
+          <FullScreenSection
+        id="BabaGP"
+        image="/images/motorcycles.jpg"
+        align="right"
+        title="Baba GP"
         subtitle="Roads. Passes. Machines."
         link="View Gallery →"
       />
