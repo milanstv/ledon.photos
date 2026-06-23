@@ -38,7 +38,7 @@ export default function Home() {
         title="Baba GP"
         subtitle="Roads. Passes. Machines."
         linkText="View Gallery →"
-        href="https://ledon.pixieset.com/babagp/"
+        href="https://ledon.pixieset.com/pezinskababagp/"
       />
 
       <FullScreenSection
