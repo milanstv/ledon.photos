@@ -29,7 +29,7 @@ export default function Home() {
         id="babagp"
         image="/images/babagp.jpg"
         align="right"
-        title="Baba GP"
+        title="GALÉRIE"
         subtitle="Galérie."
         galleries={babaGpGalleries}
       />
