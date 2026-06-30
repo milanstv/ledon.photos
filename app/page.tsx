@@ -25,19 +25,15 @@ export default function Home() {
         </a>
 
         <nav className="flex gap-5 text-[10px] font-medium uppercase tracking-[0.22em] text-white/85 md:gap-12 md:text-xs md:tracking-[0.45em]">
-          <a href="#galleries" className="transition hover:text-white">
-            Galérie
-          </a>
-          <a href="#contact" className="transition hover:text-white">
-            Contact
-          </a>
+          <a href="#galleries">Galérie</a>
+          <a href="#contact">Contact</a>
         </nav>
       </header>
 
       <section id="home" className="relative min-h-screen overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center md:hidden"
-          style={{ backgroundImage: "url('/images/babagpa.jpg')" }}
+          style={{ backgroundImage: "url('/images/babagp-mobile.jpg')" }}
         />
 
         <div
@@ -45,43 +41,43 @@ export default function Home() {
           style={{ backgroundImage: "url('/images/babagp.jpg')" }}
         />
 
-        <div className="absolute inset-0 bg-black/30 md:bg-black/15" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/20 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
-        <div className="relative z-10 flex min-h-screen items-end justify-end px-5 pb-16 pt-32 md:items-center md:justify-end md:px-14 md:pb-0">
-        
-          <div className="w-full max-w-2xl text-right">
-            <p className="mb-5 text-xs uppercase tracking-[0.45em] text-white/60">
+        <div className="absolute inset-0 bg-black/25 md:bg-black/15" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/25 via-transparent to-black/25" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#070707]/60 via-transparent to-transparent" />
+
+        <div className="relative z-10 min-h-screen px-5 pt-32 pb-16 md:px-14">
+          <div className="md:absolute md:right-[7%] md:top-[33%] md:w-[620px]">
+            <p className="mb-5 text-xs uppercase tracking-[0.45em] text-white/65 md:text-right">
               LEDON. Photography
             </p>
 
-            <h1 className="mb-6 text-5xl font-light uppercase tracking-[0.16em] md:text-7xl">
+            <h1 className="mb-6 text-5xl font-light uppercase tracking-[0.16em] md:text-right md:text-7xl">
               Galérie
             </h1>
 
-            {/* <p className="max-w-xl text-sm uppercase leading-7 tracking-[0.28em] text-white/75 md:text-xl md:leading-9 md:tracking-[0.32em]">
+            <p className="max-w-xl text-sm uppercase leading-7 tracking-[0.28em] text-white/80 md:ml-auto md:text-right md:text-xl md:leading-9 md:tracking-[0.32em]">
               Motorsport. Roads. Passes. Machines.
-            </p> */}
+            </p>
 
-            <div className="mt-10 h-px w-16 bg-white/70" />
+            <div className="mt-8 h-px w-16 bg-white/70 md:ml-auto" />
 
-            <div id="galleries" className="mt-10 ml-auto w-full max-w-xl">
+            <div id="galleries" className="mt-8 w-full">
               {babaGpGalleries.map((gallery) => (
                 <a
                   key={gallery.label}
                   href={gallery.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex items-center justify-between border-t border-white/25 py-5 text-[11px] font-medium uppercase tracking-[0.22em] text-white/90 transition hover:border-white hover:text-white md:text-xs md:tracking-[0.35em]"
+                  className="group flex items-center justify-between border-t border-white/30 py-5 text-[11px] font-medium uppercase tracking-[0.22em] text-white/90 transition hover:border-white hover:text-white md:text-xs md:tracking-[0.32em]"
                 >
-                  <span>View Gallery {gallery.label}</span>
-                  <span className="ml-4 transition group-hover:translate-x-1">
+                  <span>{gallery.label}</span>
+                  <span className="ml-4 text-lg transition group-hover:translate-x-1">
                     →
                   </span>
                 </a>
               ))}
 
-              <div className="border-t border-white/25" />
+              <div className="border-t border-white/30" />
             </div>
           </div>
         </div>
