@@ -47,9 +47,9 @@ export default function Home() {
               Galérie
             </h1>
 
-            <p className="mb-8 text-base font-light tracking-[0.35em] text-white/75 md:text-2xl">
+            {/* <p className="mb-8 text-base font-light tracking-[0.35em] text-white/75 md:text-2xl">
               Galérie.
-            </p>
+            </p> */}
 
             <div className="mb-10 h-px w-16 bg-white/70" />
 
