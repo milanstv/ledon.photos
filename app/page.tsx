@@ -55,9 +55,9 @@ export default function Home() {
               LEDON.Galéria
             </p>
 
-            <h1 className="mb-6 text-5xl font-light uppercase tracking-[0.16em] md:text-7xl">
+            <h2 className="mb-6 text-5xl font-light uppercase tracking-[0.16em] md:text-7xl">
               Galéria
-            </h1>
+            </h2>
 
             <p className="max-w-xl text-sm uppercase leading-7 tracking-[0.28em] text-white/75 md:text-xl md:leading-9 md:tracking-[0.32em]">
               Motorsport. Roads. Passes. Machines.
