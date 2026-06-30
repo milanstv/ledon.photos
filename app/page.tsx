@@ -48,7 +48,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-black/55 md:bg-black/35" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/55 to-black/10" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#070707] via-transparent to-black/25" />
-
+        {/* zmenou md:pt-24 zmením výšku celého bloku Galéria */}
         <div className="relative z-10 flex min-h-screen px-5 pt-20 md:px-14 md:pt-24">
           <div className="w-full max-w-2xl">
             <p className="mb-5 text-xs uppercase tracking-[0.45em] text-white/60">
