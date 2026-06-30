@@ -15,11 +15,11 @@ const babaGpGalleries = [
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[#050505] text-white">
+    <main className="min-h-screen bg-[#070707] text-white">
       <header className="fixed left-0 top-0 z-50 flex w-full items-center justify-between px-5 py-5 md:px-12 md:py-7">
         <a
           href="#home"
-          className="text-2xl font-bold tracking-[0.14em] md:text-4xl"
+          className="text-2xl font-bold tracking-[0.12em] md:text-4xl"
         >
           LEDON.
         </a>
@@ -45,16 +45,13 @@ export default function Home() {
           style={{ backgroundImage: "url('/images/babagp.jpg')" }}
         />
 
-        <div className="absolute inset-0 bg-black/20 md:bg-black/10" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/25 via-transparent to-black/35" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/75 via-transparent to-black/10" />
+        <div className="absolute inset-0 bg-black/55 md:bg-black/35" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/55 to-black/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#070707] via-transparent to-black/25" />
 
-        <div className="relative z-10 flex min-h-screen items-end px-5 pb-10 pt-28 md:items-center md:justify-end md:px-12 md:pb-0">
-          <section
-            id="galleries"
-            className="w-full border border-white/15 bg-black/35 p-6 shadow-2xl backdrop-blur-md md:mr-0 md:w-[42%] md:min-w-[520px] md:max-w-[720px] md:p-10"
-          >
-            <p className="mb-5 text-xs uppercase tracking-[0.45em] text-white/65">
+        <div className="relative z-10 flex min-h-screen items-end px-5 pb-16 pt-32 md:items-center md:px-14 md:pb-0">
+          <div className="w-full max-w-2xl">
+            <p className="mb-5 text-xs uppercase tracking-[0.45em] text-white/60">
               LEDON. Photography
             </p>
 
@@ -66,19 +63,19 @@ export default function Home() {
               Motorsport. Roads. Passes. Machines.
             </p>
 
-            <div className="mt-8 h-px w-16 bg-white/70" />
+            <div className="mt-10 h-px w-16 bg-white/70" />
 
-            <div className="mt-8">
+            <div id="galleries" className="mt-10 w-full max-w-xl">
               {babaGpGalleries.map((gallery) => (
                 <a
                   key={gallery.label}
                   href={gallery.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex items-center justify-between border-t border-white/25 py-5 text-[11px] font-medium uppercase tracking-[0.22em] text-white/90 transition hover:border-white hover:text-white md:text-xs md:tracking-[0.32em]"
+                  className="group flex items-center justify-between border-t border-white/25 py-5 text-[11px] font-medium uppercase tracking-[0.22em] text-white/90 transition hover:border-white hover:text-white md:text-xs md:tracking-[0.35em]"
                 >
-                  <span>{gallery.label}</span>
-                  <span className="ml-4 text-lg transition group-hover:translate-x-1">
+                  <span>View Gallery {gallery.label}</span>
+                  <span className="ml-4 transition group-hover:translate-x-1">
                     →
                   </span>
                 </a>
@@ -86,13 +83,13 @@ export default function Home() {
 
               <div className="border-t border-white/25" />
             </div>
-          </section>
+          </div>
         </div>
       </section>
 
       <section
         id="contact"
-        className="border-t border-white/20 bg-[#050505] px-5 py-12 md:px-14 md:py-14"
+        className="border-t border-white/20 bg-[#070707] px-5 py-12 md:px-14 md:py-14"
       >
         <div className="flex flex-col justify-between gap-10 md:flex-row md:items-end">
           <div>
@@ -122,7 +119,7 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="flex justify-between border-t border-white/10 bg-[#050505] px-5 py-8 text-[10px] uppercase tracking-[0.22em] text-white/45 md:px-14 md:text-xs md:tracking-[0.25em]">
+      <footer className="flex justify-between border-t border-white/10 bg-[#070707] px-5 py-8 text-[10px] uppercase tracking-[0.22em] text-white/45 md:px-14 md:text-xs md:tracking-[0.25em]">
         <span>LEDON.</span>
         <span>© 2026 LEDON.</span>
       </footer>
