@@ -1,6 +1,10 @@
 const babaGpGalleries = [
   {
-    label: "Baba GP27.8.2026",
+    label: "Baba GP 20.6.2026",
+    href: "https://ledon.pixieset.com/pezinskababa/",
+    },
+  {
+    label: "Baba GP 21.6.2026",
     href: "https://ledon.pixieset.com/pezinskababagp/",
   },
   {
