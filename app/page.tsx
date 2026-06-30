@@ -45,9 +45,9 @@ export default function Home() {
           style={{ backgroundImage: "url('/images/babagp.jpg')" }}
         />
 
-        <div className="absolute inset-0 bg-black/55 md:bg-black/35" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/55 to-black/10" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#070707] via-transparent to-black/25" />
+        <div className="absolute inset-0 bg-black/30 md:bg-black/15" />
+<div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/20 to-transparent" />
+<div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
         <div className="relative z-10 flex min-h-screen items-end justify-end px-5 pb-16 pt-32 md:items-center md:justify-end md:px-14 md:pb-0">
         
           <div className="w-full max-w-2xl text-right">
