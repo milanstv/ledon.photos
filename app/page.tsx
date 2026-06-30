@@ -55,7 +55,7 @@ export default function Home() {
               LEDON. Photography
             </p>
 
-            <h1 className="mb-6 text-5xl font-light uppercase tracking-[0.16em] md:text-7xl">
+            <h1 className="mb-6 text-5xl font-light uppercase tracking-[0.12em] md:text-7xl">
               Galérie
             </h1>
 
