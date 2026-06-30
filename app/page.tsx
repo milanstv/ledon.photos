@@ -65,7 +65,7 @@ export default function Home() {
 
             <div className="mt-10 h-px w-16 bg-white/70" />
 
-            <div id="galleries" className="mt-10 w-full max-w-xl">
+            <div id="galleries" className="mt-10 ml-auto w-full max-w-xl">
               {babaGpGalleries.map((gallery) => (
                 <a
                   key={gallery.label}
