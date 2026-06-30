@@ -1,3 +1,14 @@
+const babaGpGalleries = [
+  {
+    label: "27.8.2026",
+    href: "https://ledon.pixieset.com/pezinskababagp/",
+  },
+  {
+    label: "21.6.2026",
+    href: "https://ledon.pixieset.com/pezinskababagp/",
+  },
+];
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-[#0e0e0e] text-white">
@@ -5,93 +16,50 @@ export default function Home() {
         <div className="text-4xl font-bold tracking-tight">LEDON.</div>
 
         <nav className="hidden gap-10 text-xs font-medium uppercase tracking-[0.35em] md:flex">
-          {/* <a href="#home">Home</a> */}
-          {/* <a href="#motorcycles">Motorcycles</a> */}
           <a href="#babagp">Baba GP</a>
-          {/* <a href="#motorsport">Motorsport</a> */}
-          {/* <a href="#details">Details</a> */}
-          {/* <a href="#contact">Contact</a> */}
-          
+          <a href="#contact">Contact</a>
         </nav>
       </header>
 
-      <section id="home" className="relative h-screen overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('/images/hero.jpg')" }}
-        />
-        <div className="absolute inset-0 bg-black/10" />
-      </section>
-
       <FullScreenSection
-        id="motorcycles"
-        image="/images/motorcycles.jpg"
-        align="right"
-        title="Motorcycles."
-        subtitle="Roads. Passes. Machines."
-        
-          />
-          <FullScreenSection
         id="babagp"
         image="/images/babagp.jpg"
         align="right"
         title="Baba GP"
         subtitle="Roads. Passes. Machines."
-        linkText="View Gallery 21.6.2026→"
-        href="https://ledon.pixieset.com/pezinskababa/"
-              
+        galleries={babaGpGalleries}
       />
 
-      <FullScreenSection
-        id="motorsport"
-        image="/images/motorsport.jpg"
-        align="left"
-        title="Motorsport."
-        subtitle="Speed. Precision. Motion."
-        
-      />
-
-      <FullScreenSection
-        id="details"
-        image="/images/details.jpg"
-        align="right"
-        title="Details."
-        subtitle="Shapes. Materials. Character."
-        
-          />
-
-
-    {/* Kontakt  */}     
-<section
-  id="contact"
-  className="border-t border-white/25 bg-[#0e0e0e] px-8 py-8 md:px-8"
->
-  <div className="flex flex-col justify-between gap-12 md:flex-row md:items-end">
-    <div>
-      <h2 className="mb-4 text-3xl font-light">Contact.</h2>
-      <p className="text-white/50">Get in touch.</p>
-    </div>
-
-    <div className="flex gap-4">
-      <a
-        href="https://www.instagram.com/ledon.photos"
-        target="_blank"
-        className="border border-white/25 px-8 py-4 text-xs uppercase tracking-[0.3em] text-white/80 transition hover:border-white hover:bg-white hover:text-black"
+      <section
+        id="contact"
+        className="border-t border-white/25 bg-[#0e0e0e] px-8 py-8 md:px-8"
       >
-        Instagram
-      </a>
+        <div className="flex flex-col justify-between gap-12 md:flex-row md:items-end">
+          <div>
+            <h2 className="mb-4 text-3xl font-light">Contact.</h2>
+            <p className="text-white/50">Get in touch.</p>
+          </div>
 
-        <a
-        href="mailto:info@ledon.photos"
-        className="border border-white/25 px-8 py-4 text-xs uppercase tracking-[0.3em] text-white/80 transition hover:border-white hover:bg-white hover:text-black"
-        >
-        Email
-      </a>
-    </div>
-  </div>
-</section>
-          {/* koniec kontakt */} 
-          
+          <div className="flex gap-4">
+            <a
+              href="https://www.instagram.com/ledon.photos"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="border border-white/25 px-8 py-4 text-xs uppercase tracking-[0.3em] text-white/80 transition hover:border-white hover:bg-white hover:text-black"
+            >
+              Instagram
+            </a>
+
+            <a
+              href="mailto:info@ledon.photos"
+              className="border border-white/25 px-8 py-4 text-xs uppercase tracking-[0.3em] text-white/80 transition hover:border-white hover:bg-white hover:text-black"
+            >
+              Email
+            </a>
+          </div>
+        </div>
+      </section>
+
       <footer className="flex justify-between border-t border-white/10 bg-[#0e0e0e] px-8 py-8 text-xs text-white/40 md:px-10">
         <span>LEDON.</span>
         <span>© 2026 LEDON.</span>
@@ -107,8 +75,7 @@ function FullScreenSection({
   title,
   subtitle,
   text,
-  linkText,
-  href,
+  galleries,
 }: {
   id?: string;
   image: string;
@@ -116,8 +83,7 @@ function FullScreenSection({
   title: string;
   subtitle?: string;
   text?: string;
-  linkText?: string;
-  href?: string;
+  galleries?: { label: string; href: string }[];
 }) {
   return (
     <section id={id} className="relative h-screen overflow-hidden">
@@ -146,15 +112,20 @@ function FullScreenSection({
 
           {text && <p className="mt-4 text-lg text-white/70 md:text-xl">{text}</p>}
 
-          {href && (
-            <a
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-10 inline-block text-xs uppercase tracking-[0.35em] text-white/75 transition hover:text-white"
-            >
-              {linkText ?? "View Gallery →"}
-            </a>
+          {galleries && galleries.length > 0 && (
+            <div className="mt-10 space-y-3">
+              {galleries.map((gallery) => (
+                <a
+                  key={gallery.label}
+                  href={gallery.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-xs uppercase tracking-[0.35em] text-white/75 transition hover:text-white"
+                >
+                  View Gallery {gallery.label} →
+                </a>
+              ))}
+            </div>
           )}
         </div>
       </div>
