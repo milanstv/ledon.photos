@@ -52,11 +52,11 @@ export default function Home() {
         <div className="relative z-10 flex min-h-screen items-end px-5 pb-16 pt-32 md:items-center md:px-14 md:pb-0">
           <div className="w-full max-w-2xl">
             <p className="mb-5 text-xs uppercase tracking-[0.45em] text-white/60">
-              LEDON. Photography
+              LEDON.Galéria
             </p>
 
-            <h1 className="mb-6 text-5xl font-light uppercase tracking-[0.12em] md:text-7xl">
-              Galérie
+            <h1 className="mb-6 text-5xl font-light uppercase tracking-[0.16em] md:text-7xl">
+              Galéria
             </h1>
 
             <p className="max-w-xl text-sm uppercase leading-7 tracking-[0.28em] text-white/75 md:text-xl md:leading-9 md:tracking-[0.32em]">
