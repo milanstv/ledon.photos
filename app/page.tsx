@@ -124,7 +124,7 @@ function FullScreenSection({
                   href={gallery.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block text-xs uppercase tracking-[0.35em] text-black/75 transition hover:text-white"
+                  className="block text-xs uppercase tracking-[0.40em] text-black/75 transition hover:text-white"
                 >
                   View Gallery {gallery.label} →
                 </a>
