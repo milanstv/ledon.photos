@@ -37,7 +37,7 @@ export default function Home() {
       <section id="home" className="relative min-h-screen overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center md:hidden"
-          style={{ backgroundImage: "url('/images/babagp-mobile.jpg')" }}
+          style={{ backgroundImage: "url('/images/babagpa.jpg')" }}
         />
 
         <div
