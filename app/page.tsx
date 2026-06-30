@@ -20,7 +20,7 @@ export default function Home() {
         <div className="text-4xl font-bold tracking-tight">LEDON.</div>
 
         <nav className="hidden gap-10 text-xs font-medium uppercase tracking-[0.35em] md:flex">
-          <a href="#babagp">Baba GP</a>
+          <a href="#babagp">Galérie</a>
           <a href="#contact">Contact</a>
         </nav>
       </header>
