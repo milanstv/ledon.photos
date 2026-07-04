@@ -78,7 +78,7 @@ export default function Home() {
                   rel="noopener noreferrer"
                   className="group flex items-center justify-between border-t border-white/25 py-5 text-[11px] font-medium uppercase tracking-[0.22em] text-white/90 transition hover:border-white hover:text-white md:text-xs md:tracking-[0.35em]"
                 >
-                  <span>View Gallery {gallery.label}</span>
+                  {/* <span>View Gallery {gallery.label}</span> */}
                   <span className="ml-4 transition group-hover:translate-x-1">
                     →
                   </span>
