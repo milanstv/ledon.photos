@@ -64,7 +64,7 @@ export default function Home() {
             </h3>
 
             <p className="max-w-xl text-sm uppercase leading-7 tracking-[0.28em] text-white/75 md:text-xl md:leading-9 md:tracking-[0.32em]">
-              Motorsport. Roads. Passes. Machines.
+              {/* Motorsport. Roads. Passes. Machines. */}
             </p>
 
             <div className="mt-10 h-px w-16 bg-white/70" />
