@@ -114,7 +114,7 @@ export default function Home() {
             </a>
 
             <a
-              href="mailto:info@ledon.photos"
+              href="mailto:moto@ledon.photos"
               className="border border-white/35 px-10 py-5 text-center text-xs uppercase tracking-[0.3em] text-white/90 transition hover:border-white hover:bg-white hover:text-black md:tracking-[0.35em]"
             >
               Email
