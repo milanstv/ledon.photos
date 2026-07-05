@@ -19,22 +19,50 @@ export const metadata: Metadata = {
     template: "%s | Ledon Photos",
   },
   description:
-    "Ledon Photos – motorsport fotografia, motorky, okruhy, preteky a galérie z motoristických podujatí.",
+    "Ledon Photos – motorsport fotografia zo Slovenska. Motorky, okruhy, preteky, panning, galérie a fotografovanie motoristických podujatí.",
+  keywords: [
+    "Ledon Photos",
+    "motorsport fotografia",
+    "fotograf motorky",
+    "fotografovanie motoriek",
+    "motorky na okruhu",
+    "panning fotografia",
+    "Slovakia Ring",
+    "Pezinská Baba",
+    "motoršport Slovensko",
+    "fotograf Slovensko",
+  ],
+  authors: [{ name: "Ledon Photos" }],
+  creator: "Ledon Photos",
+  publisher: "Ledon Photos",
   alternates: {
     canonical: "https://ledon.photos",
   },
   openGraph: {
     title: "Ledon Photos | Motorsport fotografia",
     description:
-      "Motorsport fotografia, motorky, okruhy, preteky a galérie z motoristických podujatí.",
+      "Motorsport fotografia zo Slovenska. Motorky, okruhy, preteky, panning a galérie z motoristických podujatí.",
     url: "https://ledon.photos",
     siteName: "Ledon Photos",
     type: "website",
     locale: "sk_SK",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ledon Photos | Motorsport fotografia",
+    description:
+      "Motorsport fotografia zo Slovenska. Motorky, okruhy, preteky a galérie z motoristických podujatí.",
+  },
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
 };
 
