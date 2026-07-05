@@ -46,12 +46,21 @@ export const metadata: Metadata = {
     siteName: "Ledon Photos",
     type: "website",
     locale: "sk_SK",
+    images: [
+      {
+        url: "/images/babagp.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Ledon Photos - Motorsport fotografia",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Ledon Photos | Motorsport fotografia",
     description:
       "Motorsport fotografia zo Slovenska. Motorky, okruhy, preteky a galérie z motoristických podujatí.",
+    images: ["/images/babagp.jpg"],
   },
   robots: {
     index: true,
