@@ -14,6 +14,10 @@ const babaGpGalleries = [
   {
     label: "Slovakia Ring Celodenné jazdy 2.7.2026",
     href: "https://ledon.pixieset.com/slovakiaringcelodennejazdy/",
+    },
+  {
+    label: "Pezinská Baba 11.7.2026",
+    href: "https://ledon.pixieset.com/pezinskababa1172026/",
   },
 ];
 
