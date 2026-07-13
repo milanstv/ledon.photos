@@ -53,7 +53,7 @@ export default function Home() {
           style={{ backgroundImage: "url('/images/babagp.jpg')" }}
         />
 
-        <div className="absolute inset-0 bg-black/25 md:bg-black/15" />
+        <div className="absolute inset-0 bg-black/15 md:bg-black/5" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/55 to-black/10" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#070707] via-transparent to-black/25" />
         {/* zmenou md:pt-24 zmením výšku celého bloku Galéria */}
