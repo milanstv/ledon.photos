@@ -17,7 +17,7 @@ const babaGpGalleries = [
     },
   {
     label: "Pezinská Baba 11.7.2026",
-    href: "https://ledon.pixieset.com/pezinskababa1172026/",
+    href: "https://ledon.pixieset.com/pezinskababa1172026",
   },
 ];
 
