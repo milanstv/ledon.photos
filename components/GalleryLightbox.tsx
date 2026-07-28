@@ -192,14 +192,14 @@ export default function GalleryLightbox({
           ),
         }}
         labels={{
-          Previous: "Predchádzajúca fotografia",
-          Next: "Nasledujúca fotografia",
-          Close: "Zatvoriť",
-          Fullscreen: "Celá obrazovka",
-          "Exit Fullscreen": "Ukončiť celú obrazovku",
-          "Zoom in": "Priblížiť",
-          "Zoom out": "Oddialiť",
-        }}
+  Previous: "Predchádzajúca fotografia",
+  Next: "Nasledujúca fotografia",
+  Close: "Zatvoriť",
+  "Enter Fullscreen": "Celá obrazovka",
+  "Exit Fullscreen": "Ukončiť celú obrazovku",
+  "Zoom in": "Priblížiť",
+  "Zoom out": "Oddialiť",
+}}
       />
 
       {open && currentPhoto && (
