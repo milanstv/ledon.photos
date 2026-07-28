@@ -69,11 +69,12 @@ export async function POST(request: Request) {
             currency: "eur",
             unit_amount: Math.round(gallery.price * 100),
 
-            product_data: {
-              name: `Fotografia č. ${photo.customerNumber ?? photo.id}`,
-              description: `${gallery.title} – originál v plnom rozlíšení`,
-              images: [photo.src],
-            },
+          product_data: {
+  name: `Fotografia č. ${photo.customerNumber ?? photo.id}`,
+  description: `${gallery.title} – originál v plnom rozlíšení`,
+  images: [photo.src],
+  tax_code: "txcd_10103001",
+},
           },
         },
       ],
