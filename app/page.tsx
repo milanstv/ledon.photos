@@ -1,125 +1,162 @@
-const babaGpGalleries = [
+import Link from "next/link";
+
+import { galleries as localGalleries } from "@/data/galleries";
+
+const externalGalleries = [
   {
-    label: "Baba GP 20.6.2026",
-    href: "https://ledon.pixieset.com/pezinskababa/",
-  },
-  {
-    label: "Baba GP 21.6.2026",
+    label: "Gallery Baba GP 21.6.2026",
     href: "https://ledon.pixieset.com/pezinskababagp/",
-    },
-  {
-    label: "Slovakia Ring 27.6.2026",
-    href: "https://ledon.pixieset.com/slovakiaring2762026/",
+    external: true,
+    sortDate: "2026-06-21",
   },
   {
-    label: "Slovakia Ring Celodenné jazdy 2.7.2026",
-    href: "https://ledon.pixieset.com/slovakiaringcelodennejazdy/",
-    },
-  {
-    label: "Pezinská Baba 11.7.2026",
-    href: "https://ledon.pixieset.com/pezinskababa1172026",
+    label: "Gallery Slovakia Ring 27.6.2026",
+    href: "https://ledon.pixieset.com/slovakiaring2762026/",
+    external: true,
+    sortDate: "2026-06-27",
   },
 ];
 
 export default function Home() {
+  const galleryLinks = [
+    ...localGalleries.map((gallery) => ({
+      label: `Gallery ${gallery.title} ${gallery.date}`,
+      href: `/galleries/${gallery.slug}`,
+      external: false,
+      sortDate: gallery.slug.slice(0, 10),
+    })),
+
+    ...externalGalleries,
+  ].sort((a, b) => b.sortDate.localeCompare(a.sortDate));
+
   return (
-    <main className="min-h-screen bg-[#070707] text-white">
-      <header className="fixed left-0 top-0 z-50 flex w-full items-center justify-between px-5 py-5 md:px-12 md:py-7">
-        <a
-          href="#home"
-          className="text-2xl font-bold tracking-[0.12em] md:text-4xl"
+    <main className="relative min-h-screen overflow-hidden bg-black text-white">
+      <div
+        className="fixed inset-0 bg-cover bg-center"
+        style={{
+          backgroundImage: "url('/images/babagp.jpg')",
+        }}
+      />
+
+      <div className="fixed inset-0 bg-black/40" />
+
+      <div className="fixed inset-0 bg-gradient-to-r from-black/90 via-black/40 to-black/10" />
+
+      <div className="fixed inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/30" />
+
+      <header className="fixed left-0 top-0 z-50 flex w-full items-center justify-between px-6 py-6 md:px-11 md:py-7">
+        <Link
+          href="/"
+          className="text-3xl font-bold tracking-[0.12em] md:text-4xl"
         >
           LEDON.
-        </a>
+        </Link>
 
-        <nav className="flex gap-5 text-[10px] font-medium uppercase tracking-[0.22em] text-white/85 md:gap-12 md:text-xs md:tracking-[0.45em]">
-          <a href="#galleries" className="transition hover:text-white">
+        <nav className="flex items-center gap-7 text-[10px] font-medium uppercase tracking-[0.35em] md:gap-14 md:text-xs">
+          <a
+            href="#galleries"
+            className="transition hover:text-white/60"
+          >
             Galérie
           </a>
-          <a href="#contact" className="transition hover:text-white">
+
+          <a
+            href="#contact"
+            className="transition hover:text-white/60"
+          >
             Contact
           </a>
         </nav>
       </header>
 
-      <section id="home" className="relative min-h-screen overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center md:hidden"
-          style={{ backgroundImage: "url('/images/babagpa.jpg')" }}
-        />
+      <section
+        id="galleries"
+        className="relative z-10 flex min-h-screen items-start px-6 pb-12 pt-24 md:px-11 md:pt-24"
+      >
+        <div className="w-full max-w-[585px]">
+          <p className="mb-5 text-[10px] uppercase tracking-[0.48em] text-white/55 md:text-xs">
+            LEDON.GALÉRIA
+          </p>
 
-        <div
-          className="absolute inset-0 hidden bg-cover bg-center md:block"
-          style={{ backgroundImage: "url('/images/babagp.jpg')" }}
-        />
+          <h1 className="text-6xl font-light uppercase tracking-[0.14em] md:text-7xl">
+            Galéria
+          </h1>
 
-        <div className="absolute inset-0 bg-black/15 md:bg-black/5" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/55 to-black/10" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#070707] via-transparent to-black/25" />
-        {/* zmenou md:pt-24 zmením výšku celého bloku Galéria */}
-        <div className="relative z-10 flex min-h-screen px-5 pt-20 md:px-14 md:pt-24">
-          <div className="w-full max-w-2xl">
-            <p className="mb-5 text-xs uppercase tracking-[0.45em] text-white/60">
-              LEDON.Galéria
-            </p>
+          <div className="mt-11 h-px w-16 bg-white/60" />
 
-            <h3 className="mb-6 text-5xl font-light uppercase tracking-[0.16em] md:text-7xl">
-              Galéria
-            </h3>
+          <div className="mt-10 border-t border-white/25">
+            {galleryLinks.map((gallery) => {
+              const className =
+                "group flex min-h-[58px] items-center justify-between border-b border-white/25 py-4 text-left text-[10px] uppercase tracking-[0.32em] text-white/85 transition hover:bg-white/5 hover:text-white md:text-xs";
 
-            <p className="max-w-xl text-sm uppercase leading-7 tracking-[0.28em] text-white/75 md:text-xl md:leading-9 md:tracking-[0.32em]">
-              {/* Motorsport. Roads. Passes. Machines. */}
-            </p>
+              const content = (
+                <>
+                  <span className="pr-6">
+                    {gallery.label}
+                  </span>
 
-            <div className="mt-10 h-px w-16 bg-white/70" />
-
-            <div id="galleries" className="mt-10 w-full max-w-xl">
-              {babaGpGalleries.map((gallery) => (
-                <a
-                  key={gallery.label}
-                  href={gallery.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center justify-between border-t border-white/25 py-5 text-[11px] font-medium uppercase tracking-[0.22em] text-white/90 transition hover:border-white hover:text-white md:text-xs md:tracking-[0.35em]"
-                >
-                  <span>Gallery {gallery.label}</span>
-                  <span className="ml-4 transition group-hover:translate-x-1">
+                  <span className="shrink-0 text-base text-white/70 transition-transform duration-300 group-hover:translate-x-1">
                     →
                   </span>
-                </a>
-              ))}
+                </>
+              );
 
-              <div className="border-t border-white/25" />
-            </div>
+              if (gallery.external) {
+                return (
+                  <a
+                    key={gallery.href}
+                    href={gallery.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={className}
+                  >
+                    {content}
+                  </a>
+                );
+              }
+
+              return (
+                <Link
+                  key={gallery.href}
+                  href={gallery.href}
+                  className={className}
+                >
+                  {content}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
 
       <section
         id="contact"
-        className="border-t border-white/20 bg-[#070707] px-5 py-12 md:px-14 md:py-14"
+        className="relative z-10 border-t border-white/20 bg-black px-6 py-10 md:px-11"
       >
-        <div className="flex flex-col justify-between gap-10 md:flex-row md:items-end">
+        <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
           <div>
-            <h2 className="mb-4 text-3xl font-light tracking-wide md:text-4xl">
+            <h2 className="text-3xl font-light">
               Contact.
             </h2>
-            <p className="text-white/50">Get in touch.</p>
+
+            <p className="mt-3 text-sm text-white/45">
+              Get in touch.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-4 sm:flex-row">
             <a
               href="https://www.instagram.com/ledon.photos"
               target="_blank"
               rel="noopener noreferrer"
-              className="border border-white/35 px-10 py-5 text-center text-xs uppercase tracking-[0.3em] text-white/90 transition hover:border-white hover:bg-white hover:text-black md:tracking-[0.35em]"
+              className="border border-white/25 px-7 py-4 text-center text-xs uppercase tracking-[0.3em] text-white/80 transition hover:border-white hover:bg-white hover:text-black"
             >
               Instagram
             </a>
 
             <a
-              href="mailto:moto@ledon.photos"
-              className="border border-white/35 px-10 py-5 text-center text-xs uppercase tracking-[0.3em] text-white/90 transition hover:border-white hover:bg-white hover:text-black md:tracking-[0.35em]"
+              href="mailto:info@ledon.photos"
+              className="border border-white/25 px-7 py-4 text-center text-xs uppercase tracking-[0.3em] text-white/80 transition hover:border-white hover:bg-white hover:text-black"
             >
               Email
             </a>
@@ -127,7 +164,7 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="flex justify-between border-t border-white/10 bg-[#070707] px-5 py-8 text-[10px] uppercase tracking-[0.22em] text-white/45 md:px-14 md:text-xs md:tracking-[0.25em]">
+      <footer className="relative z-10 flex justify-between border-t border-white/10 bg-black px-6 py-8 text-xs text-white/40 md:px-11">
         <span>LEDON.</span>
         <span>© 2026 LEDON.</span>
       </footer>
