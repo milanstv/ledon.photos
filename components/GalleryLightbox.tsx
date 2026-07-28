@@ -1,14 +1,15 @@
 "use client";
-import BuyPhotoButton from "@/components/BuyPhotoButton";
+
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import Lightbox from "yet-another-react-lightbox";
 import Fullscreen from "yet-another-react-lightbox/plugins/fullscreen";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 
-import "yet-another-react-lightbox/styles.css";
-
+import BuyPhotoButton from "@/components/BuyPhotoButton";
 import type { Gallery } from "@/data/galleries";
+
+import "yet-another-react-lightbox/styles.css";
 
 type GalleryLightboxProps = {
   gallery: Gallery;
@@ -160,12 +161,11 @@ export default function GalleryLightbox({
                   {gallery.price} €
                 </p>
 
-                <button
-                  type="button"
-                  className="mt-10 w-full bg-white px-6 py-5 text-xs font-semibold uppercase tracking-[0.28em] text-black transition hover:bg-white/80"
-                >
-                  Kúpiť originál
-                </button>
+                <BuyPhotoButton
+                  gallerySlug={gallery.slug}
+                  photoId={currentPhoto.id}
+                  className="mt-10 w-full bg-white px-6 py-5 text-xs font-semibold uppercase tracking-[0.28em] text-black transition hover:bg-white/80 disabled:cursor-wait disabled:opacity-60"
+                />
 
                 <div className="mt-10 space-y-4 border-t border-white/15 pt-8 text-sm text-white/55">
                   <p>Originál bez vodoznaku</p>
@@ -174,7 +174,7 @@ export default function GalleryLightbox({
                 </div>
 
                 <p className="absolute bottom-10 left-9 right-9 text-xs leading-6 text-white/25">
-                  Platbu pripojíme po dokončení galérie.
+                  Platba prebehne bezpečne cez Stripe.
                 </p>
               </aside>
             ) : null,
@@ -192,17 +192,17 @@ export default function GalleryLightbox({
           ),
         }}
         labels={{
-  Previous: "Predchádzajúca fotografia",
-  Next: "Nasledujúca fotografia",
-  Close: "Zatvoriť",
-  "Enter Fullscreen": "Celá obrazovka",
-  "Exit Fullscreen": "Ukončiť celú obrazovku",
-  "Zoom in": "Priblížiť",
-  "Zoom out": "Oddialiť",
-}}
+          Previous: "Predchádzajúca fotografia",
+          Next: "Nasledujúca fotografia",
+          Close: "Zatvoriť",
+          "Enter Fullscreen": "Celá obrazovka",
+          "Exit Fullscreen": "Ukončiť celú obrazovku",
+          "Zoom in": "Priblížiť",
+          "Zoom out": "Oddialiť",
+        }}
       />
 
-      {open && currentPhoto && (
+      {open && currentPhoto ? (
         <div className="fixed bottom-0 left-0 right-0 z-[10001] border-t border-white/15 bg-[#090909]/95 px-5 py-4 text-white backdrop-blur lg:hidden">
           <div className="flex items-center justify-between gap-5">
             <div>
@@ -216,13 +216,13 @@ export default function GalleryLightbox({
             </div>
 
             <BuyPhotoButton
-  gallerySlug={gallery.slug}
-  photoId={currentPhoto.id}
-  className="bg-white px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-black disabled:cursor-wait disabled:opacity-60"
-/>
+              gallerySlug={gallery.slug}
+              photoId={currentPhoto.id}
+              className="bg-white px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-black disabled:cursor-wait disabled:opacity-60"
+            />
           </div>
         </div>
-      )}
+      ) : null}
     </>
   );
 }
