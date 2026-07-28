@@ -5,14 +5,6 @@ import { getGallery } from "@/data/galleries";
 
 export const runtime = "nodejs";
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-
-if (!stripeSecretKey) {
-  throw new Error("Chýba STRIPE_SECRET_KEY v .env.local");
-}
-
-const stripe = new Stripe(stripeSecretKey);
-
 type CheckoutRequest = {
   gallerySlug?: string;
   photoId?: string;
@@ -20,16 +12,32 @@ type CheckoutRequest = {
 
 export async function POST(request: Request) {
   try {
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+    if (!stripeSecretKey) {
+      console.error("Chýba STRIPE_SECRET_KEY v .env.local");
+
+      return NextResponse.json(
+        { error: "Stripe nie je správne nastavený." },
+        { status: 500 },
+      );
+    }
+
+    const stripe = new Stripe(stripeSecretKey);
+
     const body = (await request.json()) as CheckoutRequest;
 
-    if (!body.gallerySlug || !body.photoId) {
+    const gallerySlug = body.gallerySlug?.trim();
+    const photoId = body.photoId?.trim();
+
+    if (!gallerySlug || !photoId) {
       return NextResponse.json(
         { error: "Chýba galéria alebo fotografia." },
         { status: 400 },
       );
     }
 
-    const gallery = getGallery(body.gallerySlug);
+    const gallery = getGallery(gallerySlug);
 
     if (!gallery) {
       return NextResponse.json(
@@ -39,7 +47,7 @@ export async function POST(request: Request) {
     }
 
     const photo = gallery.photos.find(
-      (galleryPhoto) => galleryPhoto.id === body.photoId,
+      (galleryPhoto) => galleryPhoto.id === photoId,
     );
 
     if (!photo) {
@@ -62,7 +70,7 @@ export async function POST(request: Request) {
             unit_amount: Math.round(gallery.price * 100),
 
             product_data: {
-              name: `Fotografia ${photo.id}`,
+              name: `Fotografia č. ${photo.customerNumber ?? photo.id}`,
               description: `${gallery.title} – originál v plnom rozlíšení`,
               images: [photo.src],
             },
@@ -73,18 +81,16 @@ export async function POST(request: Request) {
       metadata: {
         gallerySlug: gallery.slug,
         photoId: photo.id,
+        filename: photo.filename,
       },
 
-      success_url:
-        `${origin}/dakujeme?session_id={CHECKOUT_SESSION_ID}`,
-
-      cancel_url:
-        `${origin}/galleries/${gallery.slug}/${photo.id}`,
+      success_url: `${origin}/dakujeme?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/galleries/${gallery.slug}`,
     });
 
     if (!session.url) {
       return NextResponse.json(
-        { error: "Stripe nevytvoril platobnú adresu." },
+        { error: "Stripe nevytvoril platobnú stránku." },
         { status: 500 },
       );
     }

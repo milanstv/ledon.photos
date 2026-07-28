@@ -1,5 +1,5 @@
 "use client";
-
+import BuyPhotoButton from "@/components/BuyPhotoButton";
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import Lightbox from "yet-another-react-lightbox";
@@ -215,12 +215,11 @@ export default function GalleryLightbox({
               </p>
             </div>
 
-            <button
-              type="button"
-              className="bg-white px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-black"
-            >
-              Kúpiť originál
-            </button>
+            <BuyPhotoButton
+  gallerySlug={gallery.slug}
+  photoId={currentPhoto.id}
+  className="bg-white px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-black disabled:cursor-wait disabled:opacity-60"
+/>
           </div>
         </div>
       )}
