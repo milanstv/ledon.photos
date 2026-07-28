@@ -56,7 +56,7 @@ export default function BuyPhotoButton({
   }
 
   return (
-    <div>
+    <div className="w-full">
       <button
         type="button"
         onClick={startCheckout}
@@ -66,11 +66,11 @@ export default function BuyPhotoButton({
         {loading ? "Pripravujem platbu…" : "Kúpiť originál"}
       </button>
 
-      {error && (
-        <p className="mt-3 text-xs text-red-400">
+      {error ? (
+        <p className="mt-3 text-center text-xs text-red-400">
           {error}
         </p>
-      )}
+      ) : null}
     </div>
   );
 }
