@@ -118,10 +118,10 @@ export default function GalleryLightbox({
             changePhoto(currentIndex);
           },
         }}
-        controller={{
-          closeOnBackdropClick: true,
-          closeOnPullDown: true,
-        }}
+     controller={{
+  closeOnBackdropClick: false,
+  closeOnPullDown: false,
+}}
         carousel={{
           finite: true,
           padding: 20,
