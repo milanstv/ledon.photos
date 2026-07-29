@@ -1,15 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
-import Lightbox from "yet-another-react-lightbox";
-import Fullscreen from "yet-another-react-lightbox/plugins/fullscreen";
-import Zoom from "yet-another-react-lightbox/plugins/zoom";
+import { useEffect, useState } from "react";
 
 import BuyPhotoButton from "@/components/BuyPhotoButton";
 import type { Gallery } from "@/data/galleries";
-
-import "yet-another-react-lightbox/styles.css";
 
 type GalleryLightboxProps = {
   gallery: Gallery;
@@ -18,19 +13,16 @@ type GalleryLightboxProps = {
 export default function GalleryLightbox({
   gallery,
 }: GalleryLightboxProps) {
-  const [open, setOpen] = useState(false);
-  const [index, setIndex] = useState(0);
-
-  const slides = useMemo(
-    () =>
-      gallery.photos.map((photo) => ({
-        src: photo.src,
-        alt: photo.alt,
-      })),
-    [gallery.photos],
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(
+    null,
   );
 
-  const currentPhoto = gallery.photos[index];
+  const currentPhoto =
+    selectedIndex !== null
+      ? gallery.photos[selectedIndex]
+      : null;
+
+  const isOpen = currentPhoto !== null;
 
   function openPhoto(photoIndex: number) {
     const photo = gallery.photos[photoIndex];
@@ -39,8 +31,7 @@ export default function GalleryLightbox({
       return;
     }
 
-    setIndex(photoIndex);
-    setOpen(true);
+    setSelectedIndex(photoIndex);
 
     window.history.replaceState(
       null,
@@ -49,8 +40,8 @@ export default function GalleryLightbox({
     );
   }
 
-  function closeLightbox() {
-    setOpen(false);
+  function closePhoto() {
+    setSelectedIndex(null);
 
     window.history.replaceState(
       null,
@@ -59,14 +50,15 @@ export default function GalleryLightbox({
     );
   }
 
-  function changePhoto(photoIndex: number) {
-    const photo = gallery.photos[photoIndex];
-
-    if (!photo) {
+  function showPreviousPhoto() {
+    if (selectedIndex === null || selectedIndex <= 0) {
       return;
     }
 
-    setIndex(photoIndex);
+    const newIndex = selectedIndex - 1;
+    const photo = gallery.photos[newIndex];
+
+    setSelectedIndex(newIndex);
 
     window.history.replaceState(
       null,
@@ -74,6 +66,56 @@ export default function GalleryLightbox({
       `/galleries/${gallery.slug}/${photo.id}`,
     );
   }
+
+  function showNextPhoto() {
+    if (
+      selectedIndex === null ||
+      selectedIndex >= gallery.photos.length - 1
+    ) {
+      return;
+    }
+
+    const newIndex = selectedIndex + 1;
+    const photo = gallery.photos[newIndex];
+
+    setSelectedIndex(newIndex);
+
+    window.history.replaceState(
+      null,
+      "",
+      `/galleries/${gallery.slug}/${photo.id}`,
+    );
+  }
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        closePhoto();
+      }
+
+      if (event.key === "ArrowLeft") {
+        showPreviousPhoto();
+      }
+
+      if (event.key === "ArrowRight") {
+        showNextPhoto();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  });
 
   return (
     <>
@@ -100,93 +142,75 @@ export default function GalleryLightbox({
               {photo.id}
             </span>
 
-            <span className="absolute inset-0 flex items-center justify-center text-xs uppercase tracking-[0.3em] text-white opacity-0 transition duration-300 group-hover:opacity-100">
+            <span className="absolute inset-0 hidden items-center justify-center text-xs uppercase tracking-[0.3em] text-white opacity-0 transition duration-300 group-hover:opacity-100 sm:flex">
               Zobraziť fotografiu
             </span>
           </button>
         ))}
       </section>
 
-      <Lightbox
-        open={open}
-        close={closeLightbox}
-        index={index}
-        slides={slides}
-        plugins={[Fullscreen, Zoom]}
-        on={{
-          view: ({ index: currentIndex }) => {
-            changePhoto(currentIndex);
-          },
-        }}
-     controller={{
-  closeOnBackdropClick: false,
-  closeOnPullDown: false,
-}}
-        carousel={{
-          finite: true,
-          padding: 20,
-          spacing: 30,
-          imageFit: "contain",
-        }}
-        animation={{
-          fade: 200,
-          swipe: 350,
-        }}
-        toolbar={{
-          buttons: ["fullscreen"],
-        }}
-        styles={{
-          root: {
-            "--yarl__color_backdrop": "rgba(0, 0, 0, 0.97)",
-          },
-          button: {
-            filter: "none",
-          },
-        }}
-        render={{
-          iconPrev: () => (
-            <span className="text-2xl font-light">←</span>
-          ),
-
-          iconNext: () => (
-            <span className="text-2xl font-light">→</span>
-          ),
-        }}
-        labels={{
-          Previous: "Predchádzajúca fotografia",
-          Next: "Nasledujúca fotografia",
-          Close: "Zatvoriť",
-          "Enter Fullscreen": "Celá obrazovka",
-          "Exit Fullscreen": "Ukončiť celú obrazovku",
-          "Zoom in": "Priblížiť",
-          "Zoom out": "Oddialiť",
-        }}
-      />
-
-      {open ? (
-        <button
-          type="button"
-          onClick={closeLightbox}
-          aria-label="Zatvoriť fotografiu"
-          className="fixed left-4 top-4 z-[10002] flex h-12 items-center gap-2 rounded-full border border-white/20 bg-black/70 px-5 text-sm text-white backdrop-blur transition hover:bg-black"
-        >
-          <span className="text-xl leading-none">←</span>
-          <span>Späť</span>
-        </button>
-      ) : null}
-
-      {open && currentPhoto ? (
-        <>
-          <aside className="fixed bottom-0 right-0 top-0 z-[10001] hidden w-[360px] border-l border-white/15 bg-[#090909] px-9 py-24 text-white lg:block">
+      {isOpen && currentPhoto && selectedIndex !== null ? (
+        <div className="fixed inset-0 z-[10000] bg-black text-white">
+          <div className="absolute left-0 right-0 top-0 z-30 flex h-20 items-center justify-between border-b border-white/10 bg-black/80 px-4 backdrop-blur md:px-7">
             <button
               type="button"
-              onClick={closeLightbox}
+              onClick={closePhoto}
+              className="flex items-center gap-3 text-sm text-white transition hover:text-white/65"
+            >
+              <span className="text-2xl leading-none">←</span>
+              <span>Späť do galérie</span>
+            </button>
+
+            <p className="hidden text-xs uppercase tracking-[0.25em] text-white/45 sm:block">
+              {selectedIndex + 1} / {gallery.photos.length}
+            </p>
+
+            <button
+              type="button"
+              onClick={closePhoto}
               aria-label="Zatvoriť fotografiu"
-              className="absolute right-7 top-7 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 text-2xl text-white transition hover:bg-white hover:text-black"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 text-2xl transition hover:bg-white hover:text-black"
             >
               ×
             </button>
+          </div>
 
+          <div className="absolute bottom-[116px] left-0 right-0 top-20 lg:bottom-0 lg:right-[360px]">
+            <div className="relative h-full w-full">
+              <Image
+                src={currentPhoto.src}
+                alt={currentPhoto.alt}
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, calc(100vw - 360px)"
+                className="object-contain"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={showPreviousPhoto}
+              disabled={selectedIndex === 0}
+              aria-label="Predchádzajúca fotografia"
+              className="absolute left-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/55 text-2xl backdrop-blur transition hover:bg-white hover:text-black disabled:hidden md:left-6"
+            >
+              ←
+            </button>
+
+            <button
+              type="button"
+              onClick={showNextPhoto}
+              disabled={
+                selectedIndex === gallery.photos.length - 1
+              }
+              aria-label="Nasledujúca fotografia"
+              className="absolute right-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/55 text-2xl backdrop-blur transition hover:bg-white hover:text-black disabled:hidden md:right-6"
+            >
+              →
+            </button>
+          </div>
+
+          <aside className="absolute bottom-0 right-0 top-20 hidden w-[360px] border-l border-white/15 bg-[#090909] px-9 py-12 lg:block">
             <p className="text-[11px] uppercase tracking-[0.35em] text-white/40">
               {gallery.title}
             </p>
@@ -216,10 +240,10 @@ export default function GalleryLightbox({
             </p>
           </aside>
 
-          <div className="fixed bottom-0 left-0 right-0 z-[10001] border-t border-white/15 bg-[#090909]/95 px-5 py-4 text-white backdrop-blur lg:hidden">
+          <div className="absolute bottom-0 left-0 right-0 z-30 border-t border-white/15 bg-[#090909] px-4 py-4 lg:hidden">
             <div className="flex items-center justify-between gap-4">
               <div className="min-w-0">
-                <p className="truncate text-[10px] tracking-[0.2em] text-white/40">
+                <p className="truncate text-[10px] uppercase tracking-[0.2em] text-white/40">
                   {currentPhoto.id}
                 </p>
 
@@ -228,14 +252,16 @@ export default function GalleryLightbox({
                 </p>
               </div>
 
-              <BuyPhotoButton
-                gallerySlug={gallery.slug}
-                photoId={currentPhoto.id}
-                className="shrink-0 bg-white px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white/80 disabled:cursor-wait disabled:opacity-60"
-              />
+              <div className="w-auto shrink-0">
+                <BuyPhotoButton
+                  gallerySlug={gallery.slug}
+                  photoId={currentPhoto.id}
+                  className="bg-white px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-black disabled:cursor-wait disabled:opacity-60"
+                />
+              </div>
             </div>
           </div>
-        </>
+        </div>
       ) : null}
     </>
   );
