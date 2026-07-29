@@ -33,10 +33,14 @@ export default function GalleryLightbox({
   const currentPhoto = gallery.photos[index];
 
   function openPhoto(photoIndex: number) {
+    const photo = gallery.photos[photoIndex];
+
+    if (!photo) {
+      return;
+    }
+
     setIndex(photoIndex);
     setOpen(true);
-
-    const photo = gallery.photos[photoIndex];
 
     window.history.replaceState(
       null,
@@ -56,17 +60,19 @@ export default function GalleryLightbox({
   }
 
   function changePhoto(photoIndex: number) {
-    setIndex(photoIndex);
-
     const photo = gallery.photos[photoIndex];
 
-    if (photo) {
-      window.history.replaceState(
-        null,
-        "",
-        `/galleries/${gallery.slug}/${photo.id}`,
-      );
+    if (!photo) {
+      return;
     }
+
+    setIndex(photoIndex);
+
+    window.history.replaceState(
+      null,
+      "",
+      `/galleries/${gallery.slug}/${photo.id}`,
+    );
   }
 
   return (
@@ -108,8 +114,9 @@ export default function GalleryLightbox({
         slides={slides}
         plugins={[Fullscreen, Zoom]}
         on={{
-          view: ({ index: currentIndex }) =>
-            changePhoto(currentIndex),
+          view: ({ index: currentIndex }) => {
+            changePhoto(currentIndex);
+          },
         }}
         controller={{
           closeOnBackdropClick: true,
@@ -117,8 +124,8 @@ export default function GalleryLightbox({
         }}
         carousel={{
           finite: true,
-          padding: 24,
-          spacing: 40,
+          padding: 20,
+          spacing: 30,
           imageFit: "contain",
         }}
         animation={{
@@ -126,69 +133,23 @@ export default function GalleryLightbox({
           swipe: 350,
         }}
         toolbar={{
-          buttons: ["fullscreen", "close"],
+          buttons: ["fullscreen"],
         }}
         styles={{
           root: {
             "--yarl__color_backdrop": "rgba(0, 0, 0, 0.97)",
-          },
-          container: {
-            paddingRight: "360px",
-          },
-          navigationNext: {
-            right: "380px",
-          },
-          navigationPrev: {
-            left: "20px",
           },
           button: {
             filter: "none",
           },
         }}
         render={{
-          controls: () =>
-            currentPhoto ? (
-              <aside className="fixed bottom-0 right-0 top-0 z-[10000] hidden w-[360px] border-l border-white/15 bg-[#090909] px-9 py-28 text-white lg:block">
-                <p className="text-[11px] uppercase tracking-[0.35em] text-white/40">
-                  {gallery.title}
-                </p>
-
-                <h2 className="mt-6 text-3xl font-light tracking-[0.12em]">
-                  {currentPhoto.id}
-                </h2>
-
-                <p className="mt-10 text-4xl font-light">
-                  {gallery.price} €
-                </p>
-
-                <BuyPhotoButton
-                  gallerySlug={gallery.slug}
-                  photoId={currentPhoto.id}
-                  className="mt-10 w-full bg-white px-6 py-5 text-xs font-semibold uppercase tracking-[0.28em] text-black transition hover:bg-white/80 disabled:cursor-wait disabled:opacity-60"
-                />
-
-                <div className="mt-10 space-y-4 border-t border-white/15 pt-8 text-sm text-white/55">
-                  <p>Originál bez vodoznaku</p>
-                  <p>Plné rozlíšenie fotografie</p>
-                  <p>Okamžité stiahnutie po zaplatení</p>
-                </div>
-
-                <p className="absolute bottom-10 left-9 right-9 text-xs leading-6 text-white/25">
-                  Platba prebehne bezpečne cez Stripe.
-                </p>
-              </aside>
-            ) : null,
-
           iconPrev: () => (
             <span className="text-2xl font-light">←</span>
           ),
 
           iconNext: () => (
             <span className="text-2xl font-light">→</span>
-          ),
-
-          iconClose: () => (
-            <span className="text-2xl font-light">×</span>
           ),
         }}
         labels={{
@@ -202,26 +163,79 @@ export default function GalleryLightbox({
         }}
       />
 
-      {open && currentPhoto ? (
-        <div className="fixed bottom-0 left-0 right-0 z-[10001] border-t border-white/15 bg-[#090909]/95 px-5 py-4 text-white backdrop-blur lg:hidden">
-          <div className="flex items-center justify-between gap-5">
-            <div>
-              <p className="text-[10px] tracking-[0.25em] text-white/40">
-                {currentPhoto.id}
-              </p>
+      {open ? (
+        <button
+          type="button"
+          onClick={closeLightbox}
+          aria-label="Zatvoriť fotografiu"
+          className="fixed left-4 top-4 z-[10002] flex h-12 items-center gap-2 rounded-full border border-white/20 bg-black/70 px-5 text-sm text-white backdrop-blur transition hover:bg-black"
+        >
+          <span className="text-xl leading-none">←</span>
+          <span>Späť</span>
+        </button>
+      ) : null}
 
-              <p className="mt-1 text-xl">
-                {gallery.price} €
-              </p>
-            </div>
+      {open && currentPhoto ? (
+        <>
+          <aside className="fixed bottom-0 right-0 top-0 z-[10001] hidden w-[360px] border-l border-white/15 bg-[#090909] px-9 py-24 text-white lg:block">
+            <button
+              type="button"
+              onClick={closeLightbox}
+              aria-label="Zatvoriť fotografiu"
+              className="absolute right-7 top-7 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 text-2xl text-white transition hover:bg-white hover:text-black"
+            >
+              ×
+            </button>
+
+            <p className="text-[11px] uppercase tracking-[0.35em] text-white/40">
+              {gallery.title}
+            </p>
+
+            <h2 className="mt-6 text-3xl font-light tracking-[0.12em]">
+              {currentPhoto.id}
+            </h2>
+
+            <p className="mt-10 text-4xl font-light">
+              {gallery.price} €
+            </p>
 
             <BuyPhotoButton
               gallerySlug={gallery.slug}
               photoId={currentPhoto.id}
-              className="bg-white px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-black disabled:cursor-wait disabled:opacity-60"
+              className="mt-10 w-full bg-white px-6 py-5 text-xs font-semibold uppercase tracking-[0.28em] text-black transition hover:bg-white/80 disabled:cursor-wait disabled:opacity-60"
             />
+
+            <div className="mt-10 space-y-4 border-t border-white/15 pt-8 text-sm text-white/55">
+              <p>Originál bez vodoznaku</p>
+              <p>Plné rozlíšenie fotografie</p>
+              <p>Okamžité stiahnutie po zaplatení</p>
+            </div>
+
+            <p className="absolute bottom-10 left-9 right-9 text-xs leading-6 text-white/25">
+              Platba prebehne bezpečne cez Stripe.
+            </p>
+          </aside>
+
+          <div className="fixed bottom-0 left-0 right-0 z-[10001] border-t border-white/15 bg-[#090909]/95 px-5 py-4 text-white backdrop-blur lg:hidden">
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="truncate text-[10px] tracking-[0.2em] text-white/40">
+                  {currentPhoto.id}
+                </p>
+
+                <p className="mt-1 text-xl">
+                  {gallery.price} €
+                </p>
+              </div>
+
+              <BuyPhotoButton
+                gallerySlug={gallery.slug}
+                photoId={currentPhoto.id}
+                className="shrink-0 bg-white px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white/80 disabled:cursor-wait disabled:opacity-60"
+              />
+            </div>
           </div>
-        </div>
+        </>
       ) : null}
     </>
   );

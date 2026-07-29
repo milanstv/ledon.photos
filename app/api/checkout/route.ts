@@ -62,6 +62,12 @@ export async function POST(request: Request) {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
 
+      managed_payments: {
+        enabled: false,
+      },
+
+      payment_method_types: ["card"],
+
       line_items: [
         {
           quantity: 1,
@@ -69,12 +75,11 @@ export async function POST(request: Request) {
             currency: "eur",
             unit_amount: Math.round(gallery.price * 100),
 
-          product_data: {
-  name: `Fotografia č. ${photo.customerNumber ?? photo.id}`,
-  description: `${gallery.title} – originál v plnom rozlíšení`,
-  images: [photo.src],
-  tax_code: "txcd_10103001",
-},
+            product_data: {
+              name: `Fotografia č. ${photo.customerNumber ?? photo.id}`,
+              description: `${gallery.title} – originál v plnom rozlíšení`,
+              images: [photo.src],
+            },
           },
         },
       ],
