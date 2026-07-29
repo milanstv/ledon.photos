@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  type MouseEvent,
-  type PointerEvent,
-  type TouchEvent,
-  useState,
-} from "react";
+import { useState } from "react";
 
 type BuyPhotoButtonProps = {
   gallerySlug: string;
@@ -21,24 +16,7 @@ export default function BuyPhotoButton({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  function stopMouseEvent(event: MouseEvent<HTMLElement>) {
-    event.stopPropagation();
-  }
-
-  function stopPointerEvent(event: PointerEvent<HTMLElement>) {
-    event.stopPropagation();
-  }
-
-  function stopTouchEvent(event: TouchEvent<HTMLElement>) {
-    event.stopPropagation();
-  }
-
-  async function startCheckout(
-    event: MouseEvent<HTMLButtonElement>,
-  ) {
-    event.preventDefault();
-    event.stopPropagation();
-
+  async function startCheckout() {
     if (loading) {
       return;
     }
@@ -82,14 +60,7 @@ export default function BuyPhotoButton({
   }
 
   return (
-    <div
-      className="w-full"
-      onClick={stopMouseEvent}
-      onPointerDown={stopPointerEvent}
-      onPointerUp={stopPointerEvent}
-      onTouchStart={stopTouchEvent}
-      onTouchEnd={stopTouchEvent}
-    >
+    <div className="relative z-[10010] w-full">
       <button
         type="button"
         onClick={startCheckout}
