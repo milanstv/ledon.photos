@@ -1,5 +1,5 @@
 import Link from "next/link";
-
+import Image from "next/image";
 import { galleries as localGalleries } from "@/data/galleries";
 
 const externalGalleries = [
@@ -20,7 +20,7 @@ const externalGalleries = [
 export default function Home() {
   const galleryLinks = [
     ...localGalleries.map((gallery) => ({
-      label: `Gallery ${gallery.title} ${gallery.date}`,
+      label: `${gallery.title} ${gallery.date}`,
       href: `/galleries/${gallery.slug}`,
       external: false,
       sortDate: gallery.slug.slice(0, 10),
@@ -45,12 +45,16 @@ export default function Home() {
       <div className="fixed inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/30" />
 
       <header className="fixed left-0 top-0 z-50 flex w-full items-center justify-between px-6 py-6 md:px-11 md:py-7">
-        <Link
-          href="/"
-          className="text-3xl font-bold tracking-[0.12em] md:text-4xl"
-        >
-          LEDON.
-        </Link>
+        <Link href="/" className="flex items-center">
+  <Image
+    src="/images/ledon-logo.png"
+    alt="LEDON. Photos"
+    width={260}
+    height={60}
+    priority
+    className="h-10 w-auto md:h-12"
+  />
+</Link>
 
         <nav className="flex items-center gap-7 text-[10px] font-medium uppercase tracking-[0.35em] md:gap-14 md:text-xs">
           <a
@@ -75,7 +79,7 @@ export default function Home() {
       >
         <div className="w-full max-w-[585px]">
           <p className="mb-5 text-[10px] uppercase tracking-[0.48em] text-white/55 md:text-xs">
-            LEDON.GALÉRIA
+            SPORT PHOTOGRAPHY
           </p>
 
           <h1 className="text-6xl font-light uppercase tracking-[0.14em] md:text-7xl">
