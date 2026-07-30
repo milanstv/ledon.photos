@@ -1,7 +1,6 @@
 import fs from "node:fs/promises";
 import { createReadStream } from "node:fs";
 import path from "node:path";
-import sharp from "sharp";
 
 import {
   HeadObjectCommand,
@@ -10,6 +9,18 @@ import {
 } from "@aws-sdk/client-s3";
 
 const projectRoot = process.cwd();
+
+const galleriesRoot = path.join(
+  projectRoot,
+  "storage",
+  "galleries",
+);
+
+const thumbnailsRoot = path.join(
+  projectRoot,
+  "storage",
+  "thumbs",
+);
 
 const configPath = path.join(
   projectRoot,
@@ -22,6 +33,8 @@ const outputPath = path.join(
   "data",
   "galleries.ts",
 );
+
+const DEFAULT_PRICE = 5;
 
 const supportedExtensions = new Set([
   ".jpg",
@@ -99,15 +112,10 @@ function sortPhotos(
 }
 
 function createPublicUrl(slug, filename) {
-  const encodedSlug =
-    encodeURIComponent(slug);
-
-  const encodedFilename =
-    encodeURIComponent(filename);
-
   return (
     `${r2PublicUrl}/` +
-    `${encodedSlug}/${encodedFilename}`
+    `${encodeURIComponent(slug)}/` +
+    `${encodeURIComponent(filename)}`
   );
 }
 
@@ -122,95 +130,121 @@ async function directoryExists(directoryPath) {
   }
 }
 
-async function createThumbnail(
-  originalPath,
-  thumbnailPath,
-) {
-  let shouldCreateThumbnail = true;
-
+async function fileExists(filePath) {
   try {
-    const [
-      originalStatistics,
-      thumbnailStatistics,
-    ] = await Promise.all([
-      fs.stat(originalPath),
-      fs.stat(thumbnailPath),
-    ]);
+    const statistics =
+      await fs.stat(filePath);
 
-    shouldCreateThumbnail =
-      originalStatistics.mtimeMs >
-      thumbnailStatistics.mtimeMs;
+    return statistics.isFile();
   } catch {
-    shouldCreateThumbnail = true;
-  }
-
-  if (!shouldCreateThumbnail) {
     return false;
   }
-
-  await sharp(originalPath)
-    .rotate()
-    .resize({
-      width: 2000,
-      height: 2000,
-      fit: "inside",
-      withoutEnlargement: true,
-    })
-    .jpeg({
-      quality: 82,
-      mozjpeg: true,
-    })
-    .toFile(thumbnailPath);
-
-  return true;
 }
 
-async function removeOldLocalThumbnails(
-  thumbnailDirectory,
-  originalFilenames,
-) {
-  const thumbnailExists =
-    await directoryExists(thumbnailDirectory);
+function parseSlug(slug) {
+  const match = slug.match(
+    /^(\d{4})-(\d{2})-(\d{2})-(.+)$/,
+  );
 
-  if (!thumbnailExists) {
-    return;
+  if (!match) {
+    throw new Error(
+      `Nesprávny názov galérie: ${slug}. ` +
+      "Použi napríklad 2026-07-02-slovakia-ring.",
+    );
   }
 
-  const thumbnailFiles =
-    await fs.readdir(thumbnailDirectory);
+  const [, year, month, day, namePart] =
+    match;
 
-  const originalFilenameSet =
-    new Set(originalFilenames);
+  const names = {
+    "slovakia-ring": "Slovakia Ring",
+    "baba-gp": "Baba GP",
+    "pezinska-baba": "Pezinská Baba",
+  };
 
-  for (const thumbnailFilename of thumbnailFiles) {
-    const extension = path
-      .extname(thumbnailFilename)
-      .toLowerCase();
-
-    if (!supportedExtensions.has(extension)) {
-      continue;
-    }
-
-    if (
-      originalFilenameSet.has(
-        thumbnailFilename,
+  const automaticName =
+    names[namePart] ??
+    namePart
+      .split("-")
+      .map(
+        (word) =>
+          word.charAt(0).toUpperCase() +
+          word.slice(1),
       )
-    ) {
-      continue;
-    }
+      .join(" ");
 
-    await fs.unlink(
-      path.join(
-        thumbnailDirectory,
-        thumbnailFilename,
-      ),
-    );
+  return {
+    title:
+      `${automaticName} ` +
+      `${Number(day)}. ${Number(month)}. ${year}`,
+    date:
+      `${Number(day)}. ${Number(month)}. ${year}`,
+  };
+}
 
-    console.log(
-      `Odstránený starý lokálny náhľad: ` +
-      thumbnailFilename,
+async function loadConfiguration() {
+  if (!(await fileExists(configPath))) {
+    return [];
+  }
+
+  const configurationText =
+    await fs.readFile(configPath, "utf8");
+
+  const configuration =
+    JSON.parse(configurationText);
+
+  if (!Array.isArray(configuration)) {
+    throw new Error(
+      "galleries.config.json musí obsahovať pole.",
     );
   }
+
+  return configuration;
+}
+
+async function discoverGalleries() {
+  const directoryItems = await fs.readdir(
+    galleriesRoot,
+    {
+      withFileTypes: true,
+    },
+  );
+
+  return directoryItems
+    .filter((item) => item.isDirectory())
+    .map((item) => item.name)
+    .sort((first, second) =>
+      second.localeCompare(first, "sk", {
+        numeric: true,
+      }),
+    );
+}
+
+function createGalleryConfiguration(
+  slug,
+  manualConfigurations,
+) {
+  const manualConfiguration =
+    manualConfigurations.find(
+      (gallery) => gallery.slug === slug,
+    );
+
+  const automatic = parseSlug(slug);
+
+  return {
+    slug,
+    title:
+      manualConfiguration?.title ??
+      automatic.title,
+    date:
+      manualConfiguration?.date ??
+      automatic.date,
+    price:
+      typeof manualConfiguration?.price ===
+      "number"
+        ? manualConfiguration.price
+        : DEFAULT_PRICE,
+  };
 }
 
 async function remoteObjectIsCurrent({
@@ -271,7 +305,6 @@ async function uploadFile({
 
   if (isCurrent) {
     console.log(`Preskočené: ${label}`);
-
     return false;
   }
 
@@ -298,39 +331,37 @@ async function uploadFile({
   );
 
   console.log(`Nahrané: ${label}`);
-
   return true;
 }
 
 async function buildGallery(galleryConfig) {
   const originalDirectory = path.join(
-    projectRoot,
-    "storage",
-    "galleries",
+    galleriesRoot,
     galleryConfig.slug,
     "originals",
   );
 
   const thumbnailDirectory = path.join(
-    projectRoot,
-    "public",
-    "galleries",
+    thumbnailsRoot,
     galleryConfig.slug,
-    "thumbs",
   );
 
-  const originalDirectoryExists =
-    await directoryExists(originalDirectory);
-
-  if (!originalDirectoryExists) {
+  if (
+    !(await directoryExists(originalDirectory))
+  ) {
     throw new Error(
       `Chýba priečinok: ${originalDirectory}`,
     );
   }
 
-  await fs.mkdir(thumbnailDirectory, {
-    recursive: true,
-  });
+  if (
+    !(await directoryExists(thumbnailDirectory))
+  ) {
+    throw new Error(
+      `Chýbajú náhľady s vodoznakom: ${thumbnailDirectory}\n` +
+      "Najskôr spusti npm run watermark.",
+    );
+  }
 
   const directoryItems =
     await fs.readdir(originalDirectory, {
@@ -347,17 +378,12 @@ async function buildGallery(galleryConfig) {
     )
     .sort(sortPhotos);
 
-  await removeOldLocalThumbnails(
-    thumbnailDirectory,
-    originalFilenames,
-  );
-
-  const photos = [];
-
   console.log("");
   console.log(
     `Galéria: ${galleryConfig.title}`,
   );
+
+  const photos = [];
 
   for (const filename of originalFilenames) {
     const originalPath = path.join(
@@ -370,15 +396,9 @@ async function buildGallery(galleryConfig) {
       filename,
     );
 
-    const thumbnailCreated =
-      await createThumbnail(
-        originalPath,
-        thumbnailPath,
-      );
-
-    if (thumbnailCreated) {
-      console.log(
-        `Vytvorený náhľad: ${filename}`,
+    if (!(await fileExists(thumbnailPath))) {
+      throw new Error(
+        `Chýba náhľad s vodoznakom: ${thumbnailPath}`,
       );
     }
 
@@ -426,14 +446,8 @@ async function buildGallery(galleryConfig) {
       alt:
         customerNumber ===
         Number.MAX_SAFE_INTEGER
-          ? (
-              `${galleryConfig.title} – ` +
-              filenameWithoutExtension
-            )
-          : (
-              `${galleryConfig.title} – ` +
-              `fotografia č. ${customerNumber}`
-            ),
+          ? `${galleryConfig.title} – ${filenameWithoutExtension}`
+          : `${galleryConfig.title} – fotografia č. ${customerNumber}`,
     });
   }
 
@@ -452,44 +466,26 @@ async function buildGallery(galleryConfig) {
 }
 
 async function main() {
-  const configurationText =
-    await fs.readFile(
-      configPath,
-      "utf8",
-    );
-
-  const galleryConfigurations =
-    JSON.parse(configurationText);
-
-  if (
-    !Array.isArray(
-      galleryConfigurations,
-    )
-  ) {
+  if (!(await directoryExists(galleriesRoot))) {
     throw new Error(
-      "galleries.config.json musí " +
-      "obsahovať pole galérií.",
+      `Chýba priečinok: ${galleriesRoot}`,
     );
   }
 
+  const manualConfigurations =
+    await loadConfiguration();
+
+  const discoveredSlugs =
+    await discoverGalleries();
+
   const galleries = [];
 
-  for (
-    const galleryConfig
-    of galleryConfigurations
-  ) {
-    if (
-      !galleryConfig.slug ||
-      !galleryConfig.title ||
-      !galleryConfig.date ||
-      typeof galleryConfig.price !==
-        "number"
-    ) {
-      throw new Error(
-        "Každá galéria musí mať " +
-        "slug, title, date a price.",
+  for (const slug of discoveredSlugs) {
+    const galleryConfig =
+      createGalleryConfiguration(
+        slug,
+        manualConfigurations,
       );
-    }
 
     galleries.push(
       await buildGallery(galleryConfig),
@@ -583,10 +579,7 @@ export function getPhoto(
   console.log(
     "Galérie boli úspešne vytvorené.",
   );
-
-  console.log(
-    `Výstup: ${outputPath}`,
-  );
+  console.log(`Výstup: ${outputPath}`);
 }
 
 main().catch((error) => {
@@ -594,10 +587,6 @@ main().catch((error) => {
   console.error(
     "Chyba pri vytváraní galérií:",
   );
-
-  console.error(
-    error?.message ?? error,
-  );
-
+  console.error(error?.message ?? error);
   process.exit(1);
 });
