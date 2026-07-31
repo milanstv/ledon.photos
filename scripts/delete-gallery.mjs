@@ -10,6 +10,12 @@ const galleriesDirectory = path.join(
   "galleries",
 );
 
+const configPath = path.join(
+  projectRoot,
+  "data",
+  "galleries.config.json",
+);
+
 function ask(question) {
   const rl = readline.createInterface({
     input: process.stdin,
