@@ -1,34 +1,9 @@
-import Link from "next/link";
 import Image from "next/image";
-import { galleries as localGalleries } from "@/data/galleries";
+import Link from "next/link";
 
-const externalGalleries = [
-  {
-    label: "Gallery Baba GP 21.6.2026",
-    href: "https://ledon.pixieset.com/pezinskababagp/",
-    external: true,
-    sortDate: "2026-06-21",
-  },
-  {
-    label: "Gallery Slovakia Ring 27.6.2026",
-    href: "https://ledon.pixieset.com/slovakiaring2762026/",
-    external: true,
-    sortDate: "2026-06-27",
-  },
-];
+import { galleries } from "@/data/galleries";
 
 export default function Home() {
-  const galleryLinks = [
-    ...localGalleries.map((gallery) => ({
-      label: `${gallery.title} ${gallery.date}`,
-      href: `/galleries/${gallery.slug}`,
-      external: false,
-      sortDate: gallery.slug.slice(0, 10),
-    })),
-
-    ...externalGalleries,
-  ].sort((a, b) => b.sortDate.localeCompare(a.sortDate));
-
   return (
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
       <div
@@ -46,15 +21,15 @@ export default function Home() {
 
       <header className="fixed left-0 top-0 z-50 flex w-full items-center justify-between px-6 py-6 md:px-11 md:py-7">
         <Link href="/" className="flex items-center">
-  <Image
-    src="/images/ledon-logo.png"
-    alt="LEDON. Photos"
-    width={260}
-    height={60}
-    priority
-    className="h-10 w-auto md:h-12"
-  />
-</Link>
+          <Image
+            src="/images/ledon-logo.png"
+            alt="LEDON. Photos"
+            width={260}
+            height={60}
+            priority
+            className="h-10 w-auto md:h-12"
+          />
+        </Link>
 
         <nav className="flex items-center gap-7 text-[10px] font-medium uppercase tracking-[0.35em] md:gap-14 md:text-xs">
           <a
@@ -89,46 +64,21 @@ export default function Home() {
           <div className="mt-11 h-px w-16 bg-white/60" />
 
           <div className="mt-10 border-t border-white/25">
-            {galleryLinks.map((gallery) => {
-              const className =
-                "group flex min-h-[58px] items-center justify-between border-b border-white/25 py-4 text-left text-[10px] uppercase tracking-[0.32em] text-white/85 transition hover:bg-white/5 hover:text-white md:text-xs";
+            {galleries.map((gallery) => (
+              <Link
+                key={gallery.slug}
+                href={`/galleries/${gallery.slug}`}
+                className="group flex min-h-[58px] items-center justify-between border-b border-white/25 py-4 text-left text-[10px] uppercase tracking-[0.32em] text-white/85 transition hover:bg-white/5 hover:text-white md:text-xs"
+              >
+                <span className="pr-6">
+                  {gallery.title} {gallery.date}
+                </span>
 
-              const content = (
-                <>
-                  <span className="pr-6">
-                    {gallery.label}
-                  </span>
-
-                  <span className="shrink-0 text-base text-white/70 transition-transform duration-300 group-hover:translate-x-1">
-                    →
-                  </span>
-                </>
-              );
-
-              if (gallery.external) {
-                return (
-                  <a
-                    key={gallery.href}
-                    href={gallery.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={className}
-                  >
-                    {content}
-                  </a>
-                );
-              }
-
-              return (
-                <Link
-                  key={gallery.href}
-                  href={gallery.href}
-                  className={className}
-                >
-                  {content}
-                </Link>
-              );
-            })}
+                <span className="shrink-0 text-base text-white/70 transition-transform duration-300 group-hover:translate-x-1">
+                  →
+                </span>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
