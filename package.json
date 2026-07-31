@@ -10,7 +10,7 @@
     "watermark": "node scripts/watermark.mjs",
     "gallery": "node --env-file-if-exists=.env.local scripts/build-galleries.mjs",
     "publish": "node scripts/publish.mjs",
-    "delete-gallery": "node scripts/delete-gallery.mjs"
+    "delete-gallery": "node --env-file-if-exists=.env.local scripts/delete-gallery.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1095.0",
