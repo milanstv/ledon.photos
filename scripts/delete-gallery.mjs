@@ -102,11 +102,41 @@ async function main() {
     return;
   }
 
-  console.log("");
-  console.log("================================");
-  console.log("GALÉRIA PRIPRAVENÁ NA ODSTRÁNENIE");
-  console.log("================================");
-  console.log(slug);
+  const galleryPath = path.join(
+  projectRoot,
+  "storage",
+  "galleries",
+  slug,
+);
+
+const thumbsPath = path.join(
+  projectRoot,
+  "storage",
+  "thumbs",
+  slug,
+);
+
+console.log("");
+console.log("Odstraňujem lokálne súbory...");
+
+await fs.rm(galleryPath, {
+  recursive: true,
+  force: true,
+});
+
+await fs.rm(thumbsPath, {
+  recursive: true,
+  force: true,
+});
+
+console.log("✓ storage/galleries odstránené");
+console.log("✓ storage/thumbs odstránené");
+
+console.log("");
+console.log("================================");
+console.log("LOKÁLNA GALÉRIA ODSTRÁNENÁ");
+console.log("================================");
+console.log(slug);
 }
 
 main().catch((error) => {
