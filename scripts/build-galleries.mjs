@@ -174,12 +174,9 @@ function parseSlug(slug) {
       .join(" ");
 
   return {
-    title:
-      `${automaticName} ` +
-      `${Number(day)}. ${Number(month)}. ${year}`,
-    date:
-      `${Number(day)}. ${Number(month)}. ${year}`,
-  };
+  title: automaticName,
+  date: `${Number(day)}. ${Number(month)}. ${year}`,
+};
 }
 
 async function loadConfiguration() {
