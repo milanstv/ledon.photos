@@ -5,12 +5,14 @@ import { FormEvent, useState } from "react";
 type BuyPhotoButtonProps = {
   gallerySlug: string;
   photoId: string;
+  price: number;
   className?: string;
 };
 
 export default function BuyPhotoButton({
   gallerySlug,
   photoId,
+  price,
   className = "",
 }: BuyPhotoButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -41,20 +43,17 @@ export default function BuyPhotoButton({
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        "/api/orders",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            gallerySlug,
-            photoId,
-            email: email.trim(),
-          }),
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          gallerySlug,
+          photoId,
+          email: email.trim(),
+        }),
+      });
 
       const result = await response.json();
 
@@ -92,12 +91,12 @@ export default function BuyPhotoButton({
   return (
     <form
       onSubmit={handleSubmit}
-      className="mt-8 space-y-4"
+      className="mt-8 space-y-6"
     >
       <div>
         <label
           htmlFor={`email-${photoId}`}
-          className="mb-2 block text-[10px] uppercase tracking-[0.25em] text-white/50"
+          className="mb-3 block text-[10px] uppercase tracking-[0.25em] text-white/50"
         >
           E-mail na doručenie fotografie
         </label>
@@ -116,22 +115,36 @@ export default function BuyPhotoButton({
         />
       </div>
 
-      <label className="flex cursor-pointer items-start gap-3 text-xs leading-5 text-white/55">
-        <input
-          type="checkbox"
-          checked={consent}
-          onChange={(event) =>
-            setConsent(event.target.checked)
-          }
-          disabled={isLoading}
-          className="mt-1 h-4 w-4"
-        />
+      <div>
+        <p className="mb-3 text-[10px] uppercase tracking-[0.3em] text-white/45">
+          Cena
+        </p>
 
-        <span>
-          Súhlasím so spracovaním e-mailu na
-          vybavenie a doručenie objednávky.
-        </span>
-      </label>
+        <div className="flex items-center gap-6">
+          <p className="shrink-0 whitespace-nowrap text-4xl font-light leading-none text-white">
+            {price} €
+          </p>
+
+          <div className="h-14 w-px shrink-0 bg-white/20" />
+
+          <label className="flex min-w-0 cursor-pointer items-start gap-3 text-xs leading-5 text-white/55">
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(event) =>
+                setConsent(event.target.checked)
+              }
+              disabled={isLoading}
+              className="mt-1 h-4 w-4 shrink-0"
+            />
+
+            <span>
+              Súhlasím so spracovaním e-mailu na
+              vybavenie a doručenie objednávky.
+            </span>
+          </label>
+        </div>
+      </div>
 
       {errorMessage ? (
         <p className="text-sm text-red-400">

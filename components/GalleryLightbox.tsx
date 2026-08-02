@@ -279,14 +279,11 @@ export default function GalleryLightbox({
             </p>
 
             <BuyPhotoButton
-              gallerySlug={
-                gallery.slug
-              }
-              photoId={
-                currentPhoto.id
-              }
-              className="mt-6 w-full bg-white px-6 py-5 text-xs font-semibold uppercase tracking-[0.22em] text-black transition hover:bg-white/80 disabled:cursor-wait disabled:opacity-60"
-            />
+  gallerySlug={gallery.slug}
+  photoId={currentPhoto.id}
+  price={gallery.price}
+  className="mt-10 w-full bg-white px-6 py-5 text-xs font-semibold uppercase tracking-[0.28em] text-black transition hover:bg-white/80 disabled:cursor-wait disabled:opacity-60"
+/>
 
             <div className="mt-10 space-y-4 border-t border-white/15 pt-8 text-sm text-white/55">
               <p>
@@ -325,14 +322,11 @@ export default function GalleryLightbox({
 
               <div className="w-auto shrink-0">
                 <BuyPhotoButton
-                  gallerySlug={
-                    gallery.slug
-                  }
-                  photoId={
-                    currentPhoto.id
-                  }
-                  className="bg-white px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-black disabled:cursor-wait disabled:opacity-60"
-                />
+  gallerySlug={gallery.slug}
+  photoId={currentPhoto.id}
+  price={gallery.price}
+  className="bg-white px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-black disabled:cursor-wait disabled:opacity-60"
+/>
               </div>
             </div>
           </div>
