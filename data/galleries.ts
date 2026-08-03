@@ -24,7 +24,7 @@ export const galleries: Gallery[] = [
     "slug": "2026-08-02-baba-gp",
     "title": "Baba GP",
     "date": "2. 8. 2026",
-    "price": 5,
+    "price": 3,
     "photos": [
       {
         "id": "8F7A6784-1",
