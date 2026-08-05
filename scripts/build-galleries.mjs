@@ -4,6 +4,7 @@ import path from "node:path";
 
 import {
   HeadObjectCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -61,6 +62,12 @@ for (const variableName of requiredEnvironmentVariables) {
 const r2PublicUrl =
   process.env.R2_PUBLIC_URL.replace(/\/+$/, "");
 
+const originalsBucket =
+  process.env.R2_ORIGINALS_BUCKET;
+
+const thumbsBucket =
+  process.env.R2_THUMBS_BUCKET;
+
 const r2Client = new S3Client({
   region: "auto",
   endpoint:
@@ -111,6 +118,12 @@ function sortPhotos(
   );
 }
 
+function isSupportedImage(filename) {
+  return supportedExtensions.has(
+    path.extname(filename).toLowerCase(),
+  );
+}
+
 function createPublicUrl(slug, filename) {
   return (
     `${r2PublicUrl}/` +
@@ -139,6 +152,72 @@ async function fileExists(filePath) {
   } catch {
     return false;
   }
+}
+
+async function readLocalImageFilenames(directoryPath) {
+  if (!(await directoryExists(directoryPath))) {
+    return [];
+  }
+
+  const directoryItems =
+    await fs.readdir(directoryPath, {
+      withFileTypes: true,
+    });
+
+  return directoryItems
+    .filter((item) => item.isFile())
+    .map((item) => item.name)
+    .filter(isSupportedImage)
+    .sort(sortPhotos);
+}
+
+async function listR2ImageFilenames({
+  bucket,
+  slug,
+}) {
+  const prefix = `${slug}/`;
+  const filenames = [];
+
+  let continuationToken;
+
+  do {
+    const response = await r2Client.send(
+      new ListObjectsV2Command({
+        Bucket: bucket,
+        Prefix: prefix,
+        ContinuationToken:
+          continuationToken,
+      }),
+    );
+
+    for (const object of response.Contents ?? []) {
+      if (!object.Key) {
+        continue;
+      }
+
+      const filename =
+        object.Key.slice(prefix.length);
+
+      if (
+        !filename ||
+        filename.includes("/") ||
+        !isSupportedImage(filename)
+      ) {
+        continue;
+      }
+
+      filenames.push(filename);
+    }
+
+    continuationToken =
+      response.IsTruncated
+        ? response.NextContinuationToken
+        : undefined;
+  } while (continuationToken);
+
+  return [...new Set(filenames)].sort(
+    sortPhotos,
+  );
 }
 
 function parseSlug(slug) {
@@ -174,9 +253,11 @@ function parseSlug(slug) {
       .join(" ");
 
   return {
-  title: automaticName,
-  date: `${Number(day)}. ${Number(month)}. ${year}`,
-};
+    title: automaticName,
+    date:
+      `${Number(day)}. ` +
+      `${Number(month)}. ${year}`,
+  };
 }
 
 async function loadConfiguration() {
@@ -199,22 +280,46 @@ async function loadConfiguration() {
   return configuration;
 }
 
-async function discoverGalleries() {
-  const directoryItems = await fs.readdir(
-    galleriesRoot,
-    {
+async function discoverLocalGallerySlugs() {
+  if (!(await directoryExists(galleriesRoot))) {
+    return [];
+  }
+
+  const directoryItems =
+    await fs.readdir(galleriesRoot, {
       withFileTypes: true,
-    },
-  );
+    });
 
   return directoryItems
     .filter((item) => item.isDirectory())
-    .map((item) => item.name)
-    .sort((first, second) =>
-      second.localeCompare(first, "sk", {
-        numeric: true,
-      }),
-    );
+    .map((item) => item.name);
+}
+
+async function discoverGallerySlugs(
+  manualConfigurations,
+) {
+  const localSlugs =
+    await discoverLocalGallerySlugs();
+
+  const configuredSlugs =
+    manualConfigurations
+      .map((gallery) => gallery.slug)
+      .filter(
+        (slug) =>
+          typeof slug === "string" &&
+          slug.trim(),
+      );
+
+  return [
+    ...new Set([
+      ...configuredSlugs,
+      ...localSlugs,
+    ]),
+  ].sort((first, second) =>
+    second.localeCompare(first, "sk", {
+      numeric: true,
+    }),
+  );
 }
 
 function createGalleryConfiguration(
@@ -331,26 +436,12 @@ async function uploadFile({
   return true;
 }
 
-async function buildGallery(galleryConfig) {
-  const originalDirectory = path.join(
-    galleriesRoot,
-    galleryConfig.slug,
-    "originals",
-  );
-
-  const thumbnailDirectory = path.join(
-    thumbnailsRoot,
-    galleryConfig.slug,
-  );
-
-  if (
-    !(await directoryExists(originalDirectory))
-  ) {
-    throw new Error(
-      `Chýba priečinok: ${originalDirectory}`,
-    );
-  }
-
+async function uploadLocalGallery({
+  galleryConfig,
+  originalDirectory,
+  thumbnailDirectory,
+  originalFilenames,
+}) {
   if (
     !(await directoryExists(thumbnailDirectory))
   ) {
@@ -359,28 +450,6 @@ async function buildGallery(galleryConfig) {
       "Najskôr spusti npm run watermark.",
     );
   }
-
-  const directoryItems =
-    await fs.readdir(originalDirectory, {
-      withFileTypes: true,
-    });
-
-  const originalFilenames = directoryItems
-    .filter((item) => item.isFile())
-    .map((item) => item.name)
-    .filter((filename) =>
-      supportedExtensions.has(
-        path.extname(filename).toLowerCase(),
-      ),
-    )
-    .sort(sortPhotos);
-
-  console.log("");
-  console.log(
-    `Galéria: ${galleryConfig.title}`,
-  );
-
-  const photos = [];
 
   for (const filename of originalFilenames) {
     const originalPath = path.join(
@@ -403,8 +472,7 @@ async function buildGallery(galleryConfig) {
       `${galleryConfig.slug}/${filename}`;
 
     await uploadFile({
-      bucket:
-        process.env.R2_ORIGINALS_BUCKET,
+      bucket: originalsBucket,
       key: objectKey,
       localPath: originalPath,
       label:
@@ -413,40 +481,143 @@ async function buildGallery(galleryConfig) {
     });
 
     await uploadFile({
-      bucket:
-        process.env.R2_THUMBS_BUCKET,
+      bucket: thumbsBucket,
       key: objectKey,
       localPath: thumbnailPath,
       label:
         `náhľad/${galleryConfig.slug}/` +
         filename,
     });
+  }
+}
 
-    const filenameWithoutExtension =
-      path.parse(filename).name;
+function createPhoto(
+  galleryConfig,
+  filename,
+) {
+  const filenameWithoutExtension =
+    path.parse(filename).name;
 
-    const customerNumber =
-      getCustomerNumber(filename);
+  const customerNumber =
+    getCustomerNumber(filename);
 
-    photos.push({
-      id: filenameWithoutExtension,
-      customerNumber:
-        customerNumber ===
-        Number.MAX_SAFE_INTEGER
-          ? null
-          : customerNumber,
+  return {
+    id: filenameWithoutExtension,
+    customerNumber:
+      customerNumber ===
+      Number.MAX_SAFE_INTEGER
+        ? null
+        : customerNumber,
+    filename,
+    src: createPublicUrl(
+      galleryConfig.slug,
       filename,
-      src: createPublicUrl(
-        galleryConfig.slug,
+    ),
+    alt:
+      customerNumber ===
+      Number.MAX_SAFE_INTEGER
+        ? `${galleryConfig.title} – ${filenameWithoutExtension}`
+        : `${galleryConfig.title} – fotografia č. ${customerNumber}`,
+  };
+}
+
+async function buildGallery(galleryConfig) {
+  const originalDirectory = path.join(
+    galleriesRoot,
+    galleryConfig.slug,
+    "originals",
+  );
+
+  const thumbnailDirectory = path.join(
+    thumbnailsRoot,
+    galleryConfig.slug,
+  );
+
+  console.log("");
+  console.log(
+    `Galéria: ${galleryConfig.title}`,
+  );
+
+  const localOriginalFilenames =
+    await readLocalImageFilenames(
+      originalDirectory,
+    );
+
+  let finalFilenames;
+
+  if (localOriginalFilenames.length > 0) {
+    console.log(
+      `Zdroj: lokálne súbory (${localOriginalFilenames.length})`,
+    );
+
+    await uploadLocalGallery({
+      galleryConfig,
+      originalDirectory,
+      thumbnailDirectory,
+      originalFilenames:
+        localOriginalFilenames,
+    });
+
+    finalFilenames =
+      localOriginalFilenames;
+  } else {
+    console.log(
+      "Lokálne originály chýbajú. Načítavam galériu z R2.",
+    );
+
+    const remoteOriginalFilenames =
+      await listR2ImageFilenames({
+        bucket: originalsBucket,
+        slug: galleryConfig.slug,
+      });
+
+    if (
+      remoteOriginalFilenames.length === 0
+    ) {
+      throw new Error(
+        `Galéria ${galleryConfig.slug} nemá lokálne originály ani originály v R2.`,
+      );
+    }
+
+    const remoteThumbnailFilenames =
+      await listR2ImageFilenames({
+        bucket: thumbsBucket,
+        slug: galleryConfig.slug,
+      });
+
+    const remoteThumbnailSet =
+      new Set(remoteThumbnailFilenames);
+
+    const missingThumbnails =
+      remoteOriginalFilenames.filter(
+        (filename) =>
+          !remoteThumbnailSet.has(filename),
+      );
+
+    if (missingThumbnails.length > 0) {
+      throw new Error(
+        `V R2 chýbajú náhľady pre galériu ${galleryConfig.slug}:\n` +
+        missingThumbnails
+          .slice(0, 20)
+          .join("\n"),
+      );
+    }
+
+    finalFilenames =
+      remoteOriginalFilenames;
+
+    console.log(
+      `Zdroj: R2 (${finalFilenames.length})`,
+    );
+  }
+
+  const photos = finalFilenames.map(
+    (filename) =>
+      createPhoto(
+        galleryConfig,
         filename,
       ),
-      alt:
-        customerNumber ===
-        Number.MAX_SAFE_INTEGER
-          ? `${galleryConfig.title} – ${filenameWithoutExtension}`
-          : `${galleryConfig.title} – fotografia č. ${customerNumber}`,
-    });
-  }
+  );
 
   console.log(
     `${galleryConfig.title}: ` +
@@ -463,17 +634,19 @@ async function buildGallery(galleryConfig) {
 }
 
 async function main() {
-  if (!(await directoryExists(galleriesRoot))) {
-    throw new Error(
-      `Chýba priečinok: ${galleriesRoot}`,
-    );
-  }
-
   const manualConfigurations =
     await loadConfiguration();
 
   const discoveredSlugs =
-    await discoverGalleries();
+    await discoverGallerySlugs(
+      manualConfigurations,
+    );
+
+  if (discoveredSlugs.length === 0) {
+    throw new Error(
+      "Nenašla sa žiadna galéria.",
+    );
+  }
 
   const galleries = [];
 
@@ -542,9 +715,10 @@ export function getPhoto(
     return null;
   }
 
-  const photoIndex = gallery.photos.findIndex(
-    (photo) => photo.id === photoId,
-  );
+  const photoIndex =
+    gallery.photos.findIndex(
+      (photo) => photo.id === photoId,
+    );
 
   if (photoIndex === -1) {
     return null;
@@ -552,15 +726,20 @@ export function getPhoto(
 
   return {
     gallery,
-    photo: gallery.photos[photoIndex],
+    photo:
+      gallery.photos[photoIndex],
     previousPhoto:
       photoIndex > 0
-        ? gallery.photos[photoIndex - 1]
+        ? gallery.photos[
+            photoIndex - 1
+          ]
         : null,
     nextPhoto:
       photoIndex <
       gallery.photos.length - 1
-        ? gallery.photos[photoIndex + 1]
+        ? gallery.photos[
+            photoIndex + 1
+          ]
         : null,
   };
 }
