@@ -21,6 +21,8 @@ export default function BuyPhotoButton({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const isVoluntaryPrice = price === 0;
+
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>,
   ) {
@@ -121,9 +123,23 @@ export default function BuyPhotoButton({
         </p>
 
         <div className="flex items-center gap-6">
-          <p className="shrink-0 whitespace-nowrap text-4xl font-light leading-none text-white">
-            {price} €
-          </p>
+          <div className="shrink-0">
+            {isVoluntaryPrice ? (
+              <>
+                <p className="text-2xl font-light leading-none text-white sm:text-3xl">
+                  Dobrovoľná
+                </p>
+
+                <p className="mt-2 text-[10px] uppercase tracking-[0.25em] text-white/45">
+                  suma
+                </p>
+              </>
+            ) : (
+              <p className="whitespace-nowrap text-4xl font-light leading-none text-white">
+                {price} €
+              </p>
+            )}
+          </div>
 
           <div className="h-14 w-px shrink-0 bg-white/20" />
 
@@ -159,7 +175,9 @@ export default function BuyPhotoButton({
       >
         {isLoading
           ? "Vytváram objednávku..."
-          : "Zaplatiť cez Revolut"}
+          : isVoluntaryPrice
+            ? "Zvoliť sumu cez Revolut"
+            : "Zaplatiť cez Revolut"}
       </button>
 
       <button
