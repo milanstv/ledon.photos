@@ -154,9 +154,7 @@ async function fileExists(filePath) {
   }
 }
 
-async function readLocalImageFilenames(
-  directoryPath,
-) {
+async function readLocalImageFilenames(directoryPath) {
   if (!(await directoryExists(directoryPath))) {
     return [];
   }
@@ -234,13 +232,8 @@ function parseSlug(slug) {
     );
   }
 
-  const [
-    ,
-    year,
-    month,
-    day,
-    namePart,
-  ] = match;
+  const [, year, month, day, namePart] =
+    match;
 
   const names = {
     "slovakia-ring": "Slovakia Ring",
@@ -273,10 +266,7 @@ async function loadConfiguration() {
   }
 
   const configurationText =
-    await fs.readFile(
-      configPath,
-      "utf8",
-    );
+    await fs.readFile(configPath, "utf8");
 
   const configuration =
     JSON.parse(configurationText);
@@ -326,13 +316,9 @@ async function discoverGallerySlugs(
       ...localSlugs,
     ]),
   ].sort((first, second) =>
-    second.localeCompare(
-      first,
-      "sk",
-      {
-        numeric: true,
-      },
-    ),
+    second.localeCompare(first, "sk", {
+      numeric: true,
+    }),
   );
 }
 
@@ -342,12 +328,10 @@ function createGalleryConfiguration(
 ) {
   const manualConfiguration =
     manualConfigurations.find(
-      (gallery) =>
-        gallery.slug === slug,
+      (gallery) => gallery.slug === slug,
     );
 
-  const automatic =
-    parseSlug(slug);
+  const automatic = parseSlug(slug);
 
   return {
     slug,
@@ -379,22 +363,15 @@ async function remoteObjectIsCurrent({
     );
 
     const remoteSize =
-      Number(
-        response.Metadata?.localsize,
-      );
+      Number(response.Metadata?.localsize);
 
     const remoteModifiedTime =
-      Number(
-        response.Metadata?.localmtime,
-      );
+      Number(response.Metadata?.localmtime);
 
     return (
-      remoteSize ===
-        localStatistics.size &&
+      remoteSize === localStatistics.size &&
       remoteModifiedTime ===
-        Math.round(
-          localStatistics.mtimeMs,
-        )
+        Math.round(localStatistics.mtimeMs)
     );
   } catch (error) {
     const statusCode =
@@ -429,10 +406,7 @@ async function uploadFile({
     });
 
   if (isCurrent) {
-    console.log(
-      `Preskočené: ${label}`,
-    );
-
+    console.log(`Preskočené: ${label}`);
     return false;
   }
 
@@ -440,18 +414,14 @@ async function uploadFile({
     new PutObjectCommand({
       Bucket: bucket,
       Key: key,
-      Body:
-        createReadStream(localPath),
-      ContentLength:
-        localStatistics.size,
+      Body: createReadStream(localPath),
+      ContentLength: localStatistics.size,
       ContentType: "image/jpeg",
       CacheControl:
         "public, max-age=31536000, immutable",
       Metadata: {
         localsize:
-          String(
-            localStatistics.size,
-          ),
+          String(localStatistics.size),
         localmtime:
           String(
             Math.round(
@@ -462,10 +432,7 @@ async function uploadFile({
     }),
   );
 
-  console.log(
-    `Nahrané: ${label}`,
-  );
-
+  console.log(`Nahrané: ${label}`);
   return true;
 }
 
@@ -476,9 +443,7 @@ async function uploadLocalGallery({
   originalFilenames,
 }) {
   if (
-    !(await directoryExists(
-      thumbnailDirectory,
-    ))
+    !(await directoryExists(thumbnailDirectory))
   ) {
     throw new Error(
       `Chýbajú náhľady s vodoznakom: ${thumbnailDirectory}\n` +
@@ -486,27 +451,18 @@ async function uploadLocalGallery({
     );
   }
 
-  for (
-    const filename
-    of originalFilenames
-  ) {
-    const originalPath =
-      path.join(
-        originalDirectory,
-        filename,
-      );
+  for (const filename of originalFilenames) {
+    const originalPath = path.join(
+      originalDirectory,
+      filename,
+    );
 
-    const thumbnailPath =
-      path.join(
-        thumbnailDirectory,
-        filename,
-      );
+    const thumbnailPath = path.join(
+      thumbnailDirectory,
+      filename,
+    );
 
-    if (
-      !(await fileExists(
-        thumbnailPath,
-      ))
-    ) {
+    if (!(await fileExists(thumbnailPath))) {
       throw new Error(
         `Chýba náhľad s vodoznakom: ${thumbnailPath}`,
       );
@@ -533,155 +489,6 @@ async function uploadLocalGallery({
         filename,
     });
   }
-}
-
-async function verifyRemoteGallery({
-  galleryConfig,
-  localFilenames,
-}) {
-  const [
-    remoteOriginalFilenames,
-    remoteThumbnailFilenames,
-  ] = await Promise.all([
-    listR2ImageFilenames({
-      bucket: originalsBucket,
-      slug: galleryConfig.slug,
-    }),
-    listR2ImageFilenames({
-      bucket: thumbsBucket,
-      slug: galleryConfig.slug,
-    }),
-  ]);
-
-  const localSet =
-    new Set(localFilenames);
-
-  const remoteOriginalSet =
-    new Set(
-      remoteOriginalFilenames,
-    );
-
-  const remoteThumbnailSet =
-    new Set(
-      remoteThumbnailFilenames,
-    );
-
-  const missingOriginals =
-    localFilenames.filter(
-      (filename) =>
-        !remoteOriginalSet.has(
-          filename,
-        ),
-    );
-
-  const missingThumbnails =
-    localFilenames.filter(
-      (filename) =>
-        !remoteThumbnailSet.has(
-          filename,
-        ),
-    );
-
-  const extraOriginals =
-    remoteOriginalFilenames.filter(
-      (filename) =>
-        !localSet.has(filename),
-    );
-
-  const extraThumbnails =
-    remoteThumbnailFilenames.filter(
-      (filename) =>
-        !localSet.has(filename),
-    );
-
-  if (
-    missingOriginals.length > 0 ||
-    missingThumbnails.length > 0 ||
-    extraOriginals.length > 0 ||
-    extraThumbnails.length > 0
-  ) {
-    console.error("");
-    console.error(
-      `R2 kontrola zlyhala: ${galleryConfig.slug}`,
-    );
-    console.error(
-      `Lokálne fotografie: ${localFilenames.length}`,
-    );
-    console.error(
-      `Originály v R2: ${remoteOriginalFilenames.length}`,
-    );
-    console.error(
-      `Náhľady v R2: ${remoteThumbnailFilenames.length}`,
-    );
-
-    if (
-      missingOriginals.length > 0
-    ) {
-      console.error(
-        "Chýbajúce originály v R2:",
-      );
-
-      console.error(
-        missingOriginals
-          .slice(0, 20)
-          .join("\n"),
-      );
-    }
-
-    if (
-      missingThumbnails.length > 0
-    ) {
-      console.error(
-        "Chýbajúce náhľady v R2:",
-      );
-
-      console.error(
-        missingThumbnails
-          .slice(0, 20)
-          .join("\n"),
-      );
-    }
-
-    if (
-      extraOriginals.length > 0
-    ) {
-      console.error(
-        "Nadbytočné originály v R2:",
-      );
-
-      console.error(
-        extraOriginals
-          .slice(0, 20)
-          .join("\n"),
-      );
-    }
-
-    if (
-      extraThumbnails.length > 0
-    ) {
-      console.error(
-        "Nadbytočné náhľady v R2:",
-      );
-
-      console.error(
-        extraThumbnails
-          .slice(0, 20)
-          .join("\n"),
-      );
-    }
-
-    throw new Error(
-      "Lokálne fotografie neboli vymazané.",
-    );
-  }
-
-  console.log(
-    `✓ Originály v R2: ${remoteOriginalFilenames.length}`,
-  );
-
-  console.log(
-    `✓ Náhľady v R2: ${remoteThumbnailFilenames.length}`,
-  );
 }
 
 function createPhoto(
@@ -714,21 +521,17 @@ function createPhoto(
   };
 }
 
-async function buildGallery(
-  galleryConfig,
-) {
-  const originalDirectory =
-    path.join(
-      galleriesRoot,
-      galleryConfig.slug,
-      "originals",
-    );
+async function buildGallery(galleryConfig) {
+  const originalDirectory = path.join(
+    galleriesRoot,
+    galleryConfig.slug,
+    "originals",
+  );
 
-  const thumbnailDirectory =
-    path.join(
-      thumbnailsRoot,
-      galleryConfig.slug,
-    );
+  const thumbnailDirectory = path.join(
+    thumbnailsRoot,
+    galleryConfig.slug,
+  );
 
   console.log("");
   console.log(
@@ -741,11 +544,8 @@ async function buildGallery(
     );
 
   let finalFilenames;
-  let cleanup = null;
 
-  if (
-    localOriginalFilenames.length > 0
-  ) {
+  if (localOriginalFilenames.length > 0) {
     console.log(
       `Zdroj: lokálne súbory (${localOriginalFilenames.length})`,
     );
@@ -758,20 +558,8 @@ async function buildGallery(
         localOriginalFilenames,
     });
 
-    await verifyRemoteGallery({
-      galleryConfig,
-      localFilenames:
-        localOriginalFilenames,
-    });
-
     finalFilenames =
       localOriginalFilenames;
-
-    cleanup = {
-      slug: galleryConfig.slug,
-      originalDirectory,
-      thumbnailDirectory,
-    };
   } else {
     console.log(
       "Lokálne originály chýbajú. Načítavam galériu z R2.",
@@ -784,8 +572,7 @@ async function buildGallery(
       });
 
     if (
-      remoteOriginalFilenames.length ===
-      0
+      remoteOriginalFilenames.length === 0
     ) {
       throw new Error(
         `Galéria ${galleryConfig.slug} nemá lokálne originály ani originály v R2.`,
@@ -799,21 +586,15 @@ async function buildGallery(
       });
 
     const remoteThumbnailSet =
-      new Set(
-        remoteThumbnailFilenames,
-      );
+      new Set(remoteThumbnailFilenames);
 
     const missingThumbnails =
       remoteOriginalFilenames.filter(
         (filename) =>
-          !remoteThumbnailSet.has(
-            filename,
-          ),
+          !remoteThumbnailSet.has(filename),
       );
 
-    if (
-      missingThumbnails.length > 0
-    ) {
+    if (missingThumbnails.length > 0) {
       throw new Error(
         `V R2 chýbajú náhľady pre galériu ${galleryConfig.slug}:\n` +
         missingThumbnails
@@ -830,14 +611,13 @@ async function buildGallery(
     );
   }
 
-  const photos =
-    finalFilenames.map(
-      (filename) =>
-        createPhoto(
-          galleryConfig,
-          filename,
-        ),
-    );
+  const photos = finalFilenames.map(
+    (filename) =>
+      createPhoto(
+        galleryConfig,
+        filename,
+      ),
+  );
 
   console.log(
     `${galleryConfig.title}: ` +
@@ -845,44 +625,12 @@ async function buildGallery(
   );
 
   return {
-    gallery: {
-      slug: galleryConfig.slug,
-      title: galleryConfig.title,
-      date: galleryConfig.date,
-      price: galleryConfig.price,
-      photos,
-    },
-    cleanup,
+    slug: galleryConfig.slug,
+    title: galleryConfig.title,
+    date: galleryConfig.date,
+    price: galleryConfig.price,
+    photos,
   };
-}
-
-async function removeLocalGalleryFiles(
-  cleanup,
-) {
-  await fs.rm(
-    cleanup.originalDirectory,
-    {
-      recursive: true,
-      force: true,
-    },
-  );
-
-  await fs.rm(
-    cleanup.thumbnailDirectory,
-    {
-      recursive: true,
-      force: true,
-    },
-  );
-
-  console.log("");
-  console.log(
-    `✓ Lokálne originály odstránené: ${cleanup.slug}`,
-  );
-
-  console.log(
-    `✓ Lokálne náhľady odstránené: ${cleanup.slug}`,
-  );
 }
 
 async function main() {
@@ -894,51 +642,34 @@ async function main() {
       manualConfigurations,
     );
 
-  if (
-    discoveredSlugs.length === 0
-  ) {
+  if (discoveredSlugs.length === 0) {
     throw new Error(
       "Nenašla sa žiadna galéria.",
     );
   }
 
   const galleries = [];
-  const cleanupQueue = [];
 
-  for (
-    const slug of discoveredSlugs
-  ) {
+  for (const slug of discoveredSlugs) {
     const galleryConfig =
       createGalleryConfiguration(
         slug,
         manualConfigurations,
       );
 
-    const result =
-      await buildGallery(
-        galleryConfig,
-      );
-
     galleries.push(
-      result.gallery,
+      await buildGallery(galleryConfig),
     );
-
-    if (result.cleanup) {
-      cleanupQueue.push(
-        result.cleanup,
-      );
-    }
   }
 
-  galleries.sort(
-    (first, second) =>
-      second.slug.localeCompare(
-        first.slug,
-        "sk",
-        {
-          numeric: true,
-        },
-      ),
+  galleries.sort((first, second) =>
+    second.slug.localeCompare(
+      first.slug,
+      "sk",
+      {
+        numeric: true,
+      },
+    ),
   );
 
   const generatedFile = `export type GalleryPhoto = {
@@ -986,8 +717,7 @@ export function getPhoto(
 
   const photoIndex =
     gallery.photos.findIndex(
-      (photo) =>
-        photo.id === photoId,
+      (photo) => photo.id === photoId,
     );
 
   if (photoIndex === -1) {
@@ -1021,22 +751,11 @@ export function getPhoto(
     "utf8",
   );
 
-  for (
-    const cleanup of cleanupQueue
-  ) {
-    await removeLocalGalleryFiles(
-      cleanup,
-    );
-  }
-
   console.log("");
   console.log(
     "Galérie boli úspešne vytvorené.",
   );
-
-  console.log(
-    `Výstup: ${outputPath}`,
-  );
+  console.log(`Výstup: ${outputPath}`);
 }
 
 main().catch((error) => {
@@ -1044,10 +763,6 @@ main().catch((error) => {
   console.error(
     "Chyba pri vytváraní galérií:",
   );
-
-  console.error(
-    error?.message ?? error,
-  );
-
+  console.error(error?.message ?? error);
   process.exit(1);
 });
