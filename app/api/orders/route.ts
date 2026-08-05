@@ -293,21 +293,28 @@ export async function POST(
       );
     }
 
-    const priceInCents =
-      Math.round(
-        gallery.price * 100,
-      );
+    const isVoluntaryPrice =
+  gallery.price === 0;
 
-    const paymentUrl =
-      process.env[
+const priceInCents =
+  Math.round(
+    gallery.price * 100,
+  );
+
+const paymentUrl =
+  isVoluntaryPrice
+    ? process.env.REVOLUT_PAYMENT_LINK_VOLUNTARY
+    : process.env[
         `REVOLUT_PAYMENT_LINK_${priceInCents}`
       ];
 
-    if (!paymentUrl) {
-      throw new Error(
-        `Chýba Revolut platobný odkaz pre cenu ${gallery.price} €.`,
-      );
-    }
+if (!paymentUrl) {
+  throw new Error(
+    isVoluntaryPrice
+      ? "Chýba Revolut platobný odkaz pre dobrovoľnú cenu."
+      : `Chýba Revolut platobný odkaz pre cenu ${gallery.price} €.`,
+  );
+}
 
     const ordersBucket =
       process.env.R2_ORIGINALS_BUCKET;
