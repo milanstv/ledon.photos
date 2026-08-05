@@ -13,8 +13,14 @@
   },
   {
     "slug": "2026-08-02-baba-gp",
-    "title": "Pezinské Baba",
+    "title": "Pezinská Baba",
     "date": "2. 8. 2026",
+    "price": 2
+  },
+  {
+    "slug": "2026-07-11-baba-gp",
+    "title": "Pezinská Baba",
+    "date": "11. 7. 2026",
     "price": 2
   }
 ]
