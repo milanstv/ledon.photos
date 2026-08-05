@@ -416,7 +416,6 @@ async function uploadFile({
   bucket,
   key,
   localPath,
-  label,
 }) {
   const localStatistics =
     await fs.stat(localPath);
@@ -429,10 +428,6 @@ async function uploadFile({
     });
 
   if (isCurrent) {
-    console.log(
-      `Preskočené: ${label}`,
-    );
-
     return false;
   }
 
@@ -462,10 +457,6 @@ async function uploadFile({
     }),
   );
 
-  console.log(
-    `Nahrané: ${label}`,
-  );
-
   return true;
 }
 
@@ -485,6 +476,9 @@ async function uploadLocalGallery({
       "Najskôr spusti npm run watermark.",
     );
   }
+
+  let uploadedOriginals = 0;
+  let uploadedThumbnails = 0;
 
   for (
     const filename
@@ -515,24 +509,33 @@ async function uploadLocalGallery({
     const objectKey =
       `${galleryConfig.slug}/${filename}`;
 
-    await uploadFile({
-      bucket: originalsBucket,
-      key: objectKey,
-      localPath: originalPath,
-      label:
-        `originál/${galleryConfig.slug}/` +
-        filename,
-    });
+    const originalUploaded =
+      await uploadFile({
+        bucket: originalsBucket,
+        key: objectKey,
+        localPath: originalPath,
+      });
 
-    await uploadFile({
-      bucket: thumbsBucket,
-      key: objectKey,
-      localPath: thumbnailPath,
-      label:
-        `náhľad/${galleryConfig.slug}/` +
-        filename,
-    });
+    const thumbnailUploaded =
+      await uploadFile({
+        bucket: thumbsBucket,
+        key: objectKey,
+        localPath: thumbnailPath,
+      });
+
+    if (originalUploaded) {
+      uploadedOriginals += 1;
+    }
+
+    if (thumbnailUploaded) {
+      uploadedThumbnails += 1;
+    }
   }
+
+  return {
+    uploadedOriginals,
+    uploadedThumbnails,
+  };
 }
 
 async function verifyRemoteGallery({
@@ -600,88 +603,24 @@ async function verifyRemoteGallery({
     extraOriginals.length > 0 ||
     extraThumbnails.length > 0
   ) {
-    console.error("");
-    console.error(
-      `R2 kontrola zlyhala: ${galleryConfig.slug}`,
-    );
-    console.error(
-      `Lokálne fotografie: ${localFilenames.length}`,
-    );
-    console.error(
-      `Originály v R2: ${remoteOriginalFilenames.length}`,
-    );
-    console.error(
-      `Náhľady v R2: ${remoteThumbnailFilenames.length}`,
-    );
-
-    if (
-      missingOriginals.length > 0
-    ) {
-      console.error(
-        "Chýbajúce originály v R2:",
-      );
-
-      console.error(
-        missingOriginals
-          .slice(0, 20)
-          .join("\n"),
-      );
-    }
-
-    if (
-      missingThumbnails.length > 0
-    ) {
-      console.error(
-        "Chýbajúce náhľady v R2:",
-      );
-
-      console.error(
-        missingThumbnails
-          .slice(0, 20)
-          .join("\n"),
-      );
-    }
-
-    if (
-      extraOriginals.length > 0
-    ) {
-      console.error(
-        "Nadbytočné originály v R2:",
-      );
-
-      console.error(
-        extraOriginals
-          .slice(0, 20)
-          .join("\n"),
-      );
-    }
-
-    if (
-      extraThumbnails.length > 0
-    ) {
-      console.error(
-        "Nadbytočné náhľady v R2:",
-      );
-
-      console.error(
-        extraThumbnails
-          .slice(0, 20)
-          .join("\n"),
-      );
-    }
-
     throw new Error(
-      "Lokálne fotografie neboli vymazané.",
+      [
+        `R2 kontrola zlyhala: ${galleryConfig.slug}`,
+        `Lokálne fotografie: ${localFilenames.length}`,
+        `Originály v R2: ${remoteOriginalFilenames.length}`,
+        `Náhľady v R2: ${remoteThumbnailFilenames.length}`,
+        "",
+        "Lokálne fotografie neboli vymazané.",
+      ].join("\n"),
     );
   }
 
-  console.log(
-    `✓ Originály v R2: ${remoteOriginalFilenames.length}`,
-  );
-
-  console.log(
-    `✓ Náhľady v R2: ${remoteThumbnailFilenames.length}`,
-  );
+  return {
+    remoteOriginalCount:
+      remoteOriginalFilenames.length,
+    remoteThumbnailCount:
+      remoteThumbnailFilenames.length,
+  };
 }
 
 function createPhoto(
@@ -730,33 +669,34 @@ async function buildGallery(
       galleryConfig.slug,
     );
 
-  console.log("");
-  console.log(
-    `Galéria: ${galleryConfig.title}`,
-  );
-
   const localOriginalFilenames =
     await readLocalImageFilenames(
       originalDirectory,
     );
 
   let finalFilenames;
+  let source;
   let cleanup = null;
+  let uploadedOriginals = 0;
+  let uploadedThumbnails = 0;
 
   if (
     localOriginalFilenames.length > 0
   ) {
-    console.log(
-      `Zdroj: lokálne súbory (${localOriginalFilenames.length})`,
-    );
+    const uploadResult =
+      await uploadLocalGallery({
+        galleryConfig,
+        originalDirectory,
+        thumbnailDirectory,
+        originalFilenames:
+          localOriginalFilenames,
+      });
 
-    await uploadLocalGallery({
-      galleryConfig,
-      originalDirectory,
-      thumbnailDirectory,
-      originalFilenames:
-        localOriginalFilenames,
-    });
+    uploadedOriginals =
+      uploadResult.uploadedOriginals;
+
+    uploadedThumbnails =
+      uploadResult.uploadedThumbnails;
 
     await verifyRemoteGallery({
       galleryConfig,
@@ -767,16 +707,14 @@ async function buildGallery(
     finalFilenames =
       localOriginalFilenames;
 
+    source = "UPLOAD + R2";
+
     cleanup = {
       slug: galleryConfig.slug,
       originalDirectory,
       thumbnailDirectory,
     };
   } else {
-    console.log(
-      "Lokálne originály chýbajú. Načítavam galériu z R2.",
-    );
-
     const remoteOriginalFilenames =
       await listR2ImageFilenames({
         bucket: originalsBucket,
@@ -825,9 +763,7 @@ async function buildGallery(
     finalFilenames =
       remoteOriginalFilenames;
 
-    console.log(
-      `Zdroj: R2 (${finalFilenames.length})`,
-    );
+    source = "R2";
   }
 
   const photos =
@@ -839,11 +775,6 @@ async function buildGallery(
         ),
     );
 
-  console.log(
-    `${galleryConfig.title}: ` +
-    `${photos.length} fotografií`,
-  );
-
   return {
     gallery: {
       slug: galleryConfig.slug,
@@ -851,6 +782,13 @@ async function buildGallery(
       date: galleryConfig.date,
       price: galleryConfig.price,
       photos,
+    },
+    summary: {
+      slug: galleryConfig.slug,
+      count: photos.length,
+      source,
+      uploadedOriginals,
+      uploadedThumbnails,
     },
     cleanup,
   };
@@ -874,14 +812,72 @@ async function removeLocalGalleryFiles(
       force: true,
     },
   );
+}
+
+function printSummary(
+  summaries,
+  cleanupCount,
+) {
+  console.log("");
+  console.log(
+    "==============================================",
+  );
+  console.log(
+    "LEDON. GALÉRIE",
+  );
+  console.log(
+    "==============================================",
+  );
+  console.log("");
+
+  for (const summary of summaries) {
+    const slugColumn =
+      summary.slug.padEnd(31, ".");
+
+    const countColumn =
+      String(summary.count).padStart(4, " ");
+
+    console.log(
+      `✓ ${slugColumn} ${countColumn} fotiek (${summary.source})`,
+    );
+
+    if (
+      summary.uploadedOriginals > 0 ||
+      summary.uploadedThumbnails > 0
+    ) {
+      console.log(
+        `  Nahrané: ${summary.uploadedOriginals} originálov, ` +
+        `${summary.uploadedThumbnails} náhľadov`,
+      );
+    }
+  }
 
   console.log("");
   console.log(
-    `✓ Lokálne originály odstránené: ${cleanup.slug}`,
+    "==============================================",
+  );
+  console.log(
+    "✓ Originály overené v R2",
+  );
+  console.log(
+    "✓ Náhľady overené v R2",
   );
 
+  if (cleanupCount > 0) {
+    console.log(
+      `✓ Lokálne súbory odstránené: ${cleanupCount} galérií`,
+    );
+  } else {
+    console.log(
+      "✓ Neboli nájdené lokálne fotografie na odstránenie",
+    );
+  }
+
   console.log(
-    `✓ Lokálne náhľady odstránené: ${cleanup.slug}`,
+    "✓ data/galleries.ts vytvorený",
+  );
+  console.log(
+    "==============================================",
   );
 }
 
@@ -903,6 +899,7 @@ async function main() {
   }
 
   const galleries = [];
+  const summaries = [];
   const cleanupQueue = [];
 
   for (
@@ -921,6 +918,10 @@ async function main() {
 
     galleries.push(
       result.gallery,
+    );
+
+    summaries.push(
+      result.summary,
     );
 
     if (result.cleanup) {
@@ -1029,22 +1030,23 @@ export function getPhoto(
     );
   }
 
-  console.log("");
-  console.log(
-    "Galérie boli úspešne vytvorené.",
-  );
-
-  console.log(
-    `Výstup: ${outputPath}`,
+  printSummary(
+    summaries,
+    cleanupQueue.length,
   );
 }
 
 main().catch((error) => {
   console.error("");
   console.error(
-    "Chyba pri vytváraní galérií:",
+    "==============================================",
   );
-
+  console.error(
+    "CHYBA PRI VYTVÁRANÍ GALÉRIÍ",
+  );
+  console.error(
+    "==============================================",
+  );
   console.error(
     error?.message ?? error,
   );

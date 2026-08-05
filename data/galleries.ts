@@ -3719,7 +3719,8 @@ export function getPhoto(
 
   const photoIndex =
     gallery.photos.findIndex(
-      (photo) => photo.id === photoId,
+      (photo) =>
+        photo.id === photoId,
     );
 
   if (photoIndex === -1) {
