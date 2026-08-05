@@ -54,7 +54,7 @@ export default function Home() {
       >
         <div className="w-full max-w-[585px]">
           <p className="mb-5 text-[10px] uppercase tracking-[0.48em] text-white/55 md:text-xs">
-            SPORT PHOTOGRAPHY
+            SPORT PHOTOGRAPHY - WEB je v testovacej prevádzke .
           </p>
 
           <h1 className="text-6xl font-light uppercase tracking-[0.14em] md:text-7xl">
