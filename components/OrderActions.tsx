@@ -118,75 +118,109 @@ export default function OrderActions({
     }
   }
 
-  if (status === "waiting_payment") {
-    return (
-      <ActionContainer
-        errorMessage={errorMessage}
-        successMessage={successMessage}
-      >
+  async function deleteOrder() {
+    const confirmed = window.confirm(
+      "Naozaj chcete vymazať túto objednávku?\n\nTáto akcia je nevratná.",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      const response = await fetch(
+        `/api/admin/orders/${orderId}/delete`,
+        {
+          method: "DELETE",
+        },
+      );
+
+      const result =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error ??
+            "Objednávku sa nepodarilo vymazať.",
+        );
+      }
+
+      router.refresh();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Objednávku sa nepodarilo vymazať.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  return (
+    <ActionContainer
+      errorMessage={errorMessage}
+      successMessage={successMessage}
+    >
+      {status === "waiting_payment" ? (
         <button
           type="button"
           onClick={confirmPayment}
           disabled={isLoading}
-          className="whitespace-nowrap border border-white bg-white px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-black transition hover:bg-white/80 disabled:cursor-wait disabled:opacity-50"
+          className="whitespace-nowrap bg-white px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-black transition hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isLoading
             ? "Potvrdzujem..."
             : "Platba prijatá"}
         </button>
-      </ActionContainer>
-    );
-  }
+      ) : null}
 
-  if (status === "paid") {
-    return (
-      <ActionContainer
-        errorMessage={errorMessage}
-        successMessage={successMessage}
-      >
+      {status === "paid" ? (
         <button
           type="button"
           onClick={sendOriginal}
           disabled={isLoading}
-          className="whitespace-nowrap border border-white bg-white px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-black transition hover:bg-white/80 disabled:cursor-wait disabled:opacity-50"
+          className="whitespace-nowrap bg-white px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-black transition hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isLoading
             ? "Odosielam..."
             : "Odoslať originál"}
         </button>
-      </ActionContainer>
-    );
-  }
+      ) : null}
 
-  if (status === "sent") {
-    return (
-      <ActionContainer
-        errorMessage={errorMessage}
-        successMessage={successMessage}
-      >
+      {status === "sent" ? (
         <button
           type="button"
           onClick={sendOriginal}
           disabled={isLoading}
-          className="whitespace-nowrap border border-white/30 px-4 py-3 text-[10px] uppercase tracking-[0.16em] text-white transition hover:border-white disabled:cursor-wait disabled:opacity-50"
+          className="whitespace-nowrap bg-white px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-black transition hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isLoading
             ? "Odosielam..."
             : "Poslať nový odkaz"}
         </button>
-      </ActionContainer>
-    );
-  }
+      ) : null}
 
-  if (status === "downloaded") {
-    return (
-      <span className="text-xs text-white/45">
-        Originál bol stiahnutý
-      </span>
-    );
-  }
+      {status === "downloaded" ? (
+        <p className="whitespace-nowrap text-[10px] uppercase tracking-[0.22em] text-white/45">
+          Originál bol stiahnutý
+        </p>
+      ) : null}
 
-  return null;
+      <button
+        type="button"
+        onClick={deleteOrder}
+        disabled={isLoading}
+        className="whitespace-nowrap border border-red-500/40 px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-red-400 transition hover:border-red-400 hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Vymazať
+      </button>
+    </ActionContainer>
+  );
 }
 
 function ActionContainer({
@@ -199,17 +233,19 @@ function ActionContainer({
   successMessage: string;
 }) {
   return (
-    <div className="space-y-2">
-      {children}
+    <div className="flex flex-col items-start gap-3">
+      <div className="flex flex-wrap items-center gap-3">
+        {children}
+      </div>
 
       {successMessage ? (
-        <p className="max-w-[240px] text-xs leading-5 text-green-400">
+        <p className="max-w-[260px] text-xs leading-5 text-green-400">
           {successMessage}
         </p>
       ) : null}
 
       {errorMessage ? (
-        <p className="max-w-[240px] text-xs leading-5 text-red-400">
+        <p className="max-w-[260px] text-xs leading-5 text-red-400">
           {errorMessage}
         </p>
       ) : null}
