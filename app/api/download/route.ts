@@ -11,23 +11,48 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+type OrderItem = {
+  photoId: string;
+  filename: string;
+  price: number;
+};
+
 type Order = {
   id: string;
   status: string;
+
   gallerySlug: string;
   galleryTitle: string;
   galleryDate: string;
-  photoId: string;
-  filename: string;
+
+  // Staré objednávky
+  photoId?: string;
+  filename?: string;
+
+  // BETA 2.0
+  items?: OrderItem[];
+  count?: number;
+
   email: string;
   price: number;
+  unitPrice?: number;
   currency: string;
+
+  paymentMode?: "fixed" | "manual";
+  expectedAmount?: number;
+  receivedAmount?: number;
+  paidCount?: number;
+  paidPhotoIds?: string[];
+
   createdAt: string;
   paidAt: string | null;
   sentAt: string | null;
   downloadedAt: string | null;
+
   downloadTokenHash?: string | null;
   downloadExpiresAt?: string | null;
+
+  downloadedPhotoIds?: string[];
 };
 
 function getR2Client() {
@@ -62,7 +87,9 @@ function getR2Client() {
   });
 }
 
-function createTokenHash(token: string) {
+function createTokenHash(
+  token: string,
+) {
   return crypto
     .createHash("sha256")
     .update(token)
@@ -74,13 +101,21 @@ function tokensMatch(
   receivedToken: string,
 ) {
   const receivedHash =
-    createTokenHash(receivedToken);
+    createTokenHash(
+      receivedToken,
+    );
 
   const savedBuffer =
-    Buffer.from(savedHash, "hex");
+    Buffer.from(
+      savedHash,
+      "hex",
+    );
 
   const receivedBuffer =
-    Buffer.from(receivedHash, "hex");
+    Buffer.from(
+      receivedHash,
+      "hex",
+    );
 
   if (
     savedBuffer.length !==
@@ -93,6 +128,69 @@ function tokensMatch(
     savedBuffer,
     receivedBuffer,
   );
+}
+
+function getOrderItems(
+  order: Order,
+): OrderItem[] {
+  if (
+    Array.isArray(order.items) &&
+    order.items.length > 0
+  ) {
+    return order.items;
+  }
+
+  if (
+    order.photoId &&
+    order.filename
+  ) {
+    return [
+      {
+        photoId: order.photoId,
+        filename: order.filename,
+        price: order.price,
+      },
+    ];
+  }
+
+  return [];
+}
+
+function getPaidItems(
+  order: Order,
+  items: OrderItem[],
+): OrderItem[] {
+  if (
+    Array.isArray(order.paidPhotoIds) &&
+    order.paidPhotoIds.length > 0
+  ) {
+    const paidIds =
+      new Set(
+        order.paidPhotoIds,
+      );
+
+    return items.filter(
+      (item) =>
+        paidIds.has(
+          item.photoId,
+        ),
+    );
+  }
+
+  if (
+    typeof order.paidCount ===
+      "number" &&
+    order.paidCount > 0
+  ) {
+    return items.slice(
+      0,
+      order.paidCount,
+    );
+  }
+
+  // Staré objednávky alebo staré pevné platby
+  // bez paidPhotoIds.
+  return items;
 }
 
 export async function GET(
@@ -110,6 +208,11 @@ export async function GET(
     const token =
       requestUrl.searchParams
         .get("token")
+        ?.trim();
+
+    const requestedPhotoId =
+      requestUrl.searchParams
+        .get("photoId")
         ?.trim();
 
     if (!orderId || !token) {
@@ -133,7 +236,8 @@ export async function GET(
       );
     }
 
-    const r2Client = getR2Client();
+    const r2Client =
+      getR2Client();
 
     const orderKey =
       `_orders/${orderId}.json`;
@@ -162,9 +266,10 @@ export async function GET(
       await orderResponse.Body
         .transformToString();
 
-    const order = JSON.parse(
-      content,
-    ) as Order;
+    const order =
+      JSON.parse(
+        content,
+      ) as Order;
 
     if (
       !order.downloadTokenHash ||
@@ -184,7 +289,9 @@ export async function GET(
       );
     }
 
-    if (!order.downloadExpiresAt) {
+    if (
+      !order.downloadExpiresAt
+    ) {
       return NextResponse.json(
         {
           error:
@@ -197,8 +304,10 @@ export async function GET(
     }
 
     if (
-      new Date(order.downloadExpiresAt)
-        .getTime() < Date.now()
+      new Date(
+        order.downloadExpiresAt,
+      ).getTime() <
+      Date.now()
     ) {
       return NextResponse.json(
         {
@@ -213,12 +322,82 @@ export async function GET(
 
     if (
       order.status !== "sent" &&
-      order.status !== "downloaded"
+      order.status !==
+        "downloaded"
     ) {
       return NextResponse.json(
         {
           error:
-            "Originál ešte nebol odoslaný.",
+            "Originály ešte neboli odoslané.",
+        },
+        {
+          status: 403,
+        },
+      );
+    }
+
+    const items =
+      getOrderItems(order);
+
+    if (items.length === 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Objednávka neobsahuje žiadne fotografie.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    const paidItems =
+      getPaidItems(
+        order,
+        items,
+      );
+
+    if (
+      paidItems.length === 0
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "V objednávke nie je žiadna zaplatená fotografia.",
+        },
+        {
+          status: 403,
+        },
+      );
+    }
+
+    let selectedItem:
+      | OrderItem
+      | undefined;
+
+    if (requestedPhotoId) {
+      selectedItem =
+        paidItems.find(
+          (item) =>
+            item.photoId ===
+            requestedPhotoId,
+        );
+    } else if (
+      paidItems.length === 1
+    ) {
+      // Spätná kompatibilita
+      // so starými linkami bez photoId.
+      selectedItem =
+        paidItems[0];
+    }
+
+    if (!selectedItem) {
+      return NextResponse.json(
+        {
+          error:
+            requestedPhotoId
+              ? "Táto fotografia nebola zaplatená alebo nie je súčasťou objednávky."
+              : "Fotografia sa v objednávke nenašla.",
         },
         {
           status: 403,
@@ -228,14 +407,15 @@ export async function GET(
 
     const objectKey =
       `${order.gallerySlug}/` +
-      `${order.filename}`;
+      `${selectedItem.filename}`;
 
     const command =
       new GetObjectCommand({
         Bucket: bucket,
         Key: objectKey,
+
         ResponseContentDisposition:
-          `attachment; filename="${order.filename}"`,
+          `attachment; filename="${selectedItem.filename}"`,
       });
 
     const downloadUrl =
@@ -243,35 +423,69 @@ export async function GET(
         r2Client,
         command,
         {
-          expiresIn: 5 * 60,
+          expiresIn:
+            5 * 60,
         },
       );
 
-    if (
-      order.status !== "downloaded"
-    ) {
-      const updatedOrder: Order = {
-        ...order,
-        status: "downloaded",
-        downloadedAt:
-          new Date().toISOString(),
-      };
+    const previousDownloaded =
+      Array.isArray(
+        order.downloadedPhotoIds,
+      )
+        ? order.downloadedPhotoIds
+        : [];
 
-      await r2Client.send(
-        new PutObjectCommand({
-          Bucket: bucket,
-          Key: orderKey,
-          Body: JSON.stringify(
+    const downloadedPhotoIds =
+      [
+        ...new Set([
+          ...previousDownloaded,
+          selectedItem.photoId,
+        ]),
+      ];
+
+    const allPaidDownloaded =
+      paidItems.every(
+        (item) =>
+          downloadedPhotoIds.includes(
+            item.photoId,
+          ),
+      );
+
+    const updatedOrder: Order = {
+      ...order,
+
+      downloadedPhotoIds,
+
+      status:
+        allPaidDownloaded
+          ? "downloaded"
+          : "sent",
+
+      downloadedAt:
+        allPaidDownloaded
+          ? new Date().toISOString()
+          : order.downloadedAt,
+    };
+
+    await r2Client.send(
+      new PutObjectCommand({
+        Bucket: bucket,
+        Key: orderKey,
+
+        Body:
+          JSON.stringify(
             updatedOrder,
             null,
             2,
           ),
-          ContentType:
-            "application/json; charset=utf-8",
-          CacheControl: "no-store",
-        }),
-      );
-    }
+
+        ContentType:
+          "application/json; charset=utf-8",
+
+        CacheControl:
+          "no-store",
+      }),
+    );
 
     return NextResponse.redirect(
       downloadUrl,

@@ -16,8 +16,14 @@ export const runtime = "nodejs";
 
 type CreateOrderRequest = {
   gallerySlug?: unknown;
-  photoId?: unknown;
+  photoIds?: unknown;
   email?: unknown;
+};
+
+type OrderItem = {
+  photoId: string;
+  filename: string;
+  price: number;
 };
 
 function getR2Client() {
@@ -72,15 +78,15 @@ async function sendOrderEmails({
   customerEmail,
   galleryTitle,
   galleryDate,
-  photoId,
-  price,
+  items,
+  totalPrice,
 }: {
   orderId: string;
   customerEmail: string;
   galleryTitle: string;
   galleryDate: string;
-  photoId: string;
-  price: number;
+  items: OrderItem[];
+  totalPrice: number;
 }) {
   const resendApiKey =
     process.env.RESEND_API_KEY;
@@ -97,7 +103,7 @@ async function sendOrderEmails({
     !adminEmail
   ) {
     console.error(
-      "Upozorňovacie e-maily neboli odoslané. Chýba RESEND_API_KEY, RESEND_FROM_EMAIL alebo ADMIN_NOTIFICATION_EMAIL.",
+      "Upozorňovacie e-maily neboli odoslané.",
     );
 
     return;
@@ -107,14 +113,18 @@ async function sendOrderEmails({
     resendApiKey,
   );
 
+  const photoList = items
+    .map((item) => item.photoId)
+    .join(", ");
+
   const safeGalleryTitle =
     escapeHtml(galleryTitle);
 
   const safeGalleryDate =
     escapeHtml(galleryDate);
 
-  const safePhotoId =
-    escapeHtml(photoId);
+  const safePhotoList =
+    escapeHtml(photoList);
 
   const safeOrderId =
     escapeHtml(orderId);
@@ -128,17 +138,18 @@ async function sendOrderEmails({
       to: [customerEmail],
       replyTo: fromEmail,
       subject:
-        `Objednávka fotografie ${photoId} bola prijatá`,
+        `Objednávka ${items.length} fotografií bola prijatá`,
       text: [
         "Dobrý deň,",
         "",
-        "vašu objednávku fotografie sme prijali.",
+        "vašu objednávku sme prijali.",
         "",
-        `Fotografia: ${photoId}`,
         `Galéria: ${galleryTitle}`,
-        `Cena: ${price} €`,
+        `Počet fotografií: ${items.length}`,
+        `Fotografie: ${photoList}`,
+        `Celková cena: ${totalPrice} €`,
         "",
-        "Po prijatí platby vám odošleme e-mail s odkazom na stiahnutie originálu v plnom rozlíšení.",
+        "Po prijatí platby vám odošleme e-mail s odkazmi na stiahnutie originálov v plnom rozlíšení.",
         "",
         "Ďakujeme za podporu.",
         "",
@@ -160,14 +171,15 @@ async function sendOrderEmails({
       to: [adminEmail],
       replyTo: customerEmail,
       subject:
-        `Nová objednávka – ${photoId} – ${price} €`,
+        `Nová objednávka – ${items.length} ks – ${totalPrice} €`,
       text: [
-        "Bola vytvorená nová objednávka fotografie.",
+        "Bola vytvorená nová objednávka.",
         "",
-        `Fotografia: ${photoId}`,
         `Galéria: ${galleryTitle}`,
         `Dátum galérie: ${galleryDate}`,
-        `Cena: ${price} €`,
+        `Počet fotografií: ${items.length}`,
+        `Fotografie: ${photoList}`,
+        `Celková cena: ${totalPrice} €`,
         `Zákazník: ${customerEmail}`,
         `Objednávka: ${orderId}`,
         "",
@@ -188,14 +200,15 @@ async function sendOrderEmails({
               </p>
 
               <h1 style="margin:0 0 28px;font-size:26px;font-weight:400;">
-                Bola vytvorená požiadavka na kúpu fotografie.
+                Bola vytvorená objednávka fotografií.
               </h1>
 
               <p style="color:#bbbbbb;line-height:1.8;">
-                <strong>Fotografia:</strong> ${safePhotoId}<br>
                 <strong>Galéria:</strong> ${safeGalleryTitle}<br>
                 <strong>Dátum:</strong> ${safeGalleryDate}<br>
-                <strong>Cena:</strong> ${price} €<br>
+                <strong>Počet:</strong> ${items.length}<br>
+                <strong>Fotografie:</strong> ${safePhotoList}<br>
+                <strong>Cena:</strong> ${totalPrice} €<br>
                 <strong>Zákazník:</strong> ${safeCustomerEmail}<br>
                 <strong>ID objednávky:</strong> ${safeOrderId}
               </p>
@@ -232,11 +245,6 @@ export async function POST(
         ? body.gallerySlug.trim()
         : "";
 
-    const photoId =
-      typeof body.photoId === "string"
-        ? body.photoId.trim()
-        : "";
-
     const email =
       typeof body.email === "string"
         ? body.email
@@ -244,15 +252,27 @@ export async function POST(
             .toLowerCase()
         : "";
 
+    const photoIds = Array.isArray(
+      body.photoIds,
+    )
+      ? body.photoIds
+          .filter(
+            (value): value is string =>
+              typeof value === "string",
+          )
+          .map((value) => value.trim())
+          .filter(Boolean)
+      : [];
+
     if (
       !gallerySlug ||
-      !photoId ||
+      photoIds.length === 0 ||
       !email
     ) {
       return NextResponse.json(
         {
           error:
-            "Chýba fotografia alebo e-mail.",
+            "Chýbajú fotografie alebo e-mail.",
         },
         {
           status: 400,
@@ -275,17 +295,11 @@ export async function POST(
     const gallery =
       getGallery(gallerySlug);
 
-    const photoResult =
-      getPhoto(
-        gallerySlug,
-        photoId,
-      );
-
-    if (!gallery || !photoResult) {
+    if (!gallery) {
       return NextResponse.json(
         {
           error:
-            "Fotografia sa nenašla.",
+            "Galéria sa nenašla.",
         },
         {
           status: 404,
@@ -293,28 +307,84 @@ export async function POST(
       );
     }
 
-    const isVoluntaryPrice =
-  gallery.price === 0;
+    if (
+      gallery.price !== 2 &&
+      gallery.price !== 5
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Táto galéria nemá podporovanú cenu.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
 
-const priceInCents =
-  Math.round(
-    gallery.price * 100,
-  );
+    const uniquePhotoIds = [
+      ...new Set(photoIds),
+    ];
 
-const paymentUrl =
-  isVoluntaryPrice
-    ? process.env.REVOLUT_PAYMENT_LINK_VOLUNTARY
-    : process.env[
-        `REVOLUT_PAYMENT_LINK_${priceInCents}`
-      ];
+    const items: OrderItem[] = [];
 
-if (!paymentUrl) {
-  throw new Error(
-    isVoluntaryPrice
-      ? "Chýba Revolut platobný odkaz pre dobrovoľnú cenu."
-      : `Chýba Revolut platobný odkaz pre cenu ${gallery.price} €.`,
-  );
-}
+    for (const photoId of uniquePhotoIds) {
+      const photoResult =
+        getPhoto(
+          gallerySlug,
+          photoId,
+        );
+
+      if (!photoResult) {
+        return NextResponse.json(
+          {
+            error:
+              `Fotografia ${photoId} sa nenašla.`,
+          },
+          {
+            status: 404,
+          },
+        );
+      }
+
+      items.push({
+        photoId,
+        filename:
+          photoResult.photo.filename,
+        price: gallery.price,
+      });
+    }
+
+    const count = items.length;
+
+    const totalPrice =
+      count * gallery.price;
+
+    let paymentUrl: string | undefined;
+
+    if (count <= 20) {
+      const totalInCents =
+        Math.round(
+          totalPrice * 100,
+        );
+
+      paymentUrl =
+        process.env[
+          `REVOLUT_PAYMENT_LINK_${totalInCents}`
+        ];
+    } else {
+      paymentUrl =
+        process.env
+          .REVOLUT_PAYMENT_LINK_VOLUNTARY;
+    }
+
+    if (!paymentUrl) {
+      throw new Error(
+        count <= 20
+          ? `Chýba Revolut platobný odkaz pre sumu ${totalPrice} €.`
+          : "Chýba Revolut voluntary platobný odkaz.",
+      );
+    }
 
     const ordersBucket =
       process.env.R2_ORIGINALS_BUCKET;
@@ -334,21 +404,38 @@ if (!paymentUrl) {
     const order = {
       id: orderId,
       status: "waiting_payment",
+
       gallerySlug,
       galleryTitle:
         gallery.title,
       galleryDate:
         gallery.date,
-      photoId,
-      filename:
-        photoResult.photo.filename,
+
+      items,
+      count,
+
       email,
-      price: gallery.price,
+
+      price: totalPrice,
+      unitPrice:
+        gallery.price,
+
       currency: "EUR",
+
+      paymentMode:
+        count <= 20
+          ? "fixed"
+          : "manual",
+
+      expectedAmount:
+        totalPrice,
+
       createdAt: now,
       paidAt: null,
       sentAt: null,
       downloadedAt: null,
+
+      downloadedPhotoIds: [],
     };
 
     const orderKey =
@@ -380,12 +467,12 @@ if (!paymentUrl) {
           gallery.title,
         galleryDate:
           gallery.date,
-        photoId,
-        price: gallery.price,
+        items,
+        totalPrice,
       });
     } catch (emailError) {
       console.error(
-        "Objednávka bola vytvorená, ale upozorňovacie e-maily zlyhali:",
+        "Objednávka bola vytvorená, ale e-maily zlyhali:",
         emailError,
       );
     }
@@ -394,6 +481,14 @@ if (!paymentUrl) {
       success: true,
       orderId,
       paymentUrl,
+      count,
+      unitPrice:
+        gallery.price,
+      totalPrice,
+      paymentMode:
+        count <= 20
+          ? "fixed"
+          : "manual",
     });
   } catch (error) {
     console.error(

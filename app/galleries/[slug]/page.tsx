@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import CartLink from "@/components/CartLink";
 import GalleryLightbox from "@/components/GalleryLightbox";
 import { galleries, getGallery } from "@/data/galleries";
 
@@ -36,12 +37,16 @@ export default async function GalleryPage({
           LEDON.
         </Link>
 
-        <Link
-          href="/"
-          className="text-[10px] uppercase tracking-[0.3em] text-white/60 transition hover:text-white md:text-xs"
-        >
-          ← Späť na galérie
-        </Link>
+        <div className="flex items-center gap-6">
+          <CartLink className="text-[10px] uppercase tracking-[0.3em] text-white/60 transition hover:text-white md:text-xs" />
+
+          <Link
+            href="/"
+            className="text-[10px] uppercase tracking-[0.3em] text-white/60 transition hover:text-white md:text-xs"
+          >
+            ← Späť na galérie
+          </Link>
+        </div>
       </header>
 
       <section className="px-5 py-10 md:px-10 md:py-14">

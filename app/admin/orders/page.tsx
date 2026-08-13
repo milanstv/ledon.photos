@@ -9,17 +9,35 @@ import OrderActions from "@/components/OrderActions";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+type OrderItem = {
+  photoId: string;
+  filename: string;
+  price: number;
+};
+
 type Order = {
   id: string;
   status: string;
+
   gallerySlug: string;
   galleryTitle: string;
   galleryDate: string;
-  photoId: string;
-  filename: string;
+
+  // Staré objednávky
+  photoId?: string;
+  filename?: string;
+
+  // BETA 2.0 objednávky
+  items?: OrderItem[];
+  count?: number;
+  unitPrice?: number;
+  paymentMode?: "fixed" | "manual";
+  expectedAmount?: number;
+
   email: string;
   price: number;
   currency: string;
+
   createdAt: string;
   paidAt: string | null;
   sentAt: string | null;
@@ -56,6 +74,32 @@ function getR2Client() {
       secretAccessKey,
     },
   });
+}
+
+function getOrderItems(
+  order: Order,
+): OrderItem[] {
+  if (
+    Array.isArray(order.items) &&
+    order.items.length > 0
+  ) {
+    return order.items;
+  }
+
+  if (
+    order.photoId &&
+    order.filename
+  ) {
+    return [
+      {
+        photoId: order.photoId,
+        filename: order.filename,
+        price: order.price,
+      },
+    ];
+  }
+
+  return [];
 }
 
 async function loadOrders() {
@@ -222,7 +266,7 @@ export default async function OrdersPage() {
           </div>
         ) : (
           <div className="mt-8 overflow-x-auto border border-white/15">
-            <table className="w-full min-w-[1100px] border-collapse text-left">
+            <table className="w-full min-w-[1200px] border-collapse text-left">
               <thead className="border-b border-white/15 bg-white/5 text-[10px] uppercase tracking-[0.22em] text-white/40">
                 <tr>
                   <th className="px-5 py-4">
@@ -230,7 +274,7 @@ export default async function OrdersPage() {
                   </th>
 
                   <th className="px-5 py-4">
-                    Fotografia
+                    Fotografie
                   </th>
 
                   <th className="px-5 py-4">
@@ -246,6 +290,10 @@ export default async function OrdersPage() {
                   </th>
 
                   <th className="px-5 py-4">
+                    Platba
+                  </th>
+
+                  <th className="px-5 py-4">
                     Vytvorené
                   </th>
 
@@ -256,68 +304,132 @@ export default async function OrdersPage() {
               </thead>
 
               <tbody>
-                {orders.map((order) => (
-                  <tr
-                    key={order.id}
-                    className="border-b border-white/10 last:border-b-0"
-                  >
-                    <td className="px-5 py-5">
-                      <span className="inline-flex border border-white/20 px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-white/70">
-                        {getStatusText(
-                          order.status,
+                {orders.map((order) => {
+                  const items =
+                    getOrderItems(order);
+
+                  const count =
+                    items.length;
+
+                  const photoLabel =
+                    items
+                      .map(
+                        (item) =>
+                          item.photoId,
+                      )
+                      .join(", ");
+
+                  return (
+                    <tr
+                      key={order.id}
+                      className="border-b border-white/10 last:border-b-0"
+                    >
+                      <td className="px-5 py-5">
+                        <span className="inline-flex border border-white/20 px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-white/70">
+                          {getStatusText(
+                            order.status,
+                          )}
+                        </span>
+                      </td>
+
+                      <td className="max-w-[320px] px-5 py-5">
+                        <p className="font-medium">
+                          {count}{" "}
+                          {count === 1
+                            ? "fotografia"
+                            : "fotografií"}
+                        </p>
+
+                        <p className="mt-2 break-words text-xs leading-6 text-white/55">
+                          {photoLabel}
+                        </p>
+
+                        <p className="mt-2 text-xs text-white/25">
+                          {order.id}
+                        </p>
+                      </td>
+
+                      <td className="px-5 py-5">
+                        <p>
+                          {order.galleryTitle}
+                        </p>
+
+                        <p className="mt-2 text-xs text-white/35">
+                          {order.galleryDate}
+                        </p>
+                      </td>
+
+                      <td className="px-5 py-5">
+                        <a
+                          href={`mailto:${order.email}`}
+                          className="transition hover:text-white/60"
+                        >
+                          {order.email}
+                        </a>
+                      </td>
+
+                      <td className="px-5 py-5">
+                        <p className="text-lg">
+                          {order.price} €
+                        </p>
+
+                        {order.unitPrice ? (
+                          <p className="mt-1 text-xs text-white/35">
+                            {order.unitPrice} €
+                            /ks
+                          </p>
+                        ) : null}
+                      </td>
+
+                      <td className="px-5 py-5">
+                        {order.paymentMode ===
+                        "manual" ? (
+                          <div>
+                            <p className="text-xs font-medium uppercase tracking-[0.15em] text-yellow-300">
+                              Manuálna suma
+                            </p>
+
+                            <p className="mt-2 text-sm">
+                              Očakávané:{" "}
+                              {order.expectedAmount ??
+                                order.price}{" "}
+                              €
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-xs uppercase tracking-[0.15em] text-white/45">
+                            Pevná suma
+                          </p>
                         )}
-                      </span>
-                    </td>
+                      </td>
 
-                    <td className="px-5 py-5">
-                      <p className="font-medium tracking-[0.1em]">
-                        {order.photoId}
-                      </p>
+                      <td className="px-5 py-5 text-sm text-white/50">
+                        {formatDate(
+                          order.createdAt,
+                        )}
+                      </td>
 
-                      <p className="mt-2 text-xs text-white/35">
-                        {order.id}
-                      </p>
-                    </td>
-
-                    <td className="px-5 py-5">
-                      <p>
-                        {order.galleryTitle}
-                      </p>
-
-                      <p className="mt-2 text-xs text-white/35">
-                        {order.galleryDate}
-                      </p>
-                    </td>
-
-                    <td className="px-5 py-5">
-                      <a
-                        href={`mailto:${order.email}`}
-                        className="transition hover:text-white/60"
-                      >
-                        {order.email}
-                      </a>
-                    </td>
-
-                    <td className="px-5 py-5 text-lg">
-                      {order.price} €
-                    </td>
-
-                    <td className="px-5 py-5 text-sm text-white/50">
-                      {formatDate(
-                        order.createdAt,
-                      )}
-                    </td>
-
-                    <td className="px-5 py-5">
-                      <OrderActions
-                        orderId={order.id}
-                        status={order.status}
-                        email={order.email}
-                        photoId={order.photoId}
-                      />
-                    </td>
-                  </tr>
-                ))}
+                      <td className="px-5 py-5">
+                        <OrderActions
+  orderId={order.id}
+  status={order.status}
+  email={order.email}
+  photoLabel={photoLabel}
+  count={count}
+  paymentMode={order.paymentMode}
+  expectedAmount={
+    order.expectedAmount ??
+    order.price
+  }
+  unitPrice={
+    order.unitPrice ??
+    items[0]?.price
+  }
+/>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

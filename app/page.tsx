@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import CartLink from "@/components/CartLink";
 import { galleries } from "@/data/galleries";
 
 export default function Home() {
@@ -45,6 +46,8 @@ export default function Home() {
           >
             Contact
           </a>
+
+          <CartLink className="transition hover:text-white/60" />
         </nav>
       </header>
 
@@ -123,15 +126,16 @@ export default function Home() {
 
         <div className="flex items-center gap-5">
           <span>© 2026 LEDON.</span>
-<Link
-  href="/admin/orders"
-  prefetch={false}
-  aria-label="Administrácia objednávok"
-  title="Administrácia objednávok"
-  className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-sm text-white/20 transition hover:border-white/40 hover:text-white/70"
->
-  ⚙
-</Link>
+
+          <Link
+            href="/admin/orders"
+            prefetch={false}
+            aria-label="Administrácia objednávok"
+            title="Administrácia objednávok"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-sm text-white/20 transition hover:border-white/40 hover:text-white/70"
+          >
+            ⚙
+          </Link>
         </div>
       </footer>
     </main>

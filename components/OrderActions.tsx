@@ -7,16 +7,31 @@ type OrderActionsProps = {
   orderId: string;
   status: string;
   email: string;
-  photoId: string;
+  photoLabel: string;
+  count: number;
+
+  paymentMode?: "fixed" | "manual";
+  expectedAmount?: number;
+  unitPrice?: number;
 };
 
 export default function OrderActions({
   orderId,
   status,
   email,
-  photoId,
+  photoLabel,
+  count,
+  paymentMode,
+  expectedAmount,
+  unitPrice,
 }: OrderActionsProps) {
   const router = useRouter();
+
+  const [receivedAmount, setReceivedAmount] =
+    useState(
+      expectedAmount?.toString() ??
+        "",
+    );
 
   const [isLoading, setIsLoading] =
     useState(false);
@@ -27,10 +42,66 @@ export default function OrderActions({
   const [successMessage, setSuccessMessage] =
     useState("");
 
-  async function confirmPayment() {
-    const confirmed = window.confirm(
-      "Potvrdzuješ, že platba za túto fotografiu prišla na Revolut?",
+  const isManual =
+    paymentMode === "manual";
+
+  const receivedNumber =
+    Number(
+      receivedAmount.replace(
+        ",",
+        ".",
+      ),
     );
+
+  const calculatedPaidCount =
+    isManual &&
+    unitPrice &&
+    Number.isFinite(
+      receivedNumber,
+    )
+      ? Math.min(
+          count,
+          Math.max(
+            0,
+            Math.floor(
+              (receivedNumber +
+                0.000001) /
+                unitPrice,
+            ),
+          ),
+        )
+      : count;
+
+  const unpaidCount =
+    count -
+    calculatedPaidCount;
+
+  async function confirmPayment() {
+    if (
+      isManual &&
+      (!Number.isFinite(
+        receivedNumber,
+      ) ||
+        receivedNumber <= 0)
+    ) {
+      setErrorMessage(
+        "Zadaj skutočne prijatú sumu.",
+      );
+      return;
+    }
+
+    const confirmed =
+      window.confirm(
+        isManual
+          ? [
+              `Očakávaná suma: ${expectedAmount} €`,
+              `Prijatá suma: ${receivedNumber} €`,
+              `Zaplatených fotografií: ${calculatedPaidCount} z ${count}`,
+              "",
+              "Potvrdiť prijatie platby?",
+            ].join("\n")
+          : `Potvrdzuješ, že platba za ${count} fotografií prišla na Revolut?`,
+      );
 
     if (!confirmed) {
       return;
@@ -41,12 +112,26 @@ export default function OrderActions({
     setSuccessMessage("");
 
     try {
-      const response = await fetch(
-        `/api/admin/orders/${orderId}/paid`,
-        {
-          method: "POST",
-        },
-      );
+      const response =
+        await fetch(
+          `/api/admin/orders/${orderId}/paid`,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body:
+              JSON.stringify({
+                receivedAmount:
+                  isManual
+                    ? receivedNumber
+                    : undefined,
+              }),
+          },
+        );
 
       const result =
         await response.json();
@@ -71,9 +156,12 @@ export default function OrderActions({
   }
 
   async function sendOriginal() {
-    const confirmed = window.confirm(
-      `Odoslať fotografiu ${photoId} na ${email}?`,
-    );
+    const confirmed =
+      window.confirm(
+        count === 1
+          ? `Odoslať fotografiu ${photoLabel} na ${email}?`
+          : `Odoslať zaplatené fotografie na ${email}?`,
+      );
 
     if (!confirmed) {
       return;
@@ -84,12 +172,13 @@ export default function OrderActions({
     setSuccessMessage("");
 
     try {
-      const response = await fetch(
-        `/api/admin/orders/${orderId}/send`,
-        {
-          method: "POST",
-        },
-      );
+      const response =
+        await fetch(
+          `/api/admin/orders/${orderId}/send`,
+          {
+            method: "POST",
+          },
+        );
 
       const result =
         await response.json();
@@ -119,9 +208,10 @@ export default function OrderActions({
   }
 
   async function deleteOrder() {
-    const confirmed = window.confirm(
-      "Naozaj chcete vymazať túto objednávku?\n\nTáto akcia je nevratná.",
-    );
+    const confirmed =
+      window.confirm(
+        "Naozaj chcete vymazať túto objednávku?\n\nTáto akcia je nevratná.",
+      );
 
     if (!confirmed) {
       return;
@@ -132,12 +222,13 @@ export default function OrderActions({
     setSuccessMessage("");
 
     try {
-      const response = await fetch(
-        `/api/admin/orders/${orderId}/delete`,
-        {
-          method: "DELETE",
-        },
-      );
+      const response =
+        await fetch(
+          `/api/admin/orders/${orderId}/delete`,
+          {
+            method: "DELETE",
+          },
+        );
 
       const result =
         await response.json();
@@ -163,20 +254,102 @@ export default function OrderActions({
 
   return (
     <ActionContainer
-      errorMessage={errorMessage}
-      successMessage={successMessage}
+      errorMessage={
+        errorMessage
+      }
+      successMessage={
+        successMessage
+      }
     >
-      {status === "waiting_payment" ? (
-        <button
-          type="button"
-          onClick={confirmPayment}
-          disabled={isLoading}
-          className="whitespace-nowrap bg-white px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-black transition hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isLoading
-            ? "Potvrdzujem..."
-            : "Platba prijatá"}
-        </button>
+      {status ===
+      "waiting_payment" ? (
+        <>
+          {isManual ? (
+            <div className="w-[260px] border border-yellow-400/30 bg-yellow-400/5 p-4">
+              <p className="text-[9px] uppercase tracking-[0.2em] text-yellow-300">
+                Manuálna platba
+              </p>
+
+              <p className="mt-3 text-xs text-white/45">
+                Očakávané
+              </p>
+
+              <p className="mt-1 text-lg">
+                {expectedAmount} €
+              </p>
+
+              <label className="mt-4 block text-[9px] uppercase tracking-[0.2em] text-white/45">
+                Skutočne prijaté
+              </label>
+
+              <div className="mt-2 flex items-center">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={
+                    receivedAmount
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    setReceivedAmount(
+                      event.target
+                        .value,
+                    )
+                  }
+                  disabled={
+                    isLoading
+                  }
+                  className="w-full border border-white/25 bg-black px-3 py-3 text-sm text-white outline-none focus:border-white"
+                />
+
+                <span className="ml-2">
+                  €
+                </span>
+              </div>
+
+              <div className="mt-4 border-t border-white/10 pt-4 text-xs leading-6">
+                <p className="text-white/50">
+                  Zaplatených:{" "}
+                  <strong className="text-white">
+                    {
+                      calculatedPaidCount
+                    }{" "}
+                    / {count}
+                  </strong>
+                </p>
+
+                {unpaidCount >
+                0 ? (
+                  <p className="text-red-400">
+                    Nezaplatených:{" "}
+                    {unpaidCount}
+                  </p>
+                ) : (
+                  <p className="text-green-400">
+                    Suma je správna.
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={
+              confirmPayment
+            }
+            disabled={
+              isLoading
+            }
+            className="whitespace-nowrap bg-white px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-black transition hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isLoading
+              ? "Potvrdzujem..."
+              : "Platba prijatá"}
+          </button>
+        </>
       ) : null}
 
       {status === "paid" ? (
@@ -188,7 +361,9 @@ export default function OrderActions({
         >
           {isLoading
             ? "Odosielam..."
-            : "Odoslať originál"}
+            : count === 1
+              ? "Odoslať originál"
+              : "Odoslať originály"}
         </button>
       ) : null}
 
@@ -205,9 +380,11 @@ export default function OrderActions({
         </button>
       ) : null}
 
-      {status === "downloaded" ? (
+      {status ===
+      "downloaded" ? (
         <p className="whitespace-nowrap text-[10px] uppercase tracking-[0.22em] text-white/45">
-          Originál bol stiahnutý
+          Originály boli
+          stiahnuté
         </p>
       ) : null}
 
@@ -234,7 +411,7 @@ function ActionContainer({
 }) {
   return (
     <div className="flex flex-col items-start gap-3">
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-start gap-3">
         {children}
       </div>
 

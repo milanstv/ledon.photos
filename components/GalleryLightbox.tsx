@@ -6,7 +6,8 @@ import {
   useState,
 } from "react";
 
-import BuyPhotoButton from "@/components/BuyPhotoButton";
+import AddToCartButton from "@/components/AddToCartButton";
+import CartLink from "@/components/CartLink";
 import type { Gallery } from "@/data/galleries";
 
 type GalleryLightboxProps = {
@@ -16,24 +17,18 @@ type GalleryLightboxProps = {
 export default function GalleryLightbox({
   gallery,
 }: GalleryLightboxProps) {
-  const [
-    selectedIndex,
-    setSelectedIndex,
-  ] = useState<number | null>(null);
+  const [selectedIndex, setSelectedIndex] =
+    useState<number | null>(null);
 
   const currentPhoto =
     selectedIndex !== null
       ? gallery.photos[selectedIndex]
       : null;
 
-  const isOpen =
-    currentPhoto !== null;
+  const isOpen = currentPhoto !== null;
 
-  function openPhoto(
-    photoIndex: number,
-  ) {
-    const photo =
-      gallery.photos[photoIndex];
+  function openPhoto(photoIndex: number) {
+    const photo = gallery.photos[photoIndex];
 
     if (!photo) {
       return;
@@ -66,11 +61,8 @@ export default function GalleryLightbox({
       return;
     }
 
-    const newIndex =
-      selectedIndex - 1;
-
-    const photo =
-      gallery.photos[newIndex];
+    const newIndex = selectedIndex - 1;
+    const photo = gallery.photos[newIndex];
 
     setSelectedIndex(newIndex);
 
@@ -90,11 +82,8 @@ export default function GalleryLightbox({
       return;
     }
 
-    const newIndex =
-      selectedIndex + 1;
-
-    const photo =
-      gallery.photos[newIndex];
+    const newIndex = selectedIndex + 1;
+    const photo = gallery.photos[newIndex];
 
     setSelectedIndex(newIndex);
 
@@ -113,8 +102,7 @@ export default function GalleryLightbox({
     const previousOverflow =
       document.body.style.overflow;
 
-    document.body.style.overflow =
-      "hidden";
+    document.body.style.overflow = "hidden";
 
     function handleKeyDown(
       event: KeyboardEvent,
@@ -123,15 +111,11 @@ export default function GalleryLightbox({
         closePhoto();
       }
 
-      if (
-        event.key === "ArrowLeft"
-      ) {
+      if (event.key === "ArrowLeft") {
         showPreviousPhoto();
       }
 
-      if (
-        event.key === "ArrowRight"
-      ) {
+      if (event.key === "ArrowRight") {
         showNextPhoto();
       }
     }
@@ -169,9 +153,7 @@ export default function GalleryLightbox({
                 src={photo.src}
                 alt={photo.alt}
                 fill
-                priority={
-                  photoIndex === 0
-                }
+                priority={photoIndex === 0}
                 sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
                 className="object-cover transition duration-500 group-hover:scale-[1.03]"
               />
@@ -209,19 +191,23 @@ export default function GalleryLightbox({
               </span>
             </button>
 
-            <p className="hidden text-xs uppercase tracking-[0.25em] text-white/45 sm:block">
-              {selectedIndex + 1} /{" "}
-              {gallery.photos.length}
-            </p>
+            <div className="flex items-center gap-5 md:gap-8">
+              <p className="hidden text-xs uppercase tracking-[0.25em] text-white/45 sm:block">
+                {selectedIndex + 1} /{" "}
+                {gallery.photos.length}
+              </p>
 
-            <button
-              type="button"
-              onClick={closePhoto}
-              aria-label="Zatvoriť fotografiu"
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 text-2xl transition hover:bg-white hover:text-black"
-            >
-              ×
-            </button>
+              <CartLink className="text-[10px] font-medium uppercase tracking-[0.25em] text-white transition hover:text-white/60 md:text-xs" />
+
+              <button
+                type="button"
+                onClick={closePhoto}
+                aria-label="Zatvoriť fotografiu"
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 text-2xl transition hover:bg-white hover:text-black"
+              >
+                ×
+              </button>
+            </div>
           </div>
 
           <div className="absolute bottom-[116px] left-0 right-0 top-20 lg:bottom-0 lg:right-[360px]">
@@ -238,12 +224,8 @@ export default function GalleryLightbox({
 
             <button
               type="button"
-              onClick={
-                showPreviousPhoto
-              }
-              disabled={
-                selectedIndex === 0
-              }
+              onClick={showPreviousPhoto}
+              disabled={selectedIndex === 0}
               aria-label="Predchádzajúca fotografia"
               className="absolute left-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/55 text-2xl backdrop-blur transition hover:bg-white hover:text-black disabled:hidden md:left-6"
             >
@@ -255,8 +237,7 @@ export default function GalleryLightbox({
               onClick={showNextPhoto}
               disabled={
                 selectedIndex ===
-                gallery.photos.length -
-                  1
+                gallery.photos.length - 1
               }
               aria-label="Nasledujúca fotografia"
               className="absolute right-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/55 text-2xl backdrop-blur transition hover:bg-white hover:text-black disabled:hidden md:right-6"
@@ -278,12 +259,14 @@ export default function GalleryLightbox({
               {gallery.price} €
             </p>
 
-            <BuyPhotoButton
-  gallerySlug={gallery.slug}
-  photoId={currentPhoto.id}
-  price={gallery.price}
-  className="mt-10 w-full bg-white px-6 py-5 text-xs font-semibold uppercase tracking-[0.28em] text-black transition hover:bg-white/80 disabled:cursor-wait disabled:opacity-60"
-/>
+            <AddToCartButton
+              gallerySlug={gallery.slug}
+              galleryTitle={gallery.title}
+              photoId={currentPhoto.id}
+              photoSrc={currentPhoto.src}
+              price={gallery.price}
+              className="mt-10 w-full bg-white px-6 py-5 text-xs font-semibold uppercase tracking-[0.28em] text-black transition hover:bg-white/80"
+            />
 
             <div className="mt-10 space-y-4 border-t border-white/15 pt-8 text-sm text-white/55">
               <p>
@@ -291,20 +274,18 @@ export default function GalleryLightbox({
               </p>
 
               <p>
-                Plné rozlíšenie
-                fotografie
+                Plné rozlíšenie fotografie
               </p>
 
               <p>
-                Doručenie po potvrdení
-                platby
+                Doručenie po potvrdení platby
               </p>
             </div>
 
             <p className="mt-10 text-xs leading-6 text-white/30">
-              Platba prebehne cez
-              Revolut Pro. Originál vám
-              odošleme na zadaný e-mail.
+              Platba prebehne cez Revolut Pro.
+              Originál vám odošleme na zadaný
+              e-mail.
             </p>
           </aside>
 
@@ -321,12 +302,14 @@ export default function GalleryLightbox({
               </div>
 
               <div className="w-auto shrink-0">
-                <BuyPhotoButton
-  gallerySlug={gallery.slug}
-  photoId={currentPhoto.id}
-  price={gallery.price}
-  className="bg-white px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-black disabled:cursor-wait disabled:opacity-60"
-/>
+                <AddToCartButton
+                  gallerySlug={gallery.slug}
+                  galleryTitle={gallery.title}
+                  photoId={currentPhoto.id}
+                  photoSrc={currentPhoto.src}
+                  price={gallery.price}
+                  className="bg-white px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-black"
+                />
               </div>
             </div>
           </div>
