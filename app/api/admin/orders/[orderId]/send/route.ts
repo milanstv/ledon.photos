@@ -101,7 +101,14 @@ function createTokenHash(token: string) {
 }
 
 function escapeHtml(value: unknown) {
-  return String(value ?? "")
+  const text =
+    typeof value === "string"
+      ? value
+      : value == null
+        ? ""
+        : String(value);
+
+  return text
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
