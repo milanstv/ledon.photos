@@ -27,8 +27,8 @@ type Order = {
   status: string;
 
   gallerySlug: string;
-  galleryTitle: string;
-  galleryDate: string;
+  galleryTitle?: string;
+  galleryDate?: string;
 
   // Staré objednávky
   photoId?: string;
@@ -84,8 +84,7 @@ function getR2Client() {
   return new S3Client({
     region: "auto",
     endpoint:
-      `https://${accountId}` +
-      ".r2.cloudflarestorage.com",
+      `https://${accountId}.r2.cloudflarestorage.com`,
     credentials: {
       accessKeyId,
       secretAccessKey,
@@ -93,20 +92,29 @@ function getR2Client() {
   });
 }
 
-function createTokenHash(token: string) {
+function createTokenHash(
+  token: string,
+) {
   return crypto
     .createHash("sha256")
     .update(token)
     .digest("hex");
 }
 
-function escapeHtml(value: unknown) {
+function escapeHtml(
+  value: unknown,
+) {
   const text =
-    typeof value === "string"
-      ? value
-      : value == null
-        ? ""
-        : String(value);
+    String(value ?? "");
+
+  console.log(
+    "ESCAPE DEBUG",
+    {
+      value,
+      type: typeof value,
+      text,
+    },
+  );
 
   return text
     .replaceAll("&", "&amp;")
@@ -123,7 +131,14 @@ function getOrderItems(
     Array.isArray(order.items) &&
     order.items.length > 0
   ) {
-    return order.items;
+    return order.items.filter(
+      (item) =>
+        Boolean(
+          item &&
+            typeof item.photoId === "string" &&
+            typeof item.filename === "string",
+        ),
+    );
   }
 
   if (
@@ -147,21 +162,28 @@ function getPaidItems(
   items: OrderItem[],
 ): OrderItem[] {
   if (
-    Array.isArray(order.paidPhotoIds) &&
-    order.paidPhotoIds.length > 0
-  ) {
-    const paidIds = new Set(
+    Array.isArray(
       order.paidPhotoIds,
-    );
+    ) &&
+    order.paidPhotoIds.length >
+      0
+  ) {
+    const paidIds =
+      new Set(
+        order.paidPhotoIds,
+      );
 
     return items.filter(
       (item) =>
-        paidIds.has(item.photoId),
+        paidIds.has(
+          item.photoId,
+        ),
     );
   }
 
   if (
-    typeof order.paidCount === "number" &&
+    typeof order.paidCount ===
+      "number" &&
     order.paidCount > 0
   ) {
     return items.slice(
@@ -170,7 +192,7 @@ function getPaidItems(
     );
   }
 
-  // Staré objednávky a pevné platby
+  // Pevné platby a staré objednávky.
   return items;
 }
 
@@ -195,13 +217,16 @@ export async function POST(
     }
 
     const bucket =
-      process.env.R2_ORIGINALS_BUCKET;
+      process.env
+        .R2_ORIGINALS_BUCKET;
 
     const resendApiKey =
-      process.env.RESEND_API_KEY;
+      process.env
+        .RESEND_API_KEY;
 
     const fromEmail =
-      process.env.RESEND_FROM_EMAIL;
+      process.env
+        .RESEND_FROM_EMAIL;
 
     if (!bucket) {
       throw new Error(
@@ -248,20 +273,78 @@ export async function POST(
     }
 
     const content =
-      await response.Body.transformToString();
+      await response.Body
+        .transformToString();
 
     const order =
-      JSON.parse(content) as Order;
+      JSON.parse(
+        content,
+      ) as Order;
+
+    console.log(
+      "SEND ORDER DEBUG",
+      {
+        id: order.id,
+        status: order.status,
+        gallerySlug:
+          order.gallerySlug,
+        galleryTitle:
+          order.galleryTitle,
+        email: order.email,
+        price: order.price,
+        count: order.count,
+        paymentMode:
+          order.paymentMode,
+        paidCount:
+          order.paidCount,
+        paidPhotoIds:
+          order.paidPhotoIds,
+        items: order.items,
+      },
+    );
 
     if (
       order.status !== "paid" &&
       order.status !== "sent" &&
-      order.status !== "downloaded"
+      order.status !==
+        "downloaded"
     ) {
       return NextResponse.json(
         {
           error:
             "Najskôr musíš potvrdiť prijatie platby.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (
+      !order.email ||
+      typeof order.email !==
+        "string"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Objednávka nemá platný e-mail.",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (
+      !order.gallerySlug ||
+      typeof order.gallerySlug !==
+        "string"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Objednávka nemá platnú galériu.",
         },
         {
           status: 400,
@@ -290,7 +373,9 @@ export async function POST(
         items,
       );
 
-    if (paidItems.length === 0) {
+    if (
+      paidItems.length === 0
+    ) {
       return NextResponse.json(
         {
           error:
@@ -301,6 +386,20 @@ export async function POST(
         },
       );
     }
+
+    console.log(
+      "SEND PAID ITEMS DEBUG",
+      paidItems.map(
+        (item) => ({
+          photoId:
+            item.photoId,
+          filename:
+            item.filename,
+          price:
+            item.price,
+        }),
+      ),
+    );
 
     const token =
       crypto
@@ -313,29 +412,51 @@ export async function POST(
     const expiresAt =
       new Date(
         now.getTime() +
-          24 * 60 * 60 * 1000,
+          24 *
+            60 *
+            60 *
+            1000,
       ).toISOString();
 
     const origin =
-      new URL(request.url).origin;
+      new URL(
+        request.url,
+      ).origin;
 
     const downloadLinks =
-      paidItems.map((item) => {
-        const url =
-          `${origin}/api/download` +
-          `?orderId=${encodeURIComponent(orderId)}` +
-          `&photoId=${encodeURIComponent(item.photoId)}` +
-          `&token=${encodeURIComponent(token)}`;
+      paidItems.map(
+        (item) => {
+          const url =
+            `${origin}/api/download` +
+            `?orderId=${encodeURIComponent(orderId)}` +
+            `&photoId=${encodeURIComponent(item.photoId)}` +
+            `&token=${encodeURIComponent(token)}`;
 
-        return {
-          ...item,
-          url,
-        };
-      });
+          return {
+            ...item,
+            url,
+          };
+        },
+      );
+
+    console.log(
+      "SEND LINKS DEBUG",
+      downloadLinks.map(
+        (item) => ({
+          photoId:
+            item.photoId,
+          filename:
+            item.filename,
+          url:
+            item.url,
+        }),
+      ),
+    );
 
     const safeGalleryTitle =
       escapeHtml(
-        order.galleryTitle,
+        order.galleryTitle ??
+          order.gallerySlug,
       );
 
     const textPhotoList =
@@ -373,180 +494,327 @@ export async function POST(
         .join("");
 
     const unpaidCount =
-      items.length -
-      paidItems.length;
+      Math.max(
+        0,
+        items.length -
+          paidItems.length,
+      );
 
     const resend =
       new Resend(
         resendApiKey,
       );
 
+    const galleryTitle =
+      order.galleryTitle ??
+      order.gallerySlug;
+
+    const subject =
+      paidItems.length === 1
+        ? `Vaša fotografia ${paidItems[0].photoId} je pripravená`
+        : `Vašich ${paidItems.length} fotografií je pripravených`;
+
+    console.log(
+      "SEND RESEND DEBUG",
+      {
+        from:
+          `LEDON. <${fromEmail}>`,
+        to:
+          order.email,
+        subject,
+        galleryTitle,
+        paidItems:
+          paidItems.length,
+        unpaidCount,
+      },
+    );
+
     const {
       data: emailData,
       error: emailError,
-    } = await resend.emails.send({
-      from:
-        `LEDON. <${fromEmail}>`,
-      to: [order.email],
-      replyTo: fromEmail,
+    } =
+      await resend.emails.send(
+        {
+          from:
+            `LEDON. <${fromEmail}>`,
 
-      subject:
-        paidItems.length === 1
-          ? `Vaša fotografia ${paidItems[0].photoId} je pripravená`
-          : `Vašich ${paidItems.length} fotografií je pripravených`,
+          to: [
+            order.email,
+          ],
 
-      text: [
-        "Dobrý deň,",
-        "",
-        "ďakujeme za váš nákup.",
-        "",
-        `Galéria: ${order.galleryTitle}`,
-        `Zaplatených fotografií: ${paidItems.length}`,
-        unpaidCount > 0
-          ? `Nezaplatených fotografií: ${unpaidCount}`
-          : "",
-        "",
-        "Originály v plnom rozlíšení:",
-        "",
-        textPhotoList,
-        "",
-        "Odkazy sú platné 24 hodín.",
-        "",
-        "LEDON.",
-        "https://ledon.photos",
-      ]
-        .filter(Boolean)
-        .join("\n"),
+          replyTo:
+            fromEmail,
 
-      html: `
-        <!doctype html>
-        <html lang="sk">
-          <body style="margin:0;padding:0;background:#080808;color:#ffffff;font-family:Arial,Helvetica,sans-serif;">
-            <table
-              role="presentation"
-              width="100%"
-              cellspacing="0"
-              cellpadding="0"
-              style="background:#080808;"
-            >
-              <tr>
-                <td
-                  align="center"
-                  style="padding:40px 16px;"
+          subject,
+
+          text: [
+            "Dobrý deň,",
+            "",
+            "ďakujeme za váš nákup.",
+            "",
+            `Galéria: ${galleryTitle}`,
+            `Zaplatených fotografií: ${paidItems.length}`,
+
+            unpaidCount > 0
+              ? `Nezaplatených fotografií: ${unpaidCount}`
+              : "",
+
+            "",
+            "Originály v plnom rozlíšení:",
+            "",
+            textPhotoList,
+            "",
+            "Odkazy sú platné 24 hodín.",
+            "",
+            "LEDON.",
+            "https://ledon.photos",
+          ]
+            .filter(Boolean)
+            .join("\n"),
+
+          html: `
+            <!doctype html>
+
+            <html lang="sk">
+              <body
+                style="
+                  margin:0;
+                  padding:0;
+                  background:#080808;
+                  color:#ffffff;
+                  font-family:Arial,Helvetica,sans-serif;
+                "
+              >
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellspacing="0"
+                  cellpadding="0"
+                  style="background:#080808;"
                 >
-                  <table
-                    role="presentation"
-                    width="100%"
-                    cellspacing="0"
-                    cellpadding="0"
-                    style="max-width:620px;background:#111111;border:1px solid #303030;"
-                  >
-                    <tr>
-                      <td style="padding:42px 38px 20px;">
-                        <div style="font-size:30px;font-weight:700;letter-spacing:5px;">
-                          LEDON.
-                        </div>
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <td style="padding:18px 38px 38px;">
-                        <p style="margin:0 0 14px;color:#999999;font-size:11px;letter-spacing:3px;text-transform:uppercase;">
-                          Fotografie sú pripravené
-                        </p>
-
-                        <h1 style="margin:0 0 26px;font-size:30px;font-weight:400;line-height:1.25;">
-                          Ďakujeme za váš nákup.
-                        </h1>
-
-                        <table
-                          role="presentation"
-                          width="100%"
-                          cellspacing="0"
-                          cellpadding="0"
-                          style="margin-bottom:30px;border-top:1px solid #303030;border-bottom:1px solid #303030;"
-                        >
-                          <tr>
-                            <td style="padding:18px 0;color:#888888;font-size:13px;">
-                              Galéria
-                            </td>
-
-                            <td
-                              align="right"
-                              style="padding:18px 0;color:#ffffff;font-size:15px;"
+                  <tr>
+                    <td
+                      align="center"
+                      style="padding:40px 16px;"
+                    >
+                      <table
+                        role="presentation"
+                        width="100%"
+                        cellspacing="0"
+                        cellpadding="0"
+                        style="
+                          max-width:620px;
+                          background:#111111;
+                          border:1px solid #303030;
+                        "
+                      >
+                        <tr>
+                          <td
+                            style="
+                              padding:42px 38px 20px;
+                            "
+                          >
+                            <div
+                              style="
+                                font-size:30px;
+                                font-weight:700;
+                                letter-spacing:5px;
+                              "
                             >
-                              ${safeGalleryTitle}
-                            </td>
-                          </tr>
+                              LEDON.
+                            </div>
+                          </td>
+                        </tr>
 
-                          <tr>
-                            <td style="padding:0 0 18px;color:#888888;font-size:13px;">
-                              Zaplatených fotografií
-                            </td>
-
-                            <td
-                              align="right"
-                              style="padding:0 0 18px;color:#ffffff;font-size:15px;"
+                        <tr>
+                          <td
+                            style="
+                              padding:18px 38px 38px;
+                            "
+                          >
+                            <p
+                              style="
+                                margin:0 0 14px;
+                                color:#999999;
+                                font-size:11px;
+                                letter-spacing:3px;
+                                text-transform:uppercase;
+                              "
                             >
-                              ${paidItems.length}
-                            </td>
-                          </tr>
+                              Fotografie sú pripravené
+                            </p>
 
-                          ${
-                            unpaidCount > 0
-                              ? `
-                          <tr>
-                            <td style="padding:0 0 18px;color:#888888;font-size:13px;">
-                              Nezaplatených fotografií
-                            </td>
-
-                            <td
-                              align="right"
-                              style="padding:0 0 18px;color:#ff7777;font-size:15px;"
+                            <h1
+                              style="
+                                margin:0 0 26px;
+                                font-size:30px;
+                                font-weight:400;
+                                line-height:1.25;
+                              "
                             >
-                              ${unpaidCount}
-                            </td>
-                          </tr>
-                          `
-                              : ""
-                          }
-                        </table>
+                              Ďakujeme za váš nákup.
+                            </h1>
 
-                        ${htmlPhotoLinks}
+                            <table
+                              role="presentation"
+                              width="100%"
+                              cellspacing="0"
+                              cellpadding="0"
+                              style="
+                                margin-bottom:30px;
+                                border-top:1px solid #303030;
+                                border-bottom:1px solid #303030;
+                              "
+                            >
+                              <tr>
+                                <td
+                                  style="
+                                    padding:18px 0;
+                                    color:#888888;
+                                    font-size:13px;
+                                  "
+                                >
+                                  Galéria
+                                </td>
 
-                        <p style="margin:22px 0 0;color:#777777;font-size:12px;line-height:1.7;">
-                          Odkazy sú platné 24 hodín.
-                        </p>
-                      </td>
-                    </tr>
+                                <td
+                                  align="right"
+                                  style="
+                                    padding:18px 0;
+                                    color:#ffffff;
+                                    font-size:15px;
+                                  "
+                                >
+                                  ${safeGalleryTitle}
+                                </td>
+                              </tr>
 
-                    <tr>
-                      <td style="padding:28px 38px;border-top:1px solid #303030;color:#777777;font-size:13px;line-height:1.8;">
-                        <p style="margin:0 0 14px;color:#aaaaaa;">
-                          Ďakujeme za podporu.
-                        </p>
+                              <tr>
+                                <td
+                                  style="
+                                    padding:0 0 18px;
+                                    color:#888888;
+                                    font-size:13px;
+                                  "
+                                >
+                                  Zaplatených fotografií
+                                </td>
 
-                        <p style="margin:0;color:#ffffff;font-size:17px;font-weight:700;letter-spacing:3px;">
-                          LEDON.
-                        </p>
+                                <td
+                                  align="right"
+                                  style="
+                                    padding:0 0 18px;
+                                    color:#ffffff;
+                                    font-size:15px;
+                                  "
+                                >
+                                  ${paidItems.length}
+                                </td>
+                              </tr>
 
-                        <p style="margin:8px 0 0;">
-                          ledon.photos
-                        </p>
+                              ${
+                                unpaidCount >
+                                0
+                                  ? `
+                                    <tr>
+                                      <td
+                                        style="
+                                          padding:0 0 18px;
+                                          color:#888888;
+                                          font-size:13px;
+                                        "
+                                      >
+                                        Nezaplatených fotografií
+                                      </td>
 
-                        <p style="margin:3px 0 0;">
-                          moto@ledon.photos
-                        </p>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-            </table>
-          </body>
-        </html>
-      `,
-    });
+                                      <td
+                                        align="right"
+                                        style="
+                                          padding:0 0 18px;
+                                          color:#ff7777;
+                                          font-size:15px;
+                                        "
+                                      >
+                                        ${unpaidCount}
+                                      </td>
+                                    </tr>
+                                  `
+                                  : ""
+                              }
+                            </table>
+
+                            ${htmlPhotoLinks}
+
+                            <p
+                              style="
+                                margin:22px 0 0;
+                                color:#777777;
+                                font-size:12px;
+                                line-height:1.7;
+                              "
+                            >
+                              Odkazy sú platné 24 hodín.
+                            </p>
+                          </td>
+                        </tr>
+
+                        <tr>
+                          <td
+                            style="
+                              padding:28px 38px;
+                              border-top:1px solid #303030;
+                              color:#777777;
+                              font-size:13px;
+                              line-height:1.8;
+                            "
+                          >
+                            <p
+                              style="
+                                margin:0 0 14px;
+                                color:#aaaaaa;
+                              "
+                            >
+                              Ďakujeme za podporu.
+                            </p>
+
+                            <p
+                              style="
+                                margin:0;
+                                color:#ffffff;
+                                font-size:17px;
+                                font-weight:700;
+                                letter-spacing:3px;
+                              "
+                            >
+                              LEDON.
+                            </p>
+
+                            <p
+                              style="
+                                margin:8px 0 0;
+                              "
+                            >
+                              ledon.photos
+                            </p>
+
+                            <p
+                              style="
+                                margin:3px 0 0;
+                              "
+                            >
+                              moto@ledon.photos
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </body>
+            </html>
+          `,
+        },
+      );
 
     if (emailError) {
       console.error(
@@ -566,32 +834,42 @@ export async function POST(
       );
     }
 
-    const updatedOrder: Order = {
-      ...order,
+    const updatedOrder: Order =
+      {
+        ...order,
 
-      status: "sent",
+        status:
+          "sent",
 
-      sentAt:
-        now.toISOString(),
+        sentAt:
+          now.toISOString(),
 
-      downloadedAt: null,
+        downloadedAt:
+          null,
 
-      downloadedPhotoIds: [],
+        downloadedPhotoIds:
+          [],
 
-      downloadTokenHash:
-        createTokenHash(token),
+        downloadTokenHash:
+          createTokenHash(
+            token,
+          ),
 
-      downloadExpiresAt:
-        expiresAt,
+        downloadExpiresAt:
+          expiresAt,
 
-      resendEmailId:
-        emailData?.id ?? null,
-    };
+        resendEmailId:
+          emailData?.id ??
+          null,
+      };
 
     await r2Client.send(
       new PutObjectCommand({
-        Bucket: bucket,
-        Key: orderKey,
+        Bucket:
+          bucket,
+
+        Key:
+          orderKey,
 
         Body:
           JSON.stringify(
