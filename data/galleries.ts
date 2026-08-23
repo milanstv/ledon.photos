@@ -244,6 +244,13 @@ export const galleries: Gallery[] = [
         "alt": "Pezinská Baba GP – fotografia č. 36"
       },
       {
+        "id": "8F7A9901-36",
+        "customerNumber": 36,
+        "filename": "8F7A9901-36.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-22-baba-gp/8F7A9901-36.jpg",
+        "alt": "Pezinská Baba GP – fotografia č. 36"
+      },
+      {
         "id": "8F7A0564-37",
         "customerNumber": 37,
         "filename": "8F7A0564-37.jpg",
@@ -10883,7 +10890,8 @@ export function getPhoto(
   slug: string,
   photoId: string,
 ) {
-  const gallery = getGallery(slug);
+  const gallery =
+    getGallery(slug);
 
   if (!gallery) {
     return null;
@@ -10895,20 +10903,27 @@ export function getPhoto(
         photo.id === photoId,
     );
 
-  if (photoIndex === -1) {
+  if (
+    photoIndex === -1
+  ) {
     return null;
   }
 
   return {
     gallery,
+
     photo:
-      gallery.photos[photoIndex],
+      gallery.photos[
+        photoIndex
+      ],
+
     previousPhoto:
       photoIndex > 0
         ? gallery.photos[
             photoIndex - 1
           ]
         : null,
+
     nextPhoto:
       photoIndex <
       gallery.photos.length - 1
