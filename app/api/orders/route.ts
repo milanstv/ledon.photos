@@ -49,8 +49,7 @@ function getR2Client() {
   return new S3Client({
     region: "auto",
     endpoint:
-      `https://${accountId}` +
-      ".r2.cloudflarestorage.com",
+      `https://${accountId}.r2.cloudflarestorage.com`,
     credentials: {
       accessKeyId,
       secretAccessKey,
@@ -58,13 +57,17 @@ function getR2Client() {
   });
 }
 
-function isValidEmail(email: string) {
+function isValidEmail(
+  email: string,
+) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
     email,
   );
 }
 
-function escapeHtml(value: string) {
+function escapeHtml(
+  value: string,
+) {
   return value
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
@@ -109,34 +112,53 @@ async function sendOrderEmails({
     return;
   }
 
-  const resend = new Resend(
-    resendApiKey,
-  );
+  const resend =
+    new Resend(
+      resendApiKey,
+    );
 
-  const photoList = items
-    .map((item) => item.photoId)
-    .join(", ");
+  const photoList =
+    items
+      .map(
+        (item) =>
+          item.photoId,
+      )
+      .join(", ");
 
   const safeGalleryTitle =
-    escapeHtml(galleryTitle);
+    escapeHtml(
+      galleryTitle,
+    );
 
   const safeGalleryDate =
-    escapeHtml(galleryDate);
+    escapeHtml(
+      galleryDate,
+    );
 
   const safePhotoList =
-    escapeHtml(photoList);
+    escapeHtml(
+      photoList,
+    );
 
   const safeOrderId =
-    escapeHtml(orderId);
+    escapeHtml(
+      orderId,
+    );
 
   const safeCustomerEmail =
-    escapeHtml(customerEmail);
+    escapeHtml(
+      customerEmail,
+    );
 
   const customerEmailResult =
     await resend.emails.send({
-      from: `LEDON. <${fromEmail}>`,
-      to: [customerEmail],
-      replyTo: fromEmail,
+      from:
+        `LEDON. <${fromEmail}>`,
+      to: [
+        customerEmail,
+      ],
+      replyTo:
+        fromEmail,
       subject:
         `Objednávka ${items.length} fotografií bola prijatá`,
       text: [
@@ -158,7 +180,9 @@ async function sendOrderEmails({
       ].join("\n"),
     });
 
-  if (customerEmailResult.error) {
+  if (
+    customerEmailResult.error
+  ) {
     console.error(
       "Nepodarilo sa odoslať potvrdenie zákazníkovi:",
       customerEmailResult.error,
@@ -167,9 +191,13 @@ async function sendOrderEmails({
 
   const adminEmailResult =
     await resend.emails.send({
-      from: `LEDON. <${fromEmail}>`,
-      to: [adminEmail],
-      replyTo: customerEmail,
+      from:
+        `LEDON. <${fromEmail}>`,
+      to: [
+        adminEmail,
+      ],
+      replyTo:
+        customerEmail,
       subject:
         `Nová objednávka – ${items.length} ks – ${totalPrice} €`,
       text: [
@@ -186,6 +214,7 @@ async function sendOrderEmails({
         "Po prijatí platby otvor administráciu:",
         "https://ledon.photos/admin/orders",
       ].join("\n"),
+
       html: `
         <!doctype html>
         <html lang="sk">
@@ -225,7 +254,9 @@ async function sendOrderEmails({
       `,
     });
 
-  if (adminEmailResult.error) {
+  if (
+    adminEmailResult.error
+  ) {
     console.error(
       "Nepodarilo sa odoslať upozornenie administrátorovi:",
       adminEmailResult.error,
@@ -241,28 +272,39 @@ export async function POST(
       (await request.json()) as CreateOrderRequest;
 
     const gallerySlug =
-      typeof body.gallerySlug === "string"
+      typeof body.gallerySlug ===
+        "string"
         ? body.gallerySlug.trim()
         : "";
 
     const email =
-      typeof body.email === "string"
+      typeof body.email ===
+        "string"
         ? body.email
             .trim()
             .toLowerCase()
         : "";
 
-    const photoIds = Array.isArray(
-      body.photoIds,
-    )
-      ? body.photoIds
-          .filter(
-            (value): value is string =>
-              typeof value === "string",
-          )
-          .map((value) => value.trim())
-          .filter(Boolean)
-      : [];
+    const photoIds =
+      Array.isArray(
+        body.photoIds,
+      )
+        ? body.photoIds
+            .filter(
+              (
+                value,
+              ): value is string =>
+                typeof value ===
+                "string",
+            )
+            .map(
+              (value) =>
+                value.trim(),
+            )
+            .filter(
+              Boolean,
+            )
+        : [];
 
     if (
       !gallerySlug ||
@@ -280,7 +322,11 @@ export async function POST(
       );
     }
 
-    if (!isValidEmail(email)) {
+    if (
+      !isValidEmail(
+        email,
+      )
+    ) {
       return NextResponse.json(
         {
           error:
@@ -293,7 +339,9 @@ export async function POST(
     }
 
     const gallery =
-      getGallery(gallerySlug);
+      getGallery(
+        gallerySlug,
+      );
 
     if (!gallery) {
       return NextResponse.json(
@@ -309,6 +357,7 @@ export async function POST(
 
     if (
       gallery.price !== 2 &&
+      gallery.price !== 4 &&
       gallery.price !== 5
     ) {
       return NextResponse.json(
@@ -323,12 +372,18 @@ export async function POST(
     }
 
     const uniquePhotoIds = [
-      ...new Set(photoIds),
+      ...new Set(
+        photoIds,
+      ),
     ];
 
-    const items: OrderItem[] = [];
+    const items: OrderItem[] =
+      [];
 
-    for (const photoId of uniquePhotoIds) {
+    for (
+      const photoId
+      of uniquePhotoIds
+    ) {
       const photoResult =
         getPhoto(
           gallerySlug,
@@ -350,22 +405,31 @@ export async function POST(
       items.push({
         photoId,
         filename:
-          photoResult.photo.filename,
-        price: gallery.price,
+          photoResult.photo
+            .filename,
+        price:
+          gallery.price,
       });
     }
 
-    const count = items.length;
+    const count =
+      items.length;
 
     const totalPrice =
-      count * gallery.price;
+      count *
+      gallery.price;
 
-    let paymentUrl: string | undefined;
+    let paymentUrl:
+      | string
+      | undefined;
 
-    if (count <= 20) {
+    if (
+      count <= 20
+    ) {
       const totalInCents =
         Math.round(
-          totalPrice * 100,
+          totalPrice *
+            100,
         );
 
       paymentUrl =
@@ -387,7 +451,8 @@ export async function POST(
     }
 
     const ordersBucket =
-      process.env.R2_ORIGINALS_BUCKET;
+      process.env
+        .R2_ORIGINALS_BUCKET;
 
     if (!ordersBucket) {
       throw new Error(
@@ -399,28 +464,38 @@ export async function POST(
       crypto.randomUUID();
 
     const now =
-      new Date().toISOString();
+      new Date()
+        .toISOString();
 
     const order = {
-      id: orderId,
-      status: "waiting_payment",
+      id:
+        orderId,
+
+      status:
+        "waiting_payment",
 
       gallerySlug,
+
       galleryTitle:
         gallery.title,
+
       galleryDate:
         gallery.date,
 
       items,
+
       count,
 
       email,
 
-      price: totalPrice,
+      price:
+        totalPrice,
+
       unitPrice:
         gallery.price,
 
-      currency: "EUR",
+      currency:
+        "EUR",
 
       paymentMode:
         count <= 20
@@ -430,12 +505,20 @@ export async function POST(
       expectedAmount:
         totalPrice,
 
-      createdAt: now,
-      paidAt: null,
-      sentAt: null,
-      downloadedAt: null,
+      createdAt:
+        now,
 
-      downloadedPhotoIds: [],
+      paidAt:
+        null,
+
+      sentAt:
+        null,
+
+      downloadedAt:
+        null,
+
+      downloadedPhotoIds:
+        [],
     };
 
     const orderKey =
@@ -446,31 +529,47 @@ export async function POST(
 
     await r2Client.send(
       new PutObjectCommand({
-        Bucket: ordersBucket,
-        Key: orderKey,
-        Body: JSON.stringify(
-          order,
-          null,
-          2,
-        ),
+        Bucket:
+          ordersBucket,
+
+        Key:
+          orderKey,
+
+        Body:
+          JSON.stringify(
+            order,
+            null,
+            2,
+          ),
+
         ContentType:
           "application/json; charset=utf-8",
-        CacheControl: "no-store",
+
+        CacheControl:
+          "no-store",
       }),
     );
 
     try {
       await sendOrderEmails({
         orderId,
-        customerEmail: email,
+
+        customerEmail:
+          email,
+
         galleryTitle:
           gallery.title,
+
         galleryDate:
           gallery.date,
+
         items,
+
         totalPrice,
       });
-    } catch (emailError) {
+    } catch (
+      emailError
+    ) {
       console.error(
         "Objednávka bola vytvorená, ale e-maily zlyhali:",
         emailError,
@@ -479,18 +578,26 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
+
       orderId,
+
       paymentUrl,
+
       count,
+
       unitPrice:
         gallery.price,
+
       totalPrice,
+
       paymentMode:
         count <= 20
           ? "fixed"
           : "manual",
     });
-  } catch (error) {
+  } catch (
+    error
+  ) {
     console.error(
       "Chyba pri vytváraní objednávky:",
       error,
