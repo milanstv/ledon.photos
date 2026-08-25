@@ -24,7 +24,7 @@ export const galleries: Gallery[] = [
     "slug": "2026-08-23-baba-gp",
     "title": "Pezinská Baba časť 1",
     "date": "23. 8. 2026",
-    "price": 2,
+    "price": 4,
     "photos": [
       {
         "id": "8F7A2533-1",
