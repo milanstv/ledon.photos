@@ -16,9 +16,13 @@ export default function CartLink({
   return (
     <Link
       href="/cart"
-      className={className}
+      className={`${className ?? ""} inline-flex items-center gap-2 text-lg font-semibold`}
     >
-      Košík ({count})
+      <span>Košík</span>
+
+      <span className="inline-flex min-w-7 h-7 items-center justify-center rounded-full border border-white/40 px-2 text-sm">
+        {count}
+      </span>
     </Link>
   );
 }
