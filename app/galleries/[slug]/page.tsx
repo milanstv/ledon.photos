@@ -118,12 +118,7 @@ export default async function GalleryPage({
                 </a>
               </p>
 
-              <p className="mt-2">
-                <span className="text-white/45">WhatsApp:</span>{" "}
-                <span className="text-white/40">
-                  doplníme číslo
-                </span>
-              </p>
+              
             </div>
           </div>
         </div>
