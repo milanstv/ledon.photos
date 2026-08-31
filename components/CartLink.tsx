@@ -20,8 +20,8 @@ export default function CartLink({
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        width="32"
-        height="32"
+        width="24"
+        height="24"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -37,7 +37,7 @@ export default function CartLink({
 
       <span>Košík</span>
 
-      <span className="inline-flex h-10 min-w-10 items-center justify-center rounded-full border-2 border-white/60 px-3 text-xl font-bold">
+      <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full border-2 border-white/60 px-3 text-xl font-bold">
         {count}
       </span>
     </Link>

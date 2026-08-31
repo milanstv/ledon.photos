@@ -38,7 +38,7 @@ export default async function GalleryPage({
         </Link>
 
         <div className="flex items-center gap-6">
-          <CartLink className="text-2xl font-bold text-white transition hover:text-white/70" />
+          <CartLink className="text-base font-semibold text-white transition hover:text-white/70 md:text-lg" />
 
           <Link
             href="/"

@@ -197,7 +197,7 @@ export default function GalleryLightbox({
                 {gallery.photos.length}
               </p>
 
-              <CartLink className="text-2xl font-bold text-white transition hover:text-white/70" />
+              <CartLink className="text-base font-semibold text-white transition hover:text-white/70 md:text-lg" />
 
               <button
                 type="button"
