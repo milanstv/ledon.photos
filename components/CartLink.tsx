@@ -16,7 +16,7 @@ export default function CartLink({
   return (
     <Link
       href="/cart"
-      className={`${className ?? ""} inline-flex items-center gap-3 text-2xl font-bold`}
+      className={`${className ?? ""} inline-flex items-center gap-2`}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
