@@ -75,6 +75,58 @@ export default async function GalleryPage({
             </p>
           </div>
         </div>
+
+        <div className="mt-8 rounded-xl border border-white/10 bg-white/[0.03] p-5 md:p-7">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
+            INFO
+          </p>
+
+          <div className="mt-5 space-y-4 text-sm leading-7 text-white/70 md:text-base">
+            <p>
+              Všetky fotografie v galérii sú po základnej úprave. Ak máte
+              záujem o{" "}
+              <strong className="font-semibold text-white">
+                individuálnu úpravu konkrétnej fotografie
+              </strong>
+              , kontaktujte ma e-mailom.
+            </p>
+
+            <p>
+              Ak vám nevyhovuje platba cez{" "}
+              <strong className="font-semibold text-white">
+                Revolut
+              </strong>
+              , kontaktujte ma a dohodneme sa na inom spôsobe platby.
+            </p>
+
+            <p>
+              V prípade akýchkoľvek otázok alebo problémov mi neváhajte
+              napísať.{" "}
+              <strong className="font-semibold text-white">
+                Rád vám pomôžem.
+              </strong>
+            </p>
+
+            <div className="border-t border-white/10 pt-4">
+              <p>
+                <span className="text-white/45">E-mail:</span>{" "}
+                <a
+                  href="mailto:moto@ledon.photos"
+                  className="text-white underline underline-offset-4 transition hover:text-white/60"
+                >
+                  moto@ledon.photos
+                </a>
+              </p>
+
+              <p className="mt-2">
+                <span className="text-white/45">WhatsApp:</span>{" "}
+                <span className="text-white/40">
+                  doplníme číslo
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <GalleryLightbox gallery={gallery} />
