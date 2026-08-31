@@ -56,9 +56,9 @@ export default async function GalleryPage({
 
         <div className="mt-5 flex flex-col justify-between gap-6 border-b border-white/15 pb-10 md:flex-row md:items-end">
           <div>
-            <h1 className="text-4xl font-light uppercase tracking-[0.08em] md:text-6xl">
-              {gallery.title}
-            </h1>
+            <h1 className="text-3xl font-light uppercase tracking-[0.08em] md:text-5xl">
+               {gallery.title}
+           </h1>
 
             <p className="mt-4 text-xs uppercase tracking-[0.3em] text-white/50">
               {gallery.date}
