@@ -21,6 +21,623 @@ export type Gallery = {
  */
 export const galleries: Gallery[] = [
   {
+    "slug": "2026-08-30-baba-gp",
+    "title": "Pezinská Baba",
+    "date": "30. 8. 2026",
+    "price": 2,
+    "photos": [
+      {
+        "id": "8F7A1687-1",
+        "customerNumber": 1,
+        "filename": "8F7A1687-1.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1687-1.jpg",
+        "alt": "Pezinská Baba – fotografia č. 1"
+      },
+      {
+        "id": "8F7A1692-2",
+        "customerNumber": 2,
+        "filename": "8F7A1692-2.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1692-2.jpg",
+        "alt": "Pezinská Baba – fotografia č. 2"
+      },
+      {
+        "id": "8F7A1696-3",
+        "customerNumber": 3,
+        "filename": "8F7A1696-3.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1696-3.jpg",
+        "alt": "Pezinská Baba – fotografia č. 3"
+      },
+      {
+        "id": "8F7A1700-4",
+        "customerNumber": 4,
+        "filename": "8F7A1700-4.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1700-4.jpg",
+        "alt": "Pezinská Baba – fotografia č. 4"
+      },
+      {
+        "id": "8F7A1704-5",
+        "customerNumber": 5,
+        "filename": "8F7A1704-5.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1704-5.jpg",
+        "alt": "Pezinská Baba – fotografia č. 5"
+      },
+      {
+        "id": "8F7A1713-6",
+        "customerNumber": 6,
+        "filename": "8F7A1713-6.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1713-6.jpg",
+        "alt": "Pezinská Baba – fotografia č. 6"
+      },
+      {
+        "id": "8F7A1719-7",
+        "customerNumber": 7,
+        "filename": "8F7A1719-7.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1719-7.jpg",
+        "alt": "Pezinská Baba – fotografia č. 7"
+      },
+      {
+        "id": "8F7A1724-8",
+        "customerNumber": 8,
+        "filename": "8F7A1724-8.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1724-8.jpg",
+        "alt": "Pezinská Baba – fotografia č. 8"
+      },
+      {
+        "id": "8F7A1728-9",
+        "customerNumber": 9,
+        "filename": "8F7A1728-9.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1728-9.jpg",
+        "alt": "Pezinská Baba – fotografia č. 9"
+      },
+      {
+        "id": "8F7A1729-10",
+        "customerNumber": 10,
+        "filename": "8F7A1729-10.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1729-10.jpg",
+        "alt": "Pezinská Baba – fotografia č. 10"
+      },
+      {
+        "id": "8F7A1733-11",
+        "customerNumber": 11,
+        "filename": "8F7A1733-11.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1733-11.jpg",
+        "alt": "Pezinská Baba – fotografia č. 11"
+      },
+      {
+        "id": "8F7A1738-12",
+        "customerNumber": 12,
+        "filename": "8F7A1738-12.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1738-12.jpg",
+        "alt": "Pezinská Baba – fotografia č. 12"
+      },
+      {
+        "id": "8F7A1748-13",
+        "customerNumber": 13,
+        "filename": "8F7A1748-13.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1748-13.jpg",
+        "alt": "Pezinská Baba – fotografia č. 13"
+      },
+      {
+        "id": "8F7A1751-14",
+        "customerNumber": 14,
+        "filename": "8F7A1751-14.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1751-14.jpg",
+        "alt": "Pezinská Baba – fotografia č. 14"
+      },
+      {
+        "id": "8F7A1756-15",
+        "customerNumber": 15,
+        "filename": "8F7A1756-15.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1756-15.jpg",
+        "alt": "Pezinská Baba – fotografia č. 15"
+      },
+      {
+        "id": "8F7A1757-16",
+        "customerNumber": 16,
+        "filename": "8F7A1757-16.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1757-16.jpg",
+        "alt": "Pezinská Baba – fotografia č. 16"
+      },
+      {
+        "id": "8F7A1767-17",
+        "customerNumber": 17,
+        "filename": "8F7A1767-17.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1767-17.jpg",
+        "alt": "Pezinská Baba – fotografia č. 17"
+      },
+      {
+        "id": "8F7A1771-18",
+        "customerNumber": 18,
+        "filename": "8F7A1771-18.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1771-18.jpg",
+        "alt": "Pezinská Baba – fotografia č. 18"
+      },
+      {
+        "id": "8F7A1776-19",
+        "customerNumber": 19,
+        "filename": "8F7A1776-19.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1776-19.jpg",
+        "alt": "Pezinská Baba – fotografia č. 19"
+      },
+      {
+        "id": "8F7A1787-20",
+        "customerNumber": 20,
+        "filename": "8F7A1787-20.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1787-20.jpg",
+        "alt": "Pezinská Baba – fotografia č. 20"
+      },
+      {
+        "id": "8F7A1791-21",
+        "customerNumber": 21,
+        "filename": "8F7A1791-21.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1791-21.jpg",
+        "alt": "Pezinská Baba – fotografia č. 21"
+      },
+      {
+        "id": "8F7A1795-22",
+        "customerNumber": 22,
+        "filename": "8F7A1795-22.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1795-22.jpg",
+        "alt": "Pezinská Baba – fotografia č. 22"
+      },
+      {
+        "id": "8F7A1802-23",
+        "customerNumber": 23,
+        "filename": "8F7A1802-23.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1802-23.jpg",
+        "alt": "Pezinská Baba – fotografia č. 23"
+      },
+      {
+        "id": "8F7A1819-24",
+        "customerNumber": 24,
+        "filename": "8F7A1819-24.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1819-24.jpg",
+        "alt": "Pezinská Baba – fotografia č. 24"
+      },
+      {
+        "id": "8F7A1824-25",
+        "customerNumber": 25,
+        "filename": "8F7A1824-25.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1824-25.jpg",
+        "alt": "Pezinská Baba – fotografia č. 25"
+      },
+      {
+        "id": "8F7A1826-26",
+        "customerNumber": 26,
+        "filename": "8F7A1826-26.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1826-26.jpg",
+        "alt": "Pezinská Baba – fotografia č. 26"
+      },
+      {
+        "id": "8F7A1827-27",
+        "customerNumber": 27,
+        "filename": "8F7A1827-27.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1827-27.jpg",
+        "alt": "Pezinská Baba – fotografia č. 27"
+      },
+      {
+        "id": "8F7A1830-28",
+        "customerNumber": 28,
+        "filename": "8F7A1830-28.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1830-28.jpg",
+        "alt": "Pezinská Baba – fotografia č. 28"
+      },
+      {
+        "id": "8F7A1838-29",
+        "customerNumber": 29,
+        "filename": "8F7A1838-29.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1838-29.jpg",
+        "alt": "Pezinská Baba – fotografia č. 29"
+      },
+      {
+        "id": "8F7A1848-30",
+        "customerNumber": 30,
+        "filename": "8F7A1848-30.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1848-30.jpg",
+        "alt": "Pezinská Baba – fotografia č. 30"
+      },
+      {
+        "id": "8F7A1855-31",
+        "customerNumber": 31,
+        "filename": "8F7A1855-31.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1855-31.jpg",
+        "alt": "Pezinská Baba – fotografia č. 31"
+      },
+      {
+        "id": "8F7A1856-32",
+        "customerNumber": 32,
+        "filename": "8F7A1856-32.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1856-32.jpg",
+        "alt": "Pezinská Baba – fotografia č. 32"
+      },
+      {
+        "id": "8F7A1864-33",
+        "customerNumber": 33,
+        "filename": "8F7A1864-33.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1864-33.jpg",
+        "alt": "Pezinská Baba – fotografia č. 33"
+      },
+      {
+        "id": "8F7A1867-34",
+        "customerNumber": 34,
+        "filename": "8F7A1867-34.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1867-34.jpg",
+        "alt": "Pezinská Baba – fotografia č. 34"
+      },
+      {
+        "id": "8F7A1879-35",
+        "customerNumber": 35,
+        "filename": "8F7A1879-35.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1879-35.jpg",
+        "alt": "Pezinská Baba – fotografia č. 35"
+      },
+      {
+        "id": "8F7A1881-36",
+        "customerNumber": 36,
+        "filename": "8F7A1881-36.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1881-36.jpg",
+        "alt": "Pezinská Baba – fotografia č. 36"
+      },
+      {
+        "id": "8F7A1884-37",
+        "customerNumber": 37,
+        "filename": "8F7A1884-37.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1884-37.jpg",
+        "alt": "Pezinská Baba – fotografia č. 37"
+      },
+      {
+        "id": "8F7A1890-38",
+        "customerNumber": 38,
+        "filename": "8F7A1890-38.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1890-38.jpg",
+        "alt": "Pezinská Baba – fotografia č. 38"
+      },
+      {
+        "id": "8F7A1905-39",
+        "customerNumber": 39,
+        "filename": "8F7A1905-39.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1905-39.jpg",
+        "alt": "Pezinská Baba – fotografia č. 39"
+      },
+      {
+        "id": "8F7A1913-40",
+        "customerNumber": 40,
+        "filename": "8F7A1913-40.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1913-40.jpg",
+        "alt": "Pezinská Baba – fotografia č. 40"
+      },
+      {
+        "id": "8F7A1918-41",
+        "customerNumber": 41,
+        "filename": "8F7A1918-41.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1918-41.jpg",
+        "alt": "Pezinská Baba – fotografia č. 41"
+      },
+      {
+        "id": "8F7A1920-42",
+        "customerNumber": 42,
+        "filename": "8F7A1920-42.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1920-42.jpg",
+        "alt": "Pezinská Baba – fotografia č. 42"
+      },
+      {
+        "id": "8F7A1921-43",
+        "customerNumber": 43,
+        "filename": "8F7A1921-43.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1921-43.jpg",
+        "alt": "Pezinská Baba – fotografia č. 43"
+      },
+      {
+        "id": "8F7A1921-44",
+        "customerNumber": 44,
+        "filename": "8F7A1921-44.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1921-44.jpg",
+        "alt": "Pezinská Baba – fotografia č. 44"
+      },
+      {
+        "id": "8F7A1925-45",
+        "customerNumber": 45,
+        "filename": "8F7A1925-45.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1925-45.jpg",
+        "alt": "Pezinská Baba – fotografia č. 45"
+      },
+      {
+        "id": "8F7A1929-46",
+        "customerNumber": 46,
+        "filename": "8F7A1929-46.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1929-46.jpg",
+        "alt": "Pezinská Baba – fotografia č. 46"
+      },
+      {
+        "id": "8F7A1933-47",
+        "customerNumber": 47,
+        "filename": "8F7A1933-47.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1933-47.jpg",
+        "alt": "Pezinská Baba – fotografia č. 47"
+      },
+      {
+        "id": "8F7A1938-48",
+        "customerNumber": 48,
+        "filename": "8F7A1938-48.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1938-48.jpg",
+        "alt": "Pezinská Baba – fotografia č. 48"
+      },
+      {
+        "id": "8F7A1943-49",
+        "customerNumber": 49,
+        "filename": "8F7A1943-49.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1943-49.jpg",
+        "alt": "Pezinská Baba – fotografia č. 49"
+      },
+      {
+        "id": "8F7A1947-50",
+        "customerNumber": 50,
+        "filename": "8F7A1947-50.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1947-50.jpg",
+        "alt": "Pezinská Baba – fotografia č. 50"
+      },
+      {
+        "id": "8F7A1951-51",
+        "customerNumber": 51,
+        "filename": "8F7A1951-51.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1951-51.jpg",
+        "alt": "Pezinská Baba – fotografia č. 51"
+      },
+      {
+        "id": "8F7A1956-52",
+        "customerNumber": 52,
+        "filename": "8F7A1956-52.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1956-52.jpg",
+        "alt": "Pezinská Baba – fotografia č. 52"
+      },
+      {
+        "id": "8F7A1959-53",
+        "customerNumber": 53,
+        "filename": "8F7A1959-53.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1959-53.jpg",
+        "alt": "Pezinská Baba – fotografia č. 53"
+      },
+      {
+        "id": "8F7A1966-54",
+        "customerNumber": 54,
+        "filename": "8F7A1966-54.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1966-54.jpg",
+        "alt": "Pezinská Baba – fotografia č. 54"
+      },
+      {
+        "id": "8F7A1968-55",
+        "customerNumber": 55,
+        "filename": "8F7A1968-55.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1968-55.jpg",
+        "alt": "Pezinská Baba – fotografia č. 55"
+      },
+      {
+        "id": "8F7A1973-56",
+        "customerNumber": 56,
+        "filename": "8F7A1973-56.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1973-56.jpg",
+        "alt": "Pezinská Baba – fotografia č. 56"
+      },
+      {
+        "id": "8F7A1981-57",
+        "customerNumber": 57,
+        "filename": "8F7A1981-57.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A1981-57.jpg",
+        "alt": "Pezinská Baba – fotografia č. 57"
+      },
+      {
+        "id": "8F7A2013-58",
+        "customerNumber": 58,
+        "filename": "8F7A2013-58.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2013-58.jpg",
+        "alt": "Pezinská Baba – fotografia č. 58"
+      },
+      {
+        "id": "8F7A2016-59",
+        "customerNumber": 59,
+        "filename": "8F7A2016-59.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2016-59.jpg",
+        "alt": "Pezinská Baba – fotografia č. 59"
+      },
+      {
+        "id": "8F7A2021-60",
+        "customerNumber": 60,
+        "filename": "8F7A2021-60.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2021-60.jpg",
+        "alt": "Pezinská Baba – fotografia č. 60"
+      },
+      {
+        "id": "8F7A2023-61",
+        "customerNumber": 61,
+        "filename": "8F7A2023-61.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2023-61.jpg",
+        "alt": "Pezinská Baba – fotografia č. 61"
+      },
+      {
+        "id": "8F7A2026-62",
+        "customerNumber": 62,
+        "filename": "8F7A2026-62.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2026-62.jpg",
+        "alt": "Pezinská Baba – fotografia č. 62"
+      },
+      {
+        "id": "8F7A2031-63",
+        "customerNumber": 63,
+        "filename": "8F7A2031-63.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2031-63.jpg",
+        "alt": "Pezinská Baba – fotografia č. 63"
+      },
+      {
+        "id": "8F7A2037-64",
+        "customerNumber": 64,
+        "filename": "8F7A2037-64.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2037-64.jpg",
+        "alt": "Pezinská Baba – fotografia č. 64"
+      },
+      {
+        "id": "8F7A2044-65",
+        "customerNumber": 65,
+        "filename": "8F7A2044-65.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2044-65.jpg",
+        "alt": "Pezinská Baba – fotografia č. 65"
+      },
+      {
+        "id": "8F7A2049-66",
+        "customerNumber": 66,
+        "filename": "8F7A2049-66.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2049-66.jpg",
+        "alt": "Pezinská Baba – fotografia č. 66"
+      },
+      {
+        "id": "8F7A2059-67",
+        "customerNumber": 67,
+        "filename": "8F7A2059-67.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2059-67.jpg",
+        "alt": "Pezinská Baba – fotografia č. 67"
+      },
+      {
+        "id": "8F7A2072-68",
+        "customerNumber": 68,
+        "filename": "8F7A2072-68.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2072-68.jpg",
+        "alt": "Pezinská Baba – fotografia č. 68"
+      },
+      {
+        "id": "8F7A2097-69",
+        "customerNumber": 69,
+        "filename": "8F7A2097-69.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2097-69.jpg",
+        "alt": "Pezinská Baba – fotografia č. 69"
+      },
+      {
+        "id": "8F7A2101-70",
+        "customerNumber": 70,
+        "filename": "8F7A2101-70.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2101-70.jpg",
+        "alt": "Pezinská Baba – fotografia č. 70"
+      },
+      {
+        "id": "8F7A2113-71",
+        "customerNumber": 71,
+        "filename": "8F7A2113-71.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2113-71.jpg",
+        "alt": "Pezinská Baba – fotografia č. 71"
+      },
+      {
+        "id": "8F7A2138-72",
+        "customerNumber": 72,
+        "filename": "8F7A2138-72.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2138-72.jpg",
+        "alt": "Pezinská Baba – fotografia č. 72"
+      },
+      {
+        "id": "8F7A2143-73",
+        "customerNumber": 73,
+        "filename": "8F7A2143-73.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2143-73.jpg",
+        "alt": "Pezinská Baba – fotografia č. 73"
+      },
+      {
+        "id": "8F7A2158-74",
+        "customerNumber": 74,
+        "filename": "8F7A2158-74.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2158-74.jpg",
+        "alt": "Pezinská Baba – fotografia č. 74"
+      },
+      {
+        "id": "8F7A2159-75",
+        "customerNumber": 75,
+        "filename": "8F7A2159-75.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2159-75.jpg",
+        "alt": "Pezinská Baba – fotografia č. 75"
+      },
+      {
+        "id": "8F7A2198-76",
+        "customerNumber": 76,
+        "filename": "8F7A2198-76.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2198-76.jpg",
+        "alt": "Pezinská Baba – fotografia č. 76"
+      },
+      {
+        "id": "8F7A2203-77",
+        "customerNumber": 77,
+        "filename": "8F7A2203-77.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2203-77.jpg",
+        "alt": "Pezinská Baba – fotografia č. 77"
+      },
+      {
+        "id": "8F7A2204-78",
+        "customerNumber": 78,
+        "filename": "8F7A2204-78.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2204-78.jpg",
+        "alt": "Pezinská Baba – fotografia č. 78"
+      },
+      {
+        "id": "8F7A2206-79",
+        "customerNumber": 79,
+        "filename": "8F7A2206-79.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2206-79.jpg",
+        "alt": "Pezinská Baba – fotografia č. 79"
+      },
+      {
+        "id": "8F7A2211-81",
+        "customerNumber": 81,
+        "filename": "8F7A2211-81.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2211-81.jpg",
+        "alt": "Pezinská Baba – fotografia č. 81"
+      },
+      {
+        "id": "8F7A2214-82",
+        "customerNumber": 82,
+        "filename": "8F7A2214-82.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2214-82.jpg",
+        "alt": "Pezinská Baba – fotografia č. 82"
+      },
+      {
+        "id": "8F7A2220-83",
+        "customerNumber": 83,
+        "filename": "8F7A2220-83.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2220-83.jpg",
+        "alt": "Pezinská Baba – fotografia č. 83"
+      },
+      {
+        "id": "8F7A2223-84",
+        "customerNumber": 84,
+        "filename": "8F7A2223-84.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2223-84.jpg",
+        "alt": "Pezinská Baba – fotografia č. 84"
+      },
+      {
+        "id": "8F7A2229-85",
+        "customerNumber": 85,
+        "filename": "8F7A2229-85.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2229-85.jpg",
+        "alt": "Pezinská Baba – fotografia č. 85"
+      },
+      {
+        "id": "8F7A2232-86",
+        "customerNumber": 86,
+        "filename": "8F7A2232-86.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2232-86.jpg",
+        "alt": "Pezinská Baba – fotografia č. 86"
+      },
+      {
+        "id": "8F7A2235-87",
+        "customerNumber": 87,
+        "filename": "8F7A2235-87.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2235-87.jpg",
+        "alt": "Pezinská Baba – fotografia č. 87"
+      },
+      {
+        "id": "8F7A2238-88",
+        "customerNumber": 88,
+        "filename": "8F7A2238-88.jpg",
+        "src": "https://pub-82020269fabb4c89ac7416178b29bf31.r2.dev/2026-08-30-baba-gp/8F7A2238-88.jpg",
+        "alt": "Pezinská Baba – fotografia č. 88"
+      }
+    ]
+  },
+  {
     "slug": "2026-08-29-baba-gp",
     "title": "Pezinská Baba",
     "date": "29. 8. 2026",
