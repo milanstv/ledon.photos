@@ -1,8 +1,11 @@
 "use client";
 
 import Image from "next/image";
+
 import {
+  FormEvent,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -14,21 +17,94 @@ type GalleryLightboxProps = {
   gallery: Gallery;
 };
 
+type TimedPhoto = Gallery["photos"][number] & {
+  takenAt?: string | null;
+};
+
 export default function GalleryLightbox({
   gallery,
 }: GalleryLightboxProps) {
+  const allPhotos =
+    gallery.photos as TimedPhoto[];
+
   const [selectedIndex, setSelectedIndex] =
     useState<number | null>(null);
 
+  const [fromTime, setFromTime] =
+    useState("");
+
+  const [toTime, setToTime] =
+    useState("");
+
+  const [activeFromTime, setActiveFromTime] =
+    useState("");
+
+  const [activeToTime, setActiveToTime] =
+    useState("");
+
+  const hasTimeData = useMemo(
+    () =>
+      allPhotos.some(
+        (photo) =>
+          typeof photo.takenAt === "string" &&
+          photo.takenAt.length === 5,
+      ),
+    [allPhotos],
+  );
+
+  const isTimeFilterActive =
+    activeFromTime !== "" ||
+    activeToTime !== "";
+
+  const visiblePhotos = useMemo(() => {
+    if (!isTimeFilterActive) {
+      return allPhotos;
+    }
+
+    return allPhotos.filter((photo) => {
+      const takenAt = photo.takenAt;
+
+      if (!takenAt) {
+        return false;
+      }
+
+      if (
+        activeFromTime &&
+        takenAt < activeFromTime
+      ) {
+        return false;
+      }
+
+      if (
+        activeToTime &&
+        takenAt > activeToTime
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [
+    allPhotos,
+    activeFromTime,
+    activeToTime,
+    isTimeFilterActive,
+  ]);
+
   const currentPhoto =
     selectedIndex !== null
-      ? gallery.photos[selectedIndex]
+      ? visiblePhotos[selectedIndex]
       : null;
 
-  const isOpen = currentPhoto !== null;
+  const isOpen =
+    currentPhoto !== null &&
+    currentPhoto !== undefined;
 
-  function openPhoto(photoIndex: number) {
-    const photo = gallery.photos[photoIndex];
+  function openPhoto(
+    photoIndex: number,
+  ) {
+    const photo =
+      visiblePhotos[photoIndex];
 
     if (!photo) {
       return;
@@ -61,8 +137,15 @@ export default function GalleryLightbox({
       return;
     }
 
-    const newIndex = selectedIndex - 1;
-    const photo = gallery.photos[newIndex];
+    const newIndex =
+      selectedIndex - 1;
+
+    const photo =
+      visiblePhotos[newIndex];
+
+    if (!photo) {
+      return;
+    }
 
     setSelectedIndex(newIndex);
 
@@ -77,13 +160,20 @@ export default function GalleryLightbox({
     if (
       selectedIndex === null ||
       selectedIndex >=
-        gallery.photos.length - 1
+        visiblePhotos.length - 1
     ) {
       return;
     }
 
-    const newIndex = selectedIndex + 1;
-    const photo = gallery.photos[newIndex];
+    const newIndex =
+      selectedIndex + 1;
+
+    const photo =
+      visiblePhotos[newIndex];
+
+    if (!photo) {
+      return;
+    }
 
     setSelectedIndex(newIndex);
 
@@ -91,6 +181,37 @@ export default function GalleryLightbox({
       null,
       "",
       `/galleries/${gallery.slug}/${photo.id}`,
+    );
+  }
+
+  function handleTimeSearch(
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+
+    setSelectedIndex(null);
+
+    setActiveFromTime(fromTime);
+    setActiveToTime(toTime);
+
+    window.history.replaceState(
+      null,
+      "",
+      `/galleries/${gallery.slug}`,
+    );
+  }
+
+  function clearTimeFilter() {
+    setFromTime("");
+    setToTime("");
+    setActiveFromTime("");
+    setActiveToTime("");
+    setSelectedIndex(null);
+
+    window.history.replaceState(
+      null,
+      "",
+      `/galleries/${gallery.slug}`,
     );
   }
 
@@ -102,7 +223,8 @@ export default function GalleryLightbox({
     const previousOverflow =
       document.body.style.overflow;
 
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow =
+      "hidden";
 
     function handleKeyDown(
       event: KeyboardEvent,
@@ -138,39 +260,148 @@ export default function GalleryLightbox({
 
   return (
     <>
-      <section className="grid grid-cols-1 gap-2 px-2 pb-2 sm:grid-cols-2 xl:grid-cols-4">
-        {gallery.photos.map(
-          (photo, photoIndex) => (
-            <button
-              key={photo.id}
-              type="button"
-              onClick={() =>
-                openPhoto(photoIndex)
-              }
-              className="group relative block aspect-[4/3] overflow-hidden bg-white/5 text-left"
+      {hasTimeData ? (
+        <section className="px-5 pb-10 md:px-10">
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5 md:p-7">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
+              Nájsť fotky podľa času
+            </p>
+
+            <p className="mt-3 text-sm leading-6 text-white/45">
+              Zadajte približný čas, kedy ste
+              prechádzali okolo fotografa.
+            </p>
+
+            <form
+              onSubmit={handleTimeSearch}
+              className="mt-6 flex flex-col gap-4 md:flex-row md:items-end"
             >
-              <Image
-                src={photo.src}
-                alt={photo.alt}
-                fill
-                priority={photoIndex === 0}
-                sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
-                className="object-cover transition duration-500 group-hover:scale-[1.03]"
-              />
+              <label className="flex flex-col gap-2">
+                <span className="text-[10px] uppercase tracking-[0.25em] text-white/45">
+                  Od
+                </span>
 
-              <div className="absolute inset-0 bg-black/10 transition duration-300 group-hover:bg-black/45" />
+                <input
+                  type="time"
+                  value={fromTime}
+                  onChange={(event) =>
+                    setFromTime(
+                      event.target.value,
+                    )
+                  }
+                  className="h-12 rounded-lg border border-white/15 bg-black px-4 text-base text-white outline-none transition focus:border-white/40"
+                />
+              </label>
 
-              <span className="absolute bottom-5 left-5 text-[10px] tracking-[0.25em] text-white/75">
-                {photo.id}
-              </span>
+              <label className="flex flex-col gap-2">
+                <span className="text-[10px] uppercase tracking-[0.25em] text-white/45">
+                  Do
+                </span>
 
-              <span className="absolute inset-0 hidden items-center justify-center text-xs uppercase tracking-[0.3em] text-white opacity-0 transition duration-300 group-hover:opacity-100 sm:flex">
-                Zobraziť fotografiu
-              </span>
+                <input
+                  type="time"
+                  value={toTime}
+                  onChange={(event) =>
+                    setToTime(
+                      event.target.value,
+                    )
+                  }
+                  className="h-12 rounded-lg border border-white/15 bg-black px-4 text-base text-white outline-none transition focus:border-white/40"
+                />
+              </label>
+
+              <button
+                type="submit"
+                className="h-12 rounded-lg bg-white px-7 text-xs font-semibold uppercase tracking-[0.22em] text-black transition hover:bg-white/80"
+              >
+                Vyhľadať
+              </button>
+            </form>
+
+            {isTimeFilterActive ? (
+              <div className="mt-6 border-t border-white/10 pt-5">
+                <p className="text-sm text-white/70">
+                  Nájdených{" "}
+                  <strong className="text-white">
+                    {visiblePhotos.length}
+                  </strong>{" "}
+                  fotografií
+                  {activeFromTime
+                    ? ` od ${activeFromTime}`
+                    : ""}
+                  {activeToTime
+                    ? ` do ${activeToTime}`
+                    : ""}
+                  .
+                </p>
+
+                <button
+                  type="button"
+                  onClick={clearTimeFilter}
+                  className="mt-3 text-xs font-medium uppercase tracking-[0.2em] text-white/55 underline underline-offset-4 transition hover:text-white"
+                >
+                  Zobraziť všetky fotografie
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
+      {visiblePhotos.length > 0 ? (
+        <section className="grid grid-cols-1 gap-2 px-2 pb-2 sm:grid-cols-2 xl:grid-cols-4">
+          {visiblePhotos.map(
+            (photo, photoIndex) => (
+              <button
+                key={photo.id}
+                type="button"
+                onClick={() =>
+                  openPhoto(photoIndex)
+                }
+                className="group relative block aspect-[4/3] overflow-hidden bg-white/5 text-left"
+              >
+                <Image
+                  src={photo.src}
+                  alt={photo.alt}
+                  fill
+                  priority={
+                    photoIndex === 0
+                  }
+                  sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
+                  className="object-cover transition duration-500 group-hover:scale-[1.03]"
+                />
+
+                <div className="absolute inset-0 bg-black/10 transition duration-300 group-hover:bg-black/45" />
+
+                <span className="absolute bottom-5 left-5 text-[10px] tracking-[0.25em] text-white/75">
+                  {photo.id}
+                </span>
+
+                <span className="absolute inset-0 hidden items-center justify-center text-xs uppercase tracking-[0.3em] text-white opacity-0 transition duration-300 group-hover:opacity-100 sm:flex">
+                  Zobraziť fotografiu
+                </span>
+              </button>
+            ),
+          )}
+        </section>
+      ) : (
+        <div className="px-5 pb-16 text-center md:px-10">
+          <div className="border border-white/10 px-6 py-12">
+            <p className="text-lg text-white/70">
+              V zadanom čase sa nenašli
+              žiadne fotografie.
+            </p>
+
+            <button
+              type="button"
+              onClick={clearTimeFilter}
+              className="mt-5 text-xs font-medium uppercase tracking-[0.2em] text-white underline underline-offset-4"
+            >
+              Zobraziť všetky fotografie
             </button>
-          ),
-        )}
-      </section>
+          </div>
+        </div>
+      )}
 
       {isOpen &&
       currentPhoto &&
@@ -194,7 +425,7 @@ export default function GalleryLightbox({
             <div className="flex items-center gap-5 md:gap-8">
               <p className="hidden text-xs uppercase tracking-[0.25em] text-white/45 sm:block">
                 {selectedIndex + 1} /{" "}
-                {gallery.photos.length}
+                {visiblePhotos.length}
               </p>
 
               <CartLink className="text-base font-semibold text-white transition hover:text-white/70 md:text-lg" />
@@ -225,7 +456,9 @@ export default function GalleryLightbox({
             <button
               type="button"
               onClick={showPreviousPhoto}
-              disabled={selectedIndex === 0}
+              disabled={
+                selectedIndex === 0
+              }
               aria-label="Predchádzajúca fotografia"
               className="absolute left-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/55 text-2xl backdrop-blur transition hover:bg-white hover:text-black disabled:hidden md:left-6"
             >
@@ -237,7 +470,7 @@ export default function GalleryLightbox({
               onClick={showNextPhoto}
               disabled={
                 selectedIndex ===
-                gallery.photos.length - 1
+                visiblePhotos.length - 1
               }
               aria-label="Nasledujúca fotografia"
               className="absolute right-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/55 text-2xl backdrop-blur transition hover:bg-white hover:text-black disabled:hidden md:right-6"
@@ -254,6 +487,13 @@ export default function GalleryLightbox({
             <h2 className="mt-6 text-3xl font-light tracking-[0.12em]">
               {currentPhoto.id}
             </h2>
+
+            {currentPhoto.takenAt ? (
+              <p className="mt-4 text-sm text-white/40">
+                Čas fotografie:{" "}
+                {currentPhoto.takenAt}
+              </p>
+            ) : null}
 
             <p className="mt-10 text-4xl font-light">
               {gallery.price} €
