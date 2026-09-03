@@ -12,6 +12,22 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type OrderItem = {
+  itemKey?: string;
+  gallerySlug?: string;
+  galleryTitle?: string;
+  galleryDate?: string;
+
+  photoId: string;
+  filename: string;
+  price: number;
+};
+
+type NormalizedOrderItem = {
+  itemKey: string;
+  gallerySlug: string;
+  galleryTitle: string;
+  galleryDate: string;
+
   photoId: string;
   filename: string;
   price: number;
@@ -21,15 +37,13 @@ type Order = {
   id: string;
   status: string;
 
-  gallerySlug: string;
-  galleryTitle: string;
-  galleryDate: string;
+  gallerySlug?: string;
+  galleryTitle?: string;
+  galleryDate?: string;
 
-  // Staré objednávky
   photoId?: string;
   filename?: string;
 
-  // BETA 2.0
   items?: OrderItem[];
   count?: number;
 
@@ -42,7 +56,9 @@ type Order = {
   expectedAmount?: number;
   receivedAmount?: number;
   paidCount?: number;
+
   paidPhotoIds?: string[];
+  paidItemKeys?: string[];
 
   createdAt: string;
   paidAt: string | null;
@@ -53,6 +69,7 @@ type Order = {
   downloadExpiresAt?: string | null;
 
   downloadedPhotoIds?: string[];
+  downloadedItemKeys?: string[];
 };
 
 function getR2Client() {
@@ -132,23 +149,92 @@ function tokensMatch(
 
 function getOrderItems(
   order: Order,
-): OrderItem[] {
+): NormalizedOrderItem[] {
   if (
     Array.isArray(order.items) &&
     order.items.length > 0
   ) {
-    return order.items;
+    const result:
+      NormalizedOrderItem[] = [];
+
+    for (const item of order.items) {
+      const gallerySlug =
+        item.gallerySlug ??
+        order.gallerySlug ??
+        "";
+
+      const galleryTitle =
+        item.galleryTitle ??
+        order.galleryTitle ??
+        gallerySlug;
+
+      const galleryDate =
+        item.galleryDate ??
+        order.galleryDate ??
+        "";
+
+      if (
+        !gallerySlug ||
+        !item.photoId ||
+        !item.filename ||
+        !Number.isFinite(item.price) ||
+        item.price <= 0
+      ) {
+        continue;
+      }
+
+      result.push({
+        itemKey:
+          item.itemKey ??
+          `${gallerySlug}:${item.photoId}`,
+
+        gallerySlug,
+        galleryTitle,
+        galleryDate,
+
+        photoId:
+          item.photoId,
+
+        filename:
+          item.filename,
+
+        price:
+          item.price,
+      });
+    }
+
+    return result;
   }
 
   if (
     order.photoId &&
-    order.filename
+    order.filename &&
+    order.gallerySlug
   ) {
     return [
       {
-        photoId: order.photoId,
-        filename: order.filename,
-        price: order.price,
+        itemKey:
+          `${order.gallerySlug}:${order.photoId}`,
+
+        gallerySlug:
+          order.gallerySlug,
+
+        galleryTitle:
+          order.galleryTitle ??
+          order.gallerySlug,
+
+        galleryDate:
+          order.galleryDate ??
+          "",
+
+        photoId:
+          order.photoId,
+
+        filename:
+          order.filename,
+
+        price:
+          order.price,
       },
     ];
   }
@@ -158,10 +244,31 @@ function getOrderItems(
 
 function getPaidItems(
   order: Order,
-  items: OrderItem[],
-): OrderItem[] {
+  items: NormalizedOrderItem[],
+): NormalizedOrderItem[] {
   if (
-    Array.isArray(order.paidPhotoIds) &&
+    Array.isArray(
+      order.paidItemKeys,
+    ) &&
+    order.paidItemKeys.length > 0
+  ) {
+    const paidKeys =
+      new Set(
+        order.paidItemKeys,
+      );
+
+    return items.filter(
+      (item) =>
+        paidKeys.has(
+          item.itemKey,
+        ),
+    );
+  }
+
+  if (
+    Array.isArray(
+      order.paidPhotoIds,
+    ) &&
     order.paidPhotoIds.length > 0
   ) {
     const paidIds =
@@ -188,8 +295,6 @@ function getPaidItems(
     );
   }
 
-  // Staré objednávky alebo staré pevné platby
-  // bez paidPhotoIds.
   return items;
 }
 
@@ -208,6 +313,11 @@ export async function GET(
     const token =
       requestUrl.searchParams
         .get("token")
+        ?.trim();
+
+    const requestedItemKey =
+      requestUrl.searchParams
+        .get("itemKey")
         ?.trim();
 
     const requestedPhotoId =
@@ -372,10 +482,19 @@ export async function GET(
     }
 
     let selectedItem:
-      | OrderItem
+      | NormalizedOrderItem
       | undefined;
 
-    if (requestedPhotoId) {
+    if (requestedItemKey) {
+      selectedItem =
+        paidItems.find(
+          (item) =>
+            item.itemKey ===
+            requestedItemKey,
+        );
+    } else if (
+      requestedPhotoId
+    ) {
       selectedItem =
         paidItems.find(
           (item) =>
@@ -385,8 +504,6 @@ export async function GET(
     } else if (
       paidItems.length === 1
     ) {
-      // Spätná kompatibilita
-      // so starými linkami bez photoId.
       selectedItem =
         paidItems[0];
     }
@@ -395,6 +512,7 @@ export async function GET(
       return NextResponse.json(
         {
           error:
+            requestedItemKey ||
             requestedPhotoId
               ? "Táto fotografia nebola zaplatená alebo nie je súčasťou objednávky."
               : "Fotografia sa v objednávke nenašla.",
@@ -406,8 +524,10 @@ export async function GET(
     }
 
     const objectKey =
-      `${order.gallerySlug}/` +
+      `${selectedItem.gallerySlug}/` +
       `${selectedItem.filename}`;
+     
+
 
     const command =
       new GetObjectCommand({
@@ -428,7 +548,22 @@ export async function GET(
         },
       );
 
-    const previousDownloaded =
+    const previousDownloadedItemKeys =
+      Array.isArray(
+        order.downloadedItemKeys,
+      )
+        ? order.downloadedItemKeys
+        : [];
+
+    const downloadedItemKeys =
+      [
+        ...new Set([
+          ...previousDownloadedItemKeys,
+          selectedItem.itemKey,
+        ]),
+      ];
+
+    const previousDownloadedPhotoIds =
       Array.isArray(
         order.downloadedPhotoIds,
       )
@@ -438,7 +573,7 @@ export async function GET(
     const downloadedPhotoIds =
       [
         ...new Set([
-          ...previousDownloaded,
+          ...previousDownloadedPhotoIds,
           selectedItem.photoId,
         ]),
       ];
@@ -446,13 +581,15 @@ export async function GET(
     const allPaidDownloaded =
       paidItems.every(
         (item) =>
-          downloadedPhotoIds.includes(
-            item.photoId,
+          downloadedItemKeys.includes(
+            item.itemKey,
           ),
       );
 
     const updatedOrder: Order = {
       ...order,
+
+      downloadedItemKeys,
 
       downloadedPhotoIds,
 

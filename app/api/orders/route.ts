@@ -14,13 +14,26 @@ import {
 
 export const runtime = "nodejs";
 
+type RequestedItem = {
+  gallerySlug: string;
+  photoId: string;
+};
+
 type CreateOrderRequest = {
+  items?: unknown;
+
+  // Starý formát – ponechávame kvôli kompatibilite.
   gallerySlug?: unknown;
   photoIds?: unknown;
+
   email?: unknown;
 };
 
 type OrderItem = {
+  itemKey: string;
+  gallerySlug: string;
+  galleryTitle: string;
+  galleryDate: string;
   photoId: string;
   filename: string;
   price: number;
@@ -48,8 +61,7 @@ function getR2Client() {
 
   return new S3Client({
     region: "auto",
-    endpoint:
-      `https://${accountId}.r2.cloudflarestorage.com`,
+    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
     credentials: {
       accessKeyId,
       secretAccessKey,
@@ -76,18 +88,171 @@ function escapeHtml(
     .replaceAll("'", "&#039;");
 }
 
+function parseNewItems(
+  value: unknown,
+): RequestedItem[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const items: RequestedItem[] =
+    [];
+
+  for (const rawItem of value) {
+    if (
+      !rawItem ||
+      typeof rawItem !== "object"
+    ) {
+      continue;
+    }
+
+    const item =
+      rawItem as {
+        gallerySlug?: unknown;
+        photoId?: unknown;
+      };
+
+    const gallerySlug =
+      typeof item.gallerySlug ===
+      "string"
+        ? item.gallerySlug.trim()
+        : "";
+
+    const photoId =
+      typeof item.photoId ===
+      "string"
+        ? item.photoId.trim()
+        : "";
+
+    if (
+      !gallerySlug ||
+      !photoId
+    ) {
+      continue;
+    }
+
+    items.push({
+      gallerySlug,
+      photoId,
+    });
+  }
+
+  return items;
+}
+
+function parseLegacyItems(
+  gallerySlugValue: unknown,
+  photoIdsValue: unknown,
+): RequestedItem[] {
+  const gallerySlug =
+    typeof gallerySlugValue ===
+    "string"
+      ? gallerySlugValue.trim()
+      : "";
+
+  if (
+    !gallerySlug ||
+    !Array.isArray(
+      photoIdsValue,
+    )
+  ) {
+    return [];
+  }
+
+  return photoIdsValue
+    .filter(
+      (
+        value,
+      ): value is string =>
+        typeof value ===
+        "string",
+    )
+    .map(
+      (photoId) => ({
+        gallerySlug,
+        photoId:
+          photoId.trim(),
+      }),
+    )
+    .filter(
+      (item) =>
+        Boolean(
+          item.photoId,
+        ),
+    );
+}
+
+function deduplicateItems(
+  items: RequestedItem[],
+) {
+  const result:
+    RequestedItem[] = [];
+
+  const seen =
+    new Set<string>();
+
+  for (const item of items) {
+    const itemKey =
+      `${item.gallerySlug}:${item.photoId}`;
+
+    if (seen.has(itemKey)) {
+      continue;
+    }
+
+    seen.add(itemKey);
+
+    result.push(item);
+  }
+
+  return result;
+}
+
+function getGallerySummary(
+  items: OrderItem[],
+) {
+  const seen =
+    new Set<string>();
+
+  const galleries: {
+    slug: string;
+    title: string;
+    date: string;
+  }[] = [];
+
+  for (const item of items) {
+    if (
+      seen.has(
+        item.gallerySlug,
+      )
+    ) {
+      continue;
+    }
+
+    seen.add(
+      item.gallerySlug,
+    );
+
+    galleries.push({
+      slug:
+        item.gallerySlug,
+      title:
+        item.galleryTitle,
+      date:
+        item.galleryDate,
+    });
+  }
+
+  return galleries;
+}
+
 async function sendOrderEmails({
   orderId,
   customerEmail,
-  galleryTitle,
-  galleryDate,
   items,
   totalPrice,
 }: {
   orderId: string;
   customerEmail: string;
-  galleryTitle: string;
-  galleryDate: string;
   items: OrderItem[];
   totalPrice: number;
 }) {
@@ -117,22 +282,36 @@ async function sendOrderEmails({
       resendApiKey,
     );
 
+  const galleries =
+    getGallerySummary(
+      items,
+    );
+
+  const galleryList =
+    galleries
+      .map(
+        (gallery) =>
+          `${gallery.title} (${gallery.date})`,
+      )
+      .join(", ");
+
   const photoList =
     items
       .map(
         (item) =>
-          item.photoId,
+          `${item.galleryTitle} — ${item.photoId}`,
       )
       .join(", ");
 
-  const safeGalleryTitle =
-    escapeHtml(
-      galleryTitle,
+  const photoLines =
+    items.map(
+      (item) =>
+        `${item.galleryTitle} — ${item.photoId} — ${item.price} €`,
     );
 
-  const safeGalleryDate =
+  const safeGalleryList =
     escapeHtml(
-      galleryDate,
+      galleryList,
     );
 
   const safePhotoList =
@@ -154,21 +333,28 @@ async function sendOrderEmails({
     await resend.emails.send({
       from:
         `LEDON. <${fromEmail}>`,
+
       to: [
         customerEmail,
       ],
+
       replyTo:
         fromEmail,
+
       subject:
         `Objednávka ${items.length} fotografií bola prijatá`,
+
       text: [
         "Dobrý deň,",
         "",
         "vašu objednávku sme prijali.",
         "",
-        `Galéria: ${galleryTitle}`,
+        `Galérie: ${galleryList}`,
         `Počet fotografií: ${items.length}`,
-        `Fotografie: ${photoList}`,
+        "",
+        "Fotografie:",
+        ...photoLines,
+        "",
         `Celková cena: ${totalPrice} €`,
         "",
         "Po prijatí platby vám odošleme e-mail s odkazmi na stiahnutie originálov v plnom rozlíšení.",
@@ -193,20 +379,26 @@ async function sendOrderEmails({
     await resend.emails.send({
       from:
         `LEDON. <${fromEmail}>`,
+
       to: [
         adminEmail,
       ],
+
       replyTo:
         customerEmail,
+
       subject:
         `Nová objednávka – ${items.length} ks – ${totalPrice} €`,
+
       text: [
         "Bola vytvorená nová objednávka.",
         "",
-        `Galéria: ${galleryTitle}`,
-        `Dátum galérie: ${galleryDate}`,
+        `Galérie: ${galleryList}`,
         `Počet fotografií: ${items.length}`,
-        `Fotografie: ${photoList}`,
+        "",
+        "Fotografie:",
+        ...photoLines,
+        "",
         `Celková cena: ${totalPrice} €`,
         `Zákazník: ${customerEmail}`,
         `Objednávka: ${orderId}`,
@@ -233,8 +425,7 @@ async function sendOrderEmails({
               </h1>
 
               <p style="color:#bbbbbb;line-height:1.8;">
-                <strong>Galéria:</strong> ${safeGalleryTitle}<br>
-                <strong>Dátum:</strong> ${safeGalleryDate}<br>
+                <strong>Galérie:</strong> ${safeGalleryList}<br>
                 <strong>Počet:</strong> ${items.length}<br>
                 <strong>Fotografie:</strong> ${safePhotoList}<br>
                 <strong>Cena:</strong> ${totalPrice} €<br>
@@ -271,44 +462,35 @@ export async function POST(
     const body =
       (await request.json()) as CreateOrderRequest;
 
-    const gallerySlug =
-      typeof body.gallerySlug ===
-        "string"
-        ? body.gallerySlug.trim()
-        : "";
-
     const email =
       typeof body.email ===
-        "string"
+      "string"
         ? body.email
             .trim()
             .toLowerCase()
         : "";
 
-    const photoIds =
-      Array.isArray(
+    const newItems =
+      parseNewItems(
+        body.items,
+      );
+
+    const legacyItems =
+      parseLegacyItems(
+        body.gallerySlug,
         body.photoIds,
-      )
-        ? body.photoIds
-            .filter(
-              (
-                value,
-              ): value is string =>
-                typeof value ===
-                "string",
-            )
-            .map(
-              (value) =>
-                value.trim(),
-            )
-            .filter(
-              Boolean,
-            )
-        : [];
+      );
+
+    const requestedItems =
+      deduplicateItems(
+        newItems.length > 0
+          ? newItems
+          : legacyItems,
+      );
 
     if (
-      !gallerySlug ||
-      photoIds.length === 0 ||
+      requestedItems.length ===
+        0 ||
       !email
     ) {
       return NextResponse.json(
@@ -338,63 +520,57 @@ export async function POST(
       );
     }
 
-    const gallery =
-      getGallery(
-        gallerySlug,
-      );
-
-    if (!gallery) {
-      return NextResponse.json(
-        {
-          error:
-            "Galéria sa nenašla.",
-        },
-        {
-          status: 404,
-        },
-      );
-    }
-
-    if (
-      gallery.price !== 2 &&
-      gallery.price !== 4 &&
-      gallery.price !== 5
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "Táto galéria nemá podporovanú cenu.",
-        },
-        {
-          status: 400,
-        },
-      );
-    }
-
-    const uniquePhotoIds = [
-      ...new Set(
-        photoIds,
-      ),
-    ];
-
-    const items: OrderItem[] =
-      [];
+    const items:
+      OrderItem[] = [];
 
     for (
-      const photoId
-      of uniquePhotoIds
+      const requestedItem
+      of requestedItems
     ) {
+      const gallery =
+        getGallery(
+          requestedItem.gallerySlug,
+        );
+
+      if (!gallery) {
+        return NextResponse.json(
+          {
+            error:
+              `Galéria ${requestedItem.gallerySlug} sa nenašla.`,
+          },
+          {
+            status: 404,
+          },
+        );
+      }
+
+      if (
+        gallery.price !== 2 &&
+        gallery.price !== 4 &&
+        gallery.price !== 5
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              `Galéria ${gallery.title} nemá podporovanú cenu.`,
+          },
+          {
+            status: 400,
+          },
+        );
+      }
+
       const photoResult =
         getPhoto(
-          gallerySlug,
-          photoId,
+          requestedItem.gallerySlug,
+          requestedItem.photoId,
         );
 
       if (!photoResult) {
         return NextResponse.json(
           {
             error:
-              `Fotografia ${photoId} sa nenašla.`,
+              `Fotografia ${requestedItem.photoId} sa v galérii ${gallery.title} nenašla.`,
           },
           {
             status: 404,
@@ -403,10 +579,25 @@ export async function POST(
       }
 
       items.push({
-        photoId,
+        itemKey:
+          `${gallery.slug}:${requestedItem.photoId}`,
+
+        gallerySlug:
+          gallery.slug,
+
+        galleryTitle:
+          gallery.title,
+
+        galleryDate:
+          gallery.date,
+
+        photoId:
+          requestedItem.photoId,
+
         filename:
           photoResult.photo
             .filename,
+
         price:
           gallery.price,
       });
@@ -416,36 +607,42 @@ export async function POST(
       items.length;
 
     const totalPrice =
-      count *
-      gallery.price;
+      items.reduce(
+        (sum, item) =>
+          sum + item.price,
+        0,
+      );
 
-    let paymentUrl:
-      | string
-      | undefined;
+    const totalInCents =
+      Math.round(
+        totalPrice * 100,
+      );
 
-    if (
+    const fixedPaymentUrl =
       count <= 20
-    ) {
-      const totalInCents =
-        Math.round(
-          totalPrice *
-            100,
-        );
+        ? process.env[
+            `REVOLUT_PAYMENT_LINK_${totalInCents}`
+          ]
+        : undefined;
 
-      paymentUrl =
-        process.env[
-          `REVOLUT_PAYMENT_LINK_${totalInCents}`
-        ];
-    } else {
-      paymentUrl =
-        process.env
-          .REVOLUT_PAYMENT_LINK_VOLUNTARY;
-    }
+    const voluntaryPaymentUrl =
+      process.env
+        .REVOLUT_PAYMENT_LINK_VOLUNTARY;
+
+    const paymentMode:
+      "fixed" | "manual" =
+      fixedPaymentUrl
+        ? "fixed"
+        : "manual";
+
+    const paymentUrl =
+      fixedPaymentUrl ??
+      voluntaryPaymentUrl;
 
     if (!paymentUrl) {
       throw new Error(
-        count <= 20
-          ? `Chýba Revolut platobný odkaz pre sumu ${totalPrice} €.`
+        fixedPaymentUrl
+          ? "Platobný odkaz sa nepodarilo pripraviť."
           : "Chýba Revolut voluntary platobný odkaz.",
       );
     }
@@ -467,6 +664,29 @@ export async function POST(
       new Date()
         .toISOString();
 
+    const galleries =
+      getGallerySummary(
+        items,
+      );
+
+    const firstGallery =
+      galleries[0];
+
+    const allPrices =
+      items.map(
+        (item) =>
+          item.price,
+      );
+
+    const unitPrice =
+      allPrices.every(
+        (price) =>
+          price ===
+          allPrices[0],
+      )
+        ? allPrices[0]
+        : undefined;
+
     const order = {
       id:
         orderId,
@@ -474,13 +694,18 @@ export async function POST(
       status:
         "waiting_payment",
 
-      gallerySlug,
+      // Ponechávame kvôli kompatibilite so starými časťami systému.
+      // Pri novej multi-gallery objednávke je to prvá galéria.
+      gallerySlug:
+        firstGallery.slug,
 
       galleryTitle:
-        gallery.title,
+        firstGallery.title,
 
       galleryDate:
-        gallery.date,
+        firstGallery.date,
+
+      galleries,
 
       items,
 
@@ -491,16 +716,17 @@ export async function POST(
       price:
         totalPrice,
 
-      unitPrice:
-        gallery.price,
+      ...(unitPrice !==
+      undefined
+        ? {
+            unitPrice,
+          }
+        : {}),
 
       currency:
         "EUR",
 
-      paymentMode:
-        count <= 20
-          ? "fixed"
-          : "manual",
+      paymentMode,
 
       expectedAmount:
         totalPrice,
@@ -518,6 +744,9 @@ export async function POST(
         null,
 
       downloadedPhotoIds:
+        [],
+
+      downloadedItemKeys:
         [],
     };
 
@@ -557,12 +786,6 @@ export async function POST(
         customerEmail:
           email,
 
-        galleryTitle:
-          gallery.title,
-
-        galleryDate:
-          gallery.date,
-
         items,
 
         totalPrice,
@@ -585,15 +808,16 @@ export async function POST(
 
       count,
 
-      unitPrice:
-        gallery.price,
-
       totalPrice,
 
-      paymentMode:
-        count <= 20
-          ? "fixed"
-          : "manual",
+      paymentMode,
+
+      ...(unitPrice !==
+      undefined
+        ? {
+            unitPrice,
+          }
+        : {}),
     });
   } catch (
     error

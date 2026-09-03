@@ -30,18 +30,13 @@ export default function CartPage() {
   const [errorMessage, setErrorMessage] =
     useState("");
 
-  const gallerySlug =
-    items.length > 0
-      ? items[0].gallerySlug
-      : null;
-
-  const galleryTitle =
-    items.length > 0
-      ? items[0].galleryTitle
-      : null;
-
-  const isManualPayment =
-    count > 20;
+  const galleryCount =
+    new Set(
+      items.map(
+        (item) =>
+          item.gallerySlug,
+      ),
+    ).size;
 
   async function handleCheckout(
     event: FormEvent<HTMLFormElement>,
@@ -50,7 +45,7 @@ export default function CartPage() {
 
     setErrorMessage("");
 
-    if (!gallerySlug) {
+    if (items.length === 0) {
       setErrorMessage(
         "Košík je prázdny.",
       );
@@ -86,13 +81,15 @@ export default function CartPage() {
             },
 
             body: JSON.stringify({
-              gallerySlug,
+              items: items.map(
+                (item) => ({
+                  gallerySlug:
+                    item.gallerySlug,
 
-              photoIds:
-                items.map(
-                  (item) =>
+                  photoId:
                     item.photoId,
-                ),
+                }),
+              ),
 
               email:
                 email.trim(),
@@ -140,14 +137,10 @@ export default function CartPage() {
         </Link>
 
         <Link
-          href={
-            gallerySlug
-              ? `/galleries/${gallerySlug}`
-              : "/"
-          }
+          href="/"
           className="text-[10px] uppercase tracking-[0.3em] text-white/60 transition hover:text-white md:text-xs"
         >
-          ← Späť
+          ← Galérie
         </Link>
       </header>
 
@@ -163,9 +156,11 @@ export default function CartPage() {
                 Košík
               </h1>
 
-              {galleryTitle ? (
+              {count > 0 ? (
                 <p className="mt-4 text-xs uppercase tracking-[0.25em] text-white/45">
-                  {galleryTitle}
+                  {galleryCount === 1
+                    ? "1 galéria"
+                    : `${galleryCount} galérie`}
                 </p>
               ) : null}
             </div>
@@ -201,52 +196,70 @@ export default function CartPage() {
           <div className="grid gap-12 pt-10 lg:grid-cols-[1fr_360px]">
             <div>
               <div className="divide-y divide-white/10 border-t border-white/10">
-                {items.map((item) => (
-                  <div
-                    key={`${item.gallerySlug}-${item.photoId}`}
-                    className="flex items-center gap-4 py-5 md:gap-7 md:py-7"
-                  >
-                    <div className="relative h-24 w-32 shrink-0 overflow-hidden bg-white/5 sm:h-28 sm:w-40 md:h-32 md:w-48">
-                      <Image
-                        src={item.photoSrc}
-                        alt={item.photoId}
-                        fill
-                        sizes="192px"
-                        className="object-cover"
-                      />
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-base tracking-[0.12em] md:text-xl">
-                        {item.photoId}
-                      </p>
-
-                      <p className="mt-3 text-xl font-light">
-                        {item.price} €
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        removeItem(
-                          item.photoId,
-                        )
-                      }
-                      disabled={
-                        isLoading
-                      }
-                      className="shrink-0 border border-white/20 px-4 py-3 text-[10px] uppercase tracking-[0.18em] text-white/60 transition hover:border-white hover:bg-white hover:text-black disabled:opacity-40"
+                {items.map(
+                  (item) => (
+                    <div
+                      key={`${item.gallerySlug}-${item.photoId}`}
+                      className="flex items-center gap-4 py-5 md:gap-7 md:py-7"
                     >
-                      Odobrať
-                    </button>
-                  </div>
-                ))}
+                      <div className="relative h-24 w-32 shrink-0 overflow-hidden bg-white/5 sm:h-28 sm:w-40 md:h-32 md:w-48">
+                        <Image
+                          src={
+                            item.photoSrc
+                          }
+                          alt={
+                            item.photoId
+                          }
+                          fill
+                          sizes="192px"
+                          className="object-cover"
+                        />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-base tracking-[0.12em] md:text-xl">
+                          {
+                            item.photoId
+                          }
+                        </p>
+
+                        <p className="mt-2 truncate text-[10px] uppercase tracking-[0.2em] text-white/40">
+                          {
+                            item.galleryTitle
+                          }
+                        </p>
+
+                        <p className="mt-3 text-xl font-light">
+                          {
+                            item.price
+                          }{" "}
+                          €
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          removeItem(
+                            item.gallerySlug,
+                            item.photoId,
+                          )
+                        }
+                        disabled={
+                          isLoading
+                        }
+                        className="shrink-0 border border-white/20 px-4 py-3 text-[10px] uppercase tracking-[0.18em] text-white/60 transition hover:border-white hover:bg-white hover:text-black disabled:opacity-40"
+                      >
+                        Odobrať
+                      </button>
+                    </div>
+                  ),
+                )}
               </div>
 
               <div className="mt-8 flex flex-col gap-4 border-t border-white/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
                 <Link
-                  href={`/galleries/${gallerySlug}`}
+                  href="/"
                   className="border border-white/25 px-6 py-4 text-center text-[10px] uppercase tracking-[0.22em] text-white/75 transition hover:border-white hover:text-white"
                 >
                   ← Pokračovať vo výbere
@@ -291,29 +304,6 @@ export default function CartPage() {
                   {total} €
                 </span>
               </div>
-
-              {isManualPayment ? (
-                <div className="mt-6 border border-yellow-400/50 bg-yellow-400/10 p-5">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-yellow-300">
-                    Dôležité
-                  </p>
-
-                  <p className="mt-4 text-sm leading-6 text-white/70">
-                    V Revolute zadajte
-                    presne túto sumu:
-                  </p>
-
-                  <p className="mt-3 text-4xl font-semibold text-white">
-                    {total} €
-                  </p>
-
-                  <p className="mt-4 text-xs leading-6 text-white/45">
-                    Pri objednávke nad
-                    20 fotografií sa suma
-                    zadáva ručne.
-                  </p>
-                </div>
-              ) : null}
 
               <form
                 onSubmit={
@@ -377,7 +367,9 @@ export default function CartPage() {
 
                 {errorMessage ? (
                   <p className="mt-5 text-sm leading-6 text-red-400">
-                    {errorMessage}
+                    {
+                      errorMessage
+                    }
                   </p>
                 ) : null}
 
@@ -390,9 +382,7 @@ export default function CartPage() {
                 >
                   {isLoading
                     ? "Vytváram objednávku..."
-                    : isManualPayment
-                      ? `Zaplatiť ${total} € cez Revolut`
-                      : "Zaplatiť cez Revolut"}
+                    : `Zaplatiť ${total} € cez Revolut`}
                 </button>
               </form>
 

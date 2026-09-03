@@ -12,8 +12,44 @@ type OrderActionsProps = {
 
   paymentMode?: "fixed" | "manual";
   expectedAmount?: number;
-  unitPrice?: number;
+  itemPrices: number[];
 };
+
+function calculatePaidCount(
+  itemPrices: number[],
+  receivedAmount: number,
+) {
+  let usedAmount = 0;
+  let paidCount = 0;
+
+  for (const price of itemPrices) {
+    if (
+      !Number.isFinite(price) ||
+      price <= 0
+    ) {
+      continue;
+    }
+
+    const nextAmount =
+      usedAmount +
+      price;
+
+    if (
+      nextAmount >
+      receivedAmount +
+        0.000001
+    ) {
+      break;
+    }
+
+    usedAmount =
+      nextAmount;
+
+    paidCount += 1;
+  }
+
+  return paidCount;
+}
 
 export default function OrderActions({
   orderId,
@@ -23,23 +59,36 @@ export default function OrderActions({
   count,
   paymentMode,
   expectedAmount,
-  unitPrice,
+  itemPrices,
 }: OrderActionsProps) {
-  const router = useRouter();
+  const router =
+    useRouter();
 
-  const [receivedAmount, setReceivedAmount] =
+  const [
+    receivedAmount,
+    setReceivedAmount,
+  ] =
     useState(
       expectedAmount?.toString() ??
         "",
     );
 
-  const [isLoading, setIsLoading] =
+  const [
+    isLoading,
+    setIsLoading,
+  ] =
     useState(false);
 
-  const [errorMessage, setErrorMessage] =
+  const [
+    errorMessage,
+    setErrorMessage,
+  ] =
     useState("");
 
-  const [successMessage, setSuccessMessage] =
+  const [
+    successMessage,
+    setSuccessMessage,
+  ] =
     useState("");
 
   const isManual =
@@ -55,26 +104,21 @@ export default function OrderActions({
 
   const calculatedPaidCount =
     isManual &&
-    unitPrice &&
     Number.isFinite(
       receivedNumber,
     )
-      ? Math.min(
-          count,
-          Math.max(
-            0,
-            Math.floor(
-              (receivedNumber +
-                0.000001) /
-                unitPrice,
-            ),
-          ),
+      ? calculatePaidCount(
+          itemPrices,
+          receivedNumber,
         )
       : count;
 
   const unpaidCount =
-    count -
-    calculatedPaidCount;
+    Math.max(
+      0,
+      count -
+        calculatedPaidCount,
+    );
 
   async function confirmPayment() {
     if (
@@ -87,6 +131,7 @@ export default function OrderActions({
       setErrorMessage(
         "Zadaj skutočne prijatú sumu.",
       );
+
       return;
     }
 
@@ -355,8 +400,12 @@ export default function OrderActions({
       {status === "paid" ? (
         <button
           type="button"
-          onClick={sendOriginal}
-          disabled={isLoading}
+          onClick={
+            sendOriginal
+          }
+          disabled={
+            isLoading
+          }
           className="whitespace-nowrap bg-white px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-black transition hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isLoading
@@ -370,8 +419,12 @@ export default function OrderActions({
       {status === "sent" ? (
         <button
           type="button"
-          onClick={sendOriginal}
-          disabled={isLoading}
+          onClick={
+            sendOriginal
+          }
+          disabled={
+            isLoading
+          }
           className="whitespace-nowrap bg-white px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-black transition hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isLoading
@@ -383,15 +436,18 @@ export default function OrderActions({
       {status ===
       "downloaded" ? (
         <p className="whitespace-nowrap text-[10px] uppercase tracking-[0.22em] text-white/45">
-          Originály boli
-          stiahnuté
+          Originály boli stiahnuté
         </p>
       ) : null}
 
       <button
         type="button"
-        onClick={deleteOrder}
-        disabled={isLoading}
+        onClick={
+          deleteOrder
+        }
+        disabled={
+          isLoading
+        }
         className="whitespace-nowrap border border-red-500/40 px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-red-400 transition hover:border-red-400 hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
       >
         Vymazať
@@ -405,9 +461,14 @@ function ActionContainer({
   errorMessage,
   successMessage,
 }: {
-  children: React.ReactNode;
-  errorMessage: string;
-  successMessage: string;
+  children:
+    React.ReactNode;
+
+  errorMessage:
+    string;
+
+  successMessage:
+    string;
 }) {
   return (
     <div className="flex flex-col items-start gap-3">

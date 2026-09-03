@@ -20,31 +20,58 @@ type CartContextType = {
   count: number;
   total: number;
   addItem: (item: CartItem) => boolean;
-  removeItem: (photoId: string) => void;
+  removeItem: (
+    gallerySlug: string,
+    photoId: string,
+  ) => void;
   clearCart: () => void;
-  isInCart: (photoId: string) => boolean;
+  isInCart: (
+    gallerySlug: string,
+    photoId: string,
+  ) => boolean;
 };
 
-const CartContext = createContext<CartContextType | null>(null);
+const CartContext =
+  createContext<CartContextType | null>(
+    null,
+  );
 
 const STORAGE_KEY = "ledon-cart";
-const CART_EVENT = "ledon-cart-change";
+const CART_EVENT =
+  "ledon-cart-change";
 const EMPTY_CART = "[]";
 
-function subscribe(callback: () => void) {
-  window.addEventListener(CART_EVENT, callback);
-  window.addEventListener("storage", callback);
+function subscribe(
+  callback: () => void,
+) {
+  window.addEventListener(
+    CART_EVENT,
+    callback,
+  );
+
+  window.addEventListener(
+    "storage",
+    callback,
+  );
 
   return () => {
-    window.removeEventListener(CART_EVENT, callback);
-    window.removeEventListener("storage", callback);
+    window.removeEventListener(
+      CART_EVENT,
+      callback,
+    );
+
+    window.removeEventListener(
+      "storage",
+      callback,
+    );
   };
 }
 
 function getSnapshot() {
   return (
-    window.localStorage.getItem(STORAGE_KEY) ??
-    EMPTY_CART
+    window.localStorage.getItem(
+      STORAGE_KEY,
+    ) ?? EMPTY_CART
   );
 }
 
@@ -52,21 +79,55 @@ function getServerSnapshot() {
   return EMPTY_CART;
 }
 
-function parseItems(value: string): CartItem[] {
+function isValidCartItem(
+  value: unknown,
+): value is CartItem {
+  if (
+    !value ||
+    typeof value !== "object"
+  ) {
+    return false;
+  }
+
+  const item =
+    value as Partial<CartItem>;
+
+  return (
+    typeof item.gallerySlug ===
+      "string" &&
+    typeof item.galleryTitle ===
+      "string" &&
+    typeof item.photoId ===
+      "string" &&
+    typeof item.photoSrc ===
+      "string" &&
+    typeof item.price === "number" &&
+    Number.isFinite(item.price)
+  );
+}
+
+function parseItems(
+  value: string,
+): CartItem[] {
   try {
-    const parsed = JSON.parse(value);
+    const parsed =
+      JSON.parse(value);
 
     if (!Array.isArray(parsed)) {
       return [];
     }
 
-    return parsed;
+    return parsed.filter(
+      isValidCartItem,
+    );
   } catch {
     return [];
   }
 }
 
-function saveItems(items: CartItem[]) {
+function saveItems(
+  items: CartItem[],
+) {
   window.localStorage.setItem(
     STORAGE_KEY,
     JSON.stringify(items),
@@ -77,32 +138,45 @@ function saveItems(items: CartItem[]) {
   );
 }
 
+function isSameItem(
+  first: CartItem,
+  gallerySlug: string,
+  photoId: string,
+) {
+  return (
+    first.gallerySlug ===
+      gallerySlug &&
+    first.photoId === photoId
+  );
+}
+
 export function CartProvider({
   children,
 }: {
   children: ReactNode;
 }) {
-  const storedCart = useSyncExternalStore(
-    subscribe,
-    getSnapshot,
-    getServerSnapshot,
-  );
-
-  const items = parseItems(storedCart);
-
-  function addItem(item: CartItem) {
-    if (
-      items.length > 0 &&
-      items[0].gallerySlug !== item.gallerySlug
-    ) {
-      return false;
-    }
-
-    const alreadyExists = items.some(
-      (cartItem) =>
-        cartItem.gallerySlug === item.gallerySlug &&
-        cartItem.photoId === item.photoId,
+  const storedCart =
+    useSyncExternalStore(
+      subscribe,
+      getSnapshot,
+      getServerSnapshot,
     );
+
+  const items =
+    parseItems(storedCart);
+
+  function addItem(
+    item: CartItem,
+  ) {
+    const alreadyExists =
+      items.some(
+        (cartItem) =>
+          isSameItem(
+            cartItem,
+            item.gallerySlug,
+            item.photoId,
+          ),
+      );
 
     if (alreadyExists) {
       return true;
@@ -116,10 +190,18 @@ export function CartProvider({
     return true;
   }
 
-  function removeItem(photoId: string) {
+  function removeItem(
+    gallerySlug: string,
+    photoId: string,
+  ) {
     saveItems(
       items.filter(
-        (item) => item.photoId !== photoId,
+        (item) =>
+          !isSameItem(
+            item,
+            gallerySlug,
+            photoId,
+          ),
       ),
     );
   }
@@ -128,18 +210,29 @@ export function CartProvider({
     saveItems([]);
   }
 
-  function isInCart(photoId: string) {
+  function isInCart(
+    gallerySlug: string,
+    photoId: string,
+  ) {
     return items.some(
-      (item) => item.photoId === photoId,
+      (item) =>
+        isSameItem(
+          item,
+          gallerySlug,
+          photoId,
+        ),
     );
   }
 
-  const count = items.length;
+  const count =
+    items.length;
 
-  const total = items.reduce(
-    (sum, item) => sum + item.price,
-    0,
-  );
+  const total =
+    items.reduce(
+      (sum, item) =>
+        sum + item.price,
+      0,
+    );
 
   return (
     <CartContext.Provider
@@ -159,7 +252,8 @@ export function CartProvider({
 }
 
 export function useCart() {
-  const context = useContext(CartContext);
+  const context =
+    useContext(CartContext);
 
   if (!context) {
     throw new Error(

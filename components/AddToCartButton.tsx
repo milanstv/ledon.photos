@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
 import { useCart } from "@/components/CartProvider";
 
 type AddToCartButtonProps = {
@@ -27,31 +25,27 @@ export default function AddToCartButton({
     isInCart,
   } = useCart();
 
-  const [error, setError] = useState("");
-
-  const inCart = isInCart(photoId);
+  const inCart = isInCart(
+    gallerySlug,
+    photoId,
+  );
 
   function handleClick() {
-    setError("");
-
     if (inCart) {
-      removeItem(photoId);
+      removeItem(
+        gallerySlug,
+        photoId,
+      );
       return;
     }
 
-    const added = addItem({
+    addItem({
       gallerySlug,
       galleryTitle,
       photoId,
       photoSrc,
       price,
     });
-
-    if (!added) {
-      setError(
-        "Košík už obsahuje fotografie z inej galérie.",
-      );
-    }
   }
 
   return (
@@ -65,12 +59,6 @@ export default function AddToCartButton({
           ? "Odobrať z košíka"
           : "Pridať do košíka"}
       </button>
-
-      {error ? (
-        <p className="mt-3 text-xs leading-5 text-red-400">
-          {error}
-        </p>
-      ) : null}
     </div>
   );
 }

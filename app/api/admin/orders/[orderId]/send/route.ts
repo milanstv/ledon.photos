@@ -17,6 +17,22 @@ type RouteContext = {
 };
 
 type OrderItem = {
+  itemKey?: string;
+  gallerySlug?: string;
+  galleryTitle?: string;
+  galleryDate?: string;
+
+  photoId: string;
+  filename: string;
+  price: number;
+};
+
+type NormalizedOrderItem = {
+  itemKey: string;
+  gallerySlug: string;
+  galleryTitle: string;
+  galleryDate: string;
+
   photoId: string;
   filename: string;
   price: number;
@@ -26,15 +42,13 @@ type Order = {
   id: string;
   status: string;
 
-  gallerySlug: string;
+  gallerySlug?: string;
   galleryTitle?: string;
   galleryDate?: string;
 
-  // Staré objednávky
   photoId?: string;
   filename?: string;
 
-  // BETA 2.0
   items?: OrderItem[];
   count?: number;
 
@@ -47,7 +61,9 @@ type Order = {
   expectedAmount?: number;
   receivedAmount?: number;
   paidCount?: number;
+
   paidPhotoIds?: string[];
+  paidItemKeys?: string[];
 
   createdAt: string;
   paidAt: string | null;
@@ -59,6 +75,7 @@ type Order = {
   resendEmailId?: string | null;
 
   downloadedPhotoIds?: string[];
+  downloadedItemKeys?: string[];
 };
 
 function getR2Client() {
@@ -84,7 +101,8 @@ function getR2Client() {
   return new S3Client({
     region: "auto",
     endpoint:
-      `https://${accountId}.r2.cloudflarestorage.com`,
+      `https://${accountId}` +
+      ".r2.cloudflarestorage.com",
     credentials: {
       accessKeyId,
       secretAccessKey,
@@ -104,19 +122,7 @@ function createTokenHash(
 function escapeHtml(
   value: unknown,
 ) {
-  const text =
-    String(value ?? "");
-
-  console.log(
-    "ESCAPE DEBUG",
-    {
-      value,
-      type: typeof value,
-      text,
-    },
-  );
-
-  return text
+  return String(value ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
@@ -126,30 +132,92 @@ function escapeHtml(
 
 function getOrderItems(
   order: Order,
-): OrderItem[] {
+): NormalizedOrderItem[] {
   if (
     Array.isArray(order.items) &&
     order.items.length > 0
   ) {
-    return order.items.filter(
-      (item) =>
-        Boolean(
-          item &&
-            typeof item.photoId === "string" &&
-            typeof item.filename === "string",
-        ),
-    );
+    const result:
+      NormalizedOrderItem[] = [];
+
+    for (const item of order.items) {
+      const gallerySlug =
+        item.gallerySlug ??
+        order.gallerySlug ??
+        "";
+
+      const galleryTitle =
+        item.galleryTitle ??
+        order.galleryTitle ??
+        gallerySlug;
+
+      const galleryDate =
+        item.galleryDate ??
+        order.galleryDate ??
+        "";
+
+      if (
+        !gallerySlug ||
+        !item.photoId ||
+        !item.filename ||
+        !Number.isFinite(item.price) ||
+        item.price <= 0
+      ) {
+        continue;
+      }
+
+      result.push({
+        itemKey:
+          item.itemKey ??
+          `${gallerySlug}:${item.photoId}`,
+
+        gallerySlug,
+        galleryTitle,
+        galleryDate,
+
+        photoId:
+          item.photoId,
+
+        filename:
+          item.filename,
+
+        price:
+          item.price,
+      });
+    }
+
+    return result;
   }
 
   if (
     order.photoId &&
-    order.filename
+    order.filename &&
+    order.gallerySlug
   ) {
     return [
       {
-        photoId: order.photoId,
-        filename: order.filename,
-        price: order.price,
+        itemKey:
+          `${order.gallerySlug}:${order.photoId}`,
+
+        gallerySlug:
+          order.gallerySlug,
+
+        galleryTitle:
+          order.galleryTitle ??
+          order.gallerySlug,
+
+        galleryDate:
+          order.galleryDate ??
+          "",
+
+        photoId:
+          order.photoId,
+
+        filename:
+          order.filename,
+
+        price:
+          order.price,
       },
     ];
   }
@@ -159,14 +227,32 @@ function getOrderItems(
 
 function getPaidItems(
   order: Order,
-  items: OrderItem[],
-): OrderItem[] {
+  items: NormalizedOrderItem[],
+): NormalizedOrderItem[] {
+  if (
+    Array.isArray(
+      order.paidItemKeys,
+    ) &&
+    order.paidItemKeys.length > 0
+  ) {
+    const paidKeys =
+      new Set(
+        order.paidItemKeys,
+      );
+
+    return items.filter(
+      (item) =>
+        paidKeys.has(
+          item.itemKey,
+        ),
+    );
+  }
+
   if (
     Array.isArray(
       order.paidPhotoIds,
     ) &&
-    order.paidPhotoIds.length >
-      0
+    order.paidPhotoIds.length > 0
   ) {
     const paidIds =
       new Set(
@@ -192,8 +278,25 @@ function getPaidItems(
     );
   }
 
-  // Pevné platby a staré objednávky.
   return items;
+}
+
+function getGalleryNames(
+  items: NormalizedOrderItem[],
+) {
+  const names =
+    new Set<string>();
+
+  for (const item of items) {
+    names.add(
+      item.galleryTitle ||
+        item.gallerySlug,
+    );
+  }
+
+  return [
+    ...names,
+  ];
 }
 
 export async function POST(
@@ -281,28 +384,6 @@ export async function POST(
         content,
       ) as Order;
 
-    console.log(
-      "SEND ORDER DEBUG",
-      {
-        id: order.id,
-        status: order.status,
-        gallerySlug:
-          order.gallerySlug,
-        galleryTitle:
-          order.galleryTitle,
-        email: order.email,
-        price: order.price,
-        count: order.count,
-        paymentMode:
-          order.paymentMode,
-        paidCount:
-          order.paidCount,
-        paidPhotoIds:
-          order.paidPhotoIds,
-        items: order.items,
-      },
-    );
-
     if (
       order.status !== "paid" &&
       order.status !== "sent" &&
@@ -329,22 +410,6 @@ export async function POST(
         {
           error:
             "Objednávka nemá platný e-mail.",
-        },
-        {
-          status: 400,
-        },
-      );
-    }
-
-    if (
-      !order.gallerySlug ||
-      typeof order.gallerySlug !==
-        "string"
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "Objednávka nemá platnú galériu.",
         },
         {
           status: 400,
@@ -387,20 +452,6 @@ export async function POST(
       );
     }
 
-    console.log(
-      "SEND PAID ITEMS DEBUG",
-      paidItems.map(
-        (item) => ({
-          photoId:
-            item.photoId,
-          filename:
-            item.filename,
-          price:
-            item.price,
-        }),
-      ),
-    );
-
     const token =
       crypto
         .randomBytes(32)
@@ -429,7 +480,7 @@ export async function POST(
           const url =
             `${origin}/api/download` +
             `?orderId=${encodeURIComponent(orderId)}` +
-            `&photoId=${encodeURIComponent(item.photoId)}` +
+            `&itemKey=${encodeURIComponent(item.itemKey)}` +
             `&token=${encodeURIComponent(token)}`;
 
           return {
@@ -439,31 +490,11 @@ export async function POST(
         },
       );
 
-    console.log(
-      "SEND LINKS DEBUG",
-      downloadLinks.map(
-        (item) => ({
-          photoId:
-            item.photoId,
-          filename:
-            item.filename,
-          url:
-            item.url,
-        }),
-      ),
-    );
-
-    const safeGalleryTitle =
-      escapeHtml(
-        order.galleryTitle ??
-          order.gallerySlug,
-      );
-
     const textPhotoList =
       downloadLinks
         .map(
           (item) =>
-            `${item.photoId}: ${item.url}`,
+            `${item.galleryTitle} — ${item.photoId}: ${item.url}`,
         )
         .join("\n");
 
@@ -475,6 +506,11 @@ export async function POST(
               item.photoId,
             );
 
+          const safeGalleryTitle =
+            escapeHtml(
+              item.galleryTitle,
+            );
+
           const safeUrl =
             escapeHtml(
               item.url,
@@ -482,6 +518,17 @@ export async function POST(
 
           return `
             <div style="margin-top:14px;">
+              <p
+                style="
+                  margin:0 0 7px;
+                  color:#888888;
+                  font-size:11px;
+                  line-height:1.5;
+                "
+              >
+                ${safeGalleryTitle}
+              </p>
+
               <a
                 href="${safeUrl}"
                 style="display:block;background:#ffffff;color:#000000;text-decoration:none;text-align:center;padding:18px 24px;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;"
@@ -500,34 +547,30 @@ export async function POST(
           paidItems.length,
       );
 
+    const galleryNames =
+      getGalleryNames(
+        paidItems,
+      );
+
+    const galleryText =
+      galleryNames.join(
+        ", ",
+      );
+
+    const safeGalleryText =
+      escapeHtml(
+        galleryText,
+      );
+
     const resend =
       new Resend(
         resendApiKey,
       );
 
-    const galleryTitle =
-      order.galleryTitle ??
-      order.gallerySlug;
-
     const subject =
       paidItems.length === 1
         ? `Vaša fotografia ${paidItems[0].photoId} je pripravená`
         : `Vašich ${paidItems.length} fotografií je pripravených`;
-
-    console.log(
-      "SEND RESEND DEBUG",
-      {
-        from:
-          `LEDON. <${fromEmail}>`,
-        to:
-          order.email,
-        subject,
-        galleryTitle,
-        paidItems:
-          paidItems.length,
-        unpaidCount,
-      },
-    );
 
     const {
       data: emailData,
@@ -552,7 +595,7 @@ export async function POST(
             "",
             "ďakujeme za váš nákup.",
             "",
-            `Galéria: ${galleryTitle}`,
+            `Galérie: ${galleryText}`,
             `Zaplatených fotografií: ${paidItems.length}`,
 
             unpaidCount > 0
@@ -674,7 +717,7 @@ export async function POST(
                                     font-size:13px;
                                   "
                                 >
-                                  Galéria
+                                  Galérie
                                 </td>
 
                                 <td
@@ -685,7 +728,7 @@ export async function POST(
                                     font-size:15px;
                                   "
                                 >
-                                  ${safeGalleryTitle}
+                                  ${safeGalleryText}
                                 </td>
                               </tr>
 
@@ -713,8 +756,7 @@ export async function POST(
                               </tr>
 
                               ${
-                                unpaidCount >
-                                0
+                                unpaidCount > 0
                                   ? `
                                     <tr>
                                       <td
@@ -834,34 +876,36 @@ export async function POST(
       );
     }
 
-    const updatedOrder: Order =
-      {
-        ...order,
+    const updatedOrder: Order = {
+      ...order,
 
-        status:
-          "sent",
+      status:
+        "sent",
 
-        sentAt:
-          now.toISOString(),
+      sentAt:
+        now.toISOString(),
 
-        downloadedAt:
-          null,
+      downloadedAt:
+        null,
 
-        downloadedPhotoIds:
-          [],
+      downloadedPhotoIds:
+        [],
 
-        downloadTokenHash:
-          createTokenHash(
-            token,
-          ),
+      downloadedItemKeys:
+        [],
 
-        downloadExpiresAt:
-          expiresAt,
+      downloadTokenHash:
+        createTokenHash(
+          token,
+        ),
 
-        resendEmailId:
-          emailData?.id ??
-          null,
-      };
+      downloadExpiresAt:
+        expiresAt,
+
+      resendEmailId:
+        emailData?.id ??
+        null,
+    };
 
     await r2Client.send(
       new PutObjectCommand({

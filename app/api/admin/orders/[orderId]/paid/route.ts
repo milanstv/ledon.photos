@@ -14,6 +14,22 @@ type RouteContext = {
 };
 
 type OrderItem = {
+  itemKey?: string;
+  gallerySlug?: string;
+  galleryTitle?: string;
+  galleryDate?: string;
+
+  photoId: string;
+  filename: string;
+  price: number;
+};
+
+type NormalizedOrderItem = {
+  itemKey: string;
+  gallerySlug: string;
+  galleryTitle: string;
+  galleryDate: string;
+
   photoId: string;
   filename: string;
   price: number;
@@ -23,9 +39,9 @@ type Order = {
   id: string;
   status: string;
 
-  gallerySlug: string;
-  galleryTitle: string;
-  galleryDate: string;
+  gallerySlug?: string;
+  galleryTitle?: string;
+  galleryDate?: string;
 
   photoId?: string;
   filename?: string;
@@ -45,7 +61,9 @@ type Order = {
 
   receivedAmount?: number;
   paidCount?: number;
+
   paidPhotoIds?: string[];
+  paidItemKeys?: string[];
 
   createdAt: string;
   paidAt: string | null;
@@ -87,28 +105,129 @@ function getR2Client() {
 
 function getOrderItems(
   order: Order,
-): OrderItem[] {
+): NormalizedOrderItem[] {
   if (
     Array.isArray(order.items) &&
     order.items.length > 0
   ) {
-    return order.items;
+    const normalizedItems:
+      NormalizedOrderItem[] = [];
+
+    for (const item of order.items) {
+      const gallerySlug =
+        item.gallerySlug ??
+        order.gallerySlug ??
+        "";
+
+      const galleryTitle =
+        item.galleryTitle ??
+        order.galleryTitle ??
+        "";
+
+      const galleryDate =
+        item.galleryDate ??
+        order.galleryDate ??
+        "";
+
+      if (
+        !gallerySlug ||
+        !item.photoId ||
+        !item.filename ||
+        !Number.isFinite(
+          item.price,
+        ) ||
+        item.price <= 0
+      ) {
+        continue;
+      }
+
+      normalizedItems.push({
+        itemKey:
+          item.itemKey ??
+          `${gallerySlug}:${item.photoId}`,
+
+        gallerySlug,
+        galleryTitle,
+        galleryDate,
+
+        photoId:
+          item.photoId,
+
+        filename:
+          item.filename,
+
+        price:
+          item.price,
+      });
+    }
+
+    return normalizedItems;
   }
 
   if (
     order.photoId &&
-    order.filename
+    order.filename &&
+    order.gallerySlug
   ) {
     return [
       {
-        photoId: order.photoId,
-        filename: order.filename,
-        price: order.price,
+        itemKey:
+          `${order.gallerySlug}:${order.photoId}`,
+
+        gallerySlug:
+          order.gallerySlug,
+
+        galleryTitle:
+          order.galleryTitle ??
+          "",
+
+        galleryDate:
+          order.galleryDate ??
+          "",
+
+        photoId:
+          order.photoId,
+
+        filename:
+          order.filename,
+
+        price:
+          order.price,
       },
     ];
   }
 
   return [];
+}
+
+function calculatePaidItems(
+  items: NormalizedOrderItem[],
+  receivedAmount: number,
+) {
+  const paidItems:
+    NormalizedOrderItem[] = [];
+
+  let usedAmount = 0;
+
+  for (const item of items) {
+    const nextAmount =
+      usedAmount +
+      item.price;
+
+    if (
+      nextAmount >
+      receivedAmount +
+        0.000001
+    ) {
+      break;
+    }
+
+    paidItems.push(item);
+    usedAmount =
+      nextAmount;
+  }
+
+  return paidItems;
 }
 
 export async function POST(
@@ -202,25 +321,6 @@ export async function POST(
       );
     }
 
-    const unitPrice =
-      order.unitPrice ??
-      items[0].price;
-
-    if (
-      !Number.isFinite(unitPrice) ||
-      unitPrice <= 0
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "Cena fotografie nie je platná.",
-        },
-        {
-          status: 400,
-        },
-      );
-    }
-
     let receivedAmount =
       order.price;
 
@@ -264,23 +364,21 @@ export async function POST(
 
     receivedAmount =
       Math.round(
-        receivedAmount * 100,
+        receivedAmount *
+          100,
       ) / 100;
 
-    let paidCount =
-      Math.floor(
-        (receivedAmount + 0.000001) /
-          unitPrice,
-      );
+    const paidItems =
+      order.paymentMode ===
+      "fixed"
+        ? items
+        : calculatePaidItems(
+            items,
+            receivedAmount,
+          );
 
-    paidCount =
-      Math.max(
-        0,
-        Math.min(
-          paidCount,
-          items.length,
-        ),
-      );
+    const paidCount =
+      paidItems.length;
 
     if (paidCount === 0) {
       return NextResponse.json(
@@ -294,13 +392,17 @@ export async function POST(
       );
     }
 
+    const paidItemKeys =
+      paidItems.map(
+        (item) =>
+          item.itemKey,
+      );
+
     const paidPhotoIds =
-      items
-        .slice(0, paidCount)
-        .map(
-          (item) =>
-            item.photoId,
-        );
+      paidItems.map(
+        (item) =>
+          item.photoId,
+      );
 
     const updatedOrder: Order = {
       ...order,
@@ -311,6 +413,9 @@ export async function POST(
 
       paidCount,
 
+      paidItemKeys,
+
+      // Ponechávame aj staré pole kvôli kompatibilite.
       paidPhotoIds,
 
       paidAt:

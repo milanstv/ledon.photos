@@ -10,6 +10,22 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 type OrderItem = {
+  itemKey?: string;
+  gallerySlug?: string;
+  galleryTitle?: string;
+  galleryDate?: string;
+
+  photoId: string;
+  filename: string;
+  price: number;
+};
+
+type NormalizedOrderItem = {
+  itemKey: string;
+  gallerySlug: string;
+  galleryTitle: string;
+  galleryDate: string;
+
   photoId: string;
   filename: string;
   price: number;
@@ -19,17 +35,16 @@ type Order = {
   id: string;
   status: string;
 
-  gallerySlug: string;
-  galleryTitle: string;
-  galleryDate: string;
+  gallerySlug?: string;
+  galleryTitle?: string;
+  galleryDate?: string;
 
-  // Staré objednávky
   photoId?: string;
   filename?: string;
 
-  // BETA 2.0 objednávky
   items?: OrderItem[];
   count?: number;
+
   unitPrice?: number;
   paymentMode?: "fixed" | "manual";
   expectedAmount?: number;
@@ -78,23 +93,92 @@ function getR2Client() {
 
 function getOrderItems(
   order: Order,
-): OrderItem[] {
+): NormalizedOrderItem[] {
   if (
     Array.isArray(order.items) &&
     order.items.length > 0
   ) {
-    return order.items;
+    const result:
+      NormalizedOrderItem[] = [];
+
+    for (const item of order.items) {
+      const gallerySlug =
+        item.gallerySlug ??
+        order.gallerySlug ??
+        "";
+
+      const galleryTitle =
+        item.galleryTitle ??
+        order.galleryTitle ??
+        gallerySlug;
+
+      const galleryDate =
+        item.galleryDate ??
+        order.galleryDate ??
+        "";
+
+      if (
+        !gallerySlug ||
+        !item.photoId ||
+        !item.filename ||
+        !Number.isFinite(item.price) ||
+        item.price <= 0
+      ) {
+        continue;
+      }
+
+      result.push({
+        itemKey:
+          item.itemKey ??
+          `${gallerySlug}:${item.photoId}`,
+
+        gallerySlug,
+        galleryTitle,
+        galleryDate,
+
+        photoId:
+          item.photoId,
+
+        filename:
+          item.filename,
+
+        price:
+          item.price,
+      });
+    }
+
+    return result;
   }
 
   if (
     order.photoId &&
-    order.filename
+    order.filename &&
+    order.gallerySlug
   ) {
     return [
       {
-        photoId: order.photoId,
-        filename: order.filename,
-        price: order.price,
+        itemKey:
+          `${order.gallerySlug}:${order.photoId}`,
+
+        gallerySlug:
+          order.gallerySlug,
+
+        galleryTitle:
+          order.galleryTitle ??
+          order.gallerySlug,
+
+        galleryDate:
+          order.galleryDate ??
+          "",
+
+        photoId:
+          order.photoId,
+
+        filename:
+          order.filename,
+
+        price:
+          order.price,
       },
     ];
   }
@@ -112,7 +196,8 @@ async function loadOrders() {
     );
   }
 
-  const r2Client = getR2Client();
+  const r2Client =
+    getR2Client();
 
   const listResponse =
     await r2Client.send(
@@ -125,51 +210,71 @@ async function loadOrders() {
   const orderKeys = (
     listResponse.Contents ?? []
   )
-    .map((object) => object.Key)
+    .map(
+      (object) =>
+        object.Key,
+    )
     .filter(
       (key): key is string =>
         Boolean(
           key &&
-            key.endsWith(".json"),
+            key.endsWith(
+              ".json",
+            ),
         ),
     );
 
-  const orders = await Promise.all(
-    orderKeys.map(async (key) => {
-      const response =
-        await r2Client.send(
-          new GetObjectCommand({
-            Bucket: bucket,
-            Key: key,
-          }),
-        );
+  const orders =
+    await Promise.all(
+      orderKeys.map(
+        async (key) => {
+          const response =
+            await r2Client.send(
+              new GetObjectCommand({
+                Bucket:
+                  bucket,
 
-      if (!response.Body) {
-        return null;
-      }
+                Key:
+                  key,
+              }),
+            );
 
-      const content =
-        await response.Body.transformToString();
+          if (!response.Body) {
+            return null;
+          }
 
-      return JSON.parse(
-        content,
-      ) as Order;
-    }),
-  );
+          const content =
+            await response.Body
+              .transformToString();
+
+          return JSON.parse(
+            content,
+          ) as Order;
+        },
+      ),
+    );
 
   return orders
     .filter(
-      (order): order is Order =>
+      (
+        order,
+      ): order is Order =>
         order !== null,
     )
-    .sort((first, second) =>
-      second.createdAt.localeCompare(
-        first.createdAt,
-      ),
+    .sort(
+      (
+        first,
+        second,
+      ) =>
+        second.createdAt.localeCompare(
+          first.createdAt,
+        ),
     );
 }
 
-function getStatusText(status: string) {
+function getStatusText(
+  status: string,
+) {
   if (status === "paid") {
     return "Zaplatené";
   }
@@ -178,14 +283,18 @@ function getStatusText(status: string) {
     return "Odoslané";
   }
 
-  if (status === "downloaded") {
+  if (
+    status === "downloaded"
+  ) {
     return "Stiahnuté";
   }
 
   return "Čaká na platbu";
 }
 
-function formatDate(value: string) {
+function formatDate(
+  value: string,
+) {
   return new Intl.DateTimeFormat(
     "sk-SK",
     {
@@ -194,11 +303,51 @@ function formatDate(value: string) {
       timeZone:
         "Europe/Bratislava",
     },
-  ).format(new Date(value));
+  ).format(
+    new Date(value),
+  );
+}
+
+function getGalleryGroups(
+  items: NormalizedOrderItem[],
+) {
+  const groups =
+    new Map<
+      string,
+      {
+        title: string;
+        date: string;
+      }
+    >();
+
+  for (const item of items) {
+    if (
+      !groups.has(
+        item.gallerySlug,
+      )
+    ) {
+      groups.set(
+        item.gallerySlug,
+        {
+          title:
+            item.galleryTitle ||
+            item.gallerySlug,
+
+          date:
+            item.galleryDate,
+        },
+      );
+    }
+  }
+
+  return [
+    ...groups.values(),
+  ];
 }
 
 export default async function OrdersPage() {
-  const orders = await loadOrders();
+  const orders =
+    await loadOrders();
 
   const waitingOrders =
     orders.filter(
@@ -210,7 +359,8 @@ export default async function OrdersPage() {
   const paidOrders =
     orders.filter(
       (order) =>
-        order.status === "paid",
+        order.status ===
+        "paid",
     ).length;
 
   return (
@@ -278,7 +428,7 @@ export default async function OrdersPage() {
                   </th>
 
                   <th className="px-5 py-4">
-                    Galéria
+                    Galérie
                   </th>
 
                   <th className="px-5 py-4">
@@ -304,132 +454,231 @@ export default async function OrdersPage() {
               </thead>
 
               <tbody>
-                {orders.map((order) => {
-                  const items =
-                    getOrderItems(order);
+                {orders.map(
+                  (order) => {
+                    const items =
+                      getOrderItems(
+                        order,
+                      );
 
-                  const count =
-                    items.length;
+                    const count =
+                      items.length;
 
-                  const photoLabel =
-                    items
-                      .map(
+                    const photoLabel =
+                      items
+                        .map(
+                          (item) =>
+                            `${item.galleryTitle} — ${item.photoId}`,
+                        )
+                        .join(
+                          ", ",
+                        );
+
+                    const galleries =
+                      getGalleryGroups(
+                        items,
+                      );
+
+                    const itemPrices =
+                      items.map(
                         (item) =>
-                          item.photoId,
-                      )
-                      .join(", ");
+                          item.price,
+                      );
 
-                  return (
-                    <tr
-                      key={order.id}
-                      className="border-b border-white/10 last:border-b-0"
-                    >
-                      <td className="px-5 py-5">
-                        <span className="inline-flex border border-white/20 px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-white/70">
-                          {getStatusText(
-                            order.status,
-                          )}
-                        </span>
-                      </td>
+                    const uniquePrices =
+                      new Set(
+                        itemPrices,
+                      );
 
-                      <td className="max-w-[320px] px-5 py-5">
-                        <p className="font-medium">
-                          {count}{" "}
-                          {count === 1
-                            ? "fotografia"
-                            : "fotografií"}
-                        </p>
+                    const commonUnitPrice =
+                      uniquePrices.size ===
+                        1 &&
+                      itemPrices.length > 0
+                        ? itemPrices[0]
+                        : null;
 
-                        <p className="mt-2 break-words text-xs leading-6 text-white/55">
-                          {photoLabel}
-                        </p>
+                    return (
+                      <tr
+                        key={
+                          order.id
+                        }
+                        className="border-b border-white/10 last:border-b-0"
+                      >
+                        <td className="px-5 py-5">
+                          <span className="inline-flex border border-white/20 px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-white/70">
+                            {getStatusText(
+                              order.status,
+                            )}
+                          </span>
+                        </td>
 
-                        <p className="mt-2 text-xs text-white/25">
-                          {order.id}
-                        </p>
-                      </td>
-
-                      <td className="px-5 py-5">
-                        <p>
-                          {order.galleryTitle}
-                        </p>
-
-                        <p className="mt-2 text-xs text-white/35">
-                          {order.galleryDate}
-                        </p>
-                      </td>
-
-                      <td className="px-5 py-5">
-                        <a
-                          href={`mailto:${order.email}`}
-                          className="transition hover:text-white/60"
-                        >
-                          {order.email}
-                        </a>
-                      </td>
-
-                      <td className="px-5 py-5">
-                        <p className="text-lg">
-                          {order.price} €
-                        </p>
-
-                        {order.unitPrice ? (
-                          <p className="mt-1 text-xs text-white/35">
-                            {order.unitPrice} €
-                            /ks
+                        <td className="max-w-[360px] px-5 py-5">
+                          <p className="font-medium">
+                            {count}{" "}
+                            {count ===
+                            1
+                              ? "fotografia"
+                              : "fotografií"}
                           </p>
-                        ) : null}
-                      </td>
 
-                      <td className="px-5 py-5">
-                        {order.paymentMode ===
-                        "manual" ? (
-                          <div>
-                            <p className="text-xs font-medium uppercase tracking-[0.15em] text-yellow-300">
-                              Manuálna suma
-                            </p>
-
-                            <p className="mt-2 text-sm">
-                              Očakávané:{" "}
-                              {order.expectedAmount ??
-                                order.price}{" "}
-                              €
-                            </p>
+                          <div className="mt-2 space-y-1 text-xs leading-5 text-white/55">
+                            {items.map(
+                              (
+                                item,
+                              ) => (
+                                <p
+                                  key={
+                                    item.itemKey
+                                  }
+                                >
+                                  {
+                                    item.galleryTitle
+                                  }{" "}
+                                  —{" "}
+                                  {
+                                    item.photoId
+                                  }{" "}
+                                  —{" "}
+                                  {
+                                    item.price
+                                  }{" "}
+                                  €
+                                </p>
+                              ),
+                            )}
                           </div>
-                        ) : (
-                          <p className="text-xs uppercase tracking-[0.15em] text-white/45">
-                            Pevná suma
+
+                          <p className="mt-2 text-xs text-white/25">
+                            {
+                              order.id
+                            }
                           </p>
-                        )}
-                      </td>
+                        </td>
 
-                      <td className="px-5 py-5 text-sm text-white/50">
-                        {formatDate(
-                          order.createdAt,
-                        )}
-                      </td>
+                        <td className="px-5 py-5">
+                          <div className="space-y-3">
+                            {galleries.map(
+                              (
+                                gallery,
+                                index,
+                              ) => (
+                                <div
+                                  key={`${gallery.title}-${index}`}
+                                >
+                                  <p>
+                                    {
+                                      gallery.title
+                                    }
+                                  </p>
 
-                      <td className="px-5 py-5">
-                        <OrderActions
-  orderId={order.id}
-  status={order.status}
-  email={order.email}
-  photoLabel={photoLabel}
-  count={count}
-  paymentMode={order.paymentMode}
-  expectedAmount={
-    order.expectedAmount ??
-    order.price
-  }
-  unitPrice={
-    order.unitPrice ??
-    items[0]?.price
-  }
-/>
-                      </td>
-                    </tr>
-                  );
-                })}
+                                  {gallery.date ? (
+                                    <p className="mt-1 text-xs text-white/35">
+                                      {
+                                        gallery.date
+                                      }
+                                    </p>
+                                  ) : null}
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="px-5 py-5">
+                          <a
+                            href={`mailto:${order.email}`}
+                            className="transition hover:text-white/60"
+                          >
+                            {
+                              order.email
+                            }
+                          </a>
+                        </td>
+
+                        <td className="px-5 py-5">
+                          <p className="text-lg">
+                            {
+                              order.price
+                            }{" "}
+                            €
+                          </p>
+
+                          {commonUnitPrice !==
+                          null ? (
+                            <p className="mt-1 text-xs text-white/35">
+                              {
+                                commonUnitPrice
+                              }{" "}
+                              €/ks
+                            </p>
+                          ) : (
+                            <p className="mt-1 text-xs text-white/35">
+                              rôzne ceny
+                            </p>
+                          )}
+                        </td>
+
+                        <td className="px-5 py-5">
+                          {order.paymentMode ===
+                          "manual" ? (
+                            <div>
+                              <p className="text-xs font-medium uppercase tracking-[0.15em] text-yellow-300">
+                                Manuálna suma
+                              </p>
+
+                              <p className="mt-2 text-sm">
+                                Očakávané:{" "}
+                                {order.expectedAmount ??
+                                  order.price}{" "}
+                                €
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="text-xs uppercase tracking-[0.15em] text-white/45">
+                              Pevná suma
+                            </p>
+                          )}
+                        </td>
+
+                        <td className="px-5 py-5 text-sm text-white/50">
+                          {formatDate(
+                            order.createdAt,
+                          )}
+                        </td>
+
+                        <td className="px-5 py-5">
+                          <OrderActions
+                            orderId={
+                              order.id
+                            }
+                            status={
+                              order.status
+                            }
+                            email={
+                              order.email
+                            }
+                            photoLabel={
+                              photoLabel
+                            }
+                            count={
+                              count
+                            }
+                            paymentMode={
+                              order.paymentMode
+                            }
+                            expectedAmount={
+                              order.expectedAmount ??
+                              order.price
+                            }
+                            itemPrices={
+                              itemPrices
+                            }
+                          />
+                        </td>
+                      </tr>
+                    );
+                  },
+                )}
               </tbody>
             </table>
           </div>
