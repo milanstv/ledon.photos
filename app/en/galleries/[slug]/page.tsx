@@ -39,10 +39,10 @@ export async function generateMetadata({
     title: gallery.title,
 
     description:
-      `${gallery.title} – ${gallery.date}. Motorsport fotografia LEDON.PHOTOS.`,
+      `${gallery.title} – ${gallery.date}. Motorsport photography by LEDON.PHOTOS.`,
 
     alternates: {
-      canonical: skPath,
+      canonical: enPath,
 
       languages: {
         "sk-SK": skPath,
@@ -55,14 +55,14 @@ export async function generateMetadata({
         `${gallery.title} | Ledon Photos`,
 
       description:
-        `${gallery.title} – ${gallery.date}. Motorsport fotografia LEDON.PHOTOS.`,
+        `${gallery.title} – ${gallery.date}. Motorsport photography by LEDON.PHOTOS.`,
 
-      url: skPath,
+      url: enPath,
 
-      locale: "sk_SK",
+      locale: "en_US",
 
       alternateLocale: [
-        "en_US",
+        "sk_SK",
       ],
 
       type: "website",
@@ -73,15 +73,16 @@ export async function generateMetadata({
         `${gallery.title} | Ledon Photos`,
 
       description:
-        `${gallery.title} – ${gallery.date}. Motorsport fotografia LEDON.PHOTOS.`,
+        `${gallery.title} – ${gallery.date}. Motorsport photography by LEDON.PHOTOS.`,
     },
   };
 }
 
-export default async function GalleryRoute({
+export default async function EnglishGalleryRoute({
   params,
 }: GalleryRouteProps) {
   const { slug } = await params;
+
   const gallery = getGallery(slug);
 
   if (!gallery) {
@@ -91,7 +92,7 @@ export default async function GalleryRoute({
   return (
     <GalleryPage
       gallery={gallery}
-      language="sk"
+      language="en"
     />
   );
 }

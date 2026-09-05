@@ -6,7 +6,11 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://ledon.photos/sitemap.xml",
-    host: "https://ledon.photos",
+
+    sitemap:
+      "https://ledon.photos/sitemap.xml",
+
+    host:
+      "https://ledon.photos",
   };
 }

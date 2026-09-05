@@ -21,7 +21,6 @@ type OrderItem = {
   gallerySlug?: string;
   galleryTitle?: string;
   galleryDate?: string;
-
   photoId: string;
   filename: string;
   price: number;
@@ -32,7 +31,6 @@ type NormalizedOrderItem = {
   gallerySlug: string;
   galleryTitle: string;
   galleryDate: string;
-
   photoId: string;
   filename: string;
   price: number;
@@ -41,39 +39,31 @@ type NormalizedOrderItem = {
 type Order = {
   id: string;
   status: string;
-
+  language?: "sk" | "en";
   gallerySlug?: string;
   galleryTitle?: string;
   galleryDate?: string;
-
   photoId?: string;
   filename?: string;
-
   items?: OrderItem[];
   count?: number;
-
   email: string;
   price: number;
   unitPrice?: number;
   currency: string;
-
   paymentMode?: "fixed" | "manual";
   expectedAmount?: number;
   receivedAmount?: number;
   paidCount?: number;
-
   paidPhotoIds?: string[];
   paidItemKeys?: string[];
-
   createdAt: string;
   paidAt: string | null;
   sentAt: string | null;
   downloadedAt: string | null;
-
   downloadTokenHash?: string | null;
   downloadExpiresAt?: string | null;
   resendEmailId?: string | null;
-
   downloadedPhotoIds?: string[];
   downloadedItemKeys?: string[];
 };
@@ -170,17 +160,13 @@ function getOrderItems(
         itemKey:
           item.itemKey ??
           `${gallerySlug}:${item.photoId}`,
-
         gallerySlug,
         galleryTitle,
         galleryDate,
-
         photoId:
           item.photoId,
-
         filename:
           item.filename,
-
         price:
           item.price,
       });
@@ -198,24 +184,18 @@ function getOrderItems(
       {
         itemKey:
           `${order.gallerySlug}:${order.photoId}`,
-
         gallerySlug:
           order.gallerySlug,
-
         galleryTitle:
           order.galleryTitle ??
           order.gallerySlug,
-
         galleryDate:
           order.galleryDate ??
           "",
-
         photoId:
           order.photoId,
-
         filename:
           order.filename,
-
         price:
           order.price,
       },
@@ -384,6 +364,11 @@ export async function POST(
         content,
       ) as Order;
 
+    const language =
+      order.language === "en"
+        ? "en"
+        : "sk";
+
     if (
       order.status !== "paid" &&
       order.status !== "sent" &&
@@ -516,6 +501,11 @@ export async function POST(
               item.url,
             );
 
+          const downloadText =
+            language === "en"
+              ? `Download ${safePhotoId}`
+              : `Stiahnuť ${safePhotoId}`;
+
           return `
             <div style="margin-top:14px;">
               <p
@@ -533,7 +523,7 @@ export async function POST(
                 href="${safeUrl}"
                 style="display:block;background:#ffffff;color:#000000;text-decoration:none;text-align:center;padding:18px 24px;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;"
               >
-                Stiahnuť ${safePhotoId}
+                ${downloadText}
               </a>
             </div>
           `;
@@ -568,9 +558,101 @@ export async function POST(
       );
 
     const subject =
-      paidItems.length === 1
-        ? `Vaša fotografia ${paidItems[0].photoId} je pripravená`
-        : `Vašich ${paidItems.length} fotografií je pripravených`;
+      language === "en"
+        ? paidItems.length === 1
+          ? `Your photo ${paidItems[0].photoId} is ready`
+          : `Your ${paidItems.length} photos are ready`
+        : paidItems.length === 1
+          ? `Vaša fotografia ${paidItems[0].photoId} je pripravená`
+          : `Vašich ${paidItems.length} fotografií je pripravených`;
+
+    const text =
+      language === "en"
+        ? [
+            "Hello,",
+            "",
+            "thank you for your purchase.",
+            "",
+            `Galleries: ${galleryText}`,
+            `Paid photos: ${paidItems.length}`,
+            unpaidCount > 0
+              ? `Unpaid photos: ${unpaidCount}`
+              : "",
+            "",
+            "Full-resolution originals:",
+            "",
+            textPhotoList,
+            "",
+            "The download links are valid for 24 hours.",
+            "",
+            "Thank you for your support.",
+            "",
+            "LEDON.",
+            "https://ledon.photos",
+          ]
+            .filter(Boolean)
+            .join("\n")
+        : [
+            "Dobrý deň,",
+            "",
+            "ďakujeme za váš nákup.",
+            "",
+            `Galérie: ${galleryText}`,
+            `Zaplatených fotografií: ${paidItems.length}`,
+            unpaidCount > 0
+              ? `Nezaplatených fotografií: ${unpaidCount}`
+              : "",
+            "",
+            "Originály v plnom rozlíšení:",
+            "",
+            textPhotoList,
+            "",
+            "Odkazy sú platné 24 hodín.",
+            "",
+            "Ďakujeme za podporu.",
+            "",
+            "LEDON.",
+            "https://ledon.photos",
+          ]
+            .filter(Boolean)
+            .join("\n");
+
+    const emailLabel =
+      language === "en"
+        ? {
+            htmlLang: "en",
+            eyebrow:
+              "Photos are ready",
+            title:
+              "Thank you for your purchase.",
+            galleries:
+              "Galleries",
+            paidPhotos:
+              "Paid photos",
+            unpaidPhotos:
+              "Unpaid photos",
+            validity:
+              "The download links are valid for 24 hours.",
+            support:
+              "Thank you for your support.",
+          }
+        : {
+            htmlLang: "sk",
+            eyebrow:
+              "Fotografie sú pripravené",
+            title:
+              "Ďakujeme za váš nákup.",
+            galleries:
+              "Galérie",
+            paidPhotos:
+              "Zaplatených fotografií",
+            unpaidPhotos:
+              "Nezaplatených fotografií",
+            validity:
+              "Odkazy sú platné 24 hodín.",
+            support:
+              "Ďakujeme za podporu.",
+          };
 
     const {
       data: emailData,
@@ -580,45 +662,16 @@ export async function POST(
         {
           from:
             `LEDON. <${fromEmail}>`,
-
           to: [
             order.email,
           ],
-
           replyTo:
             fromEmail,
-
           subject,
-
-          text: [
-            "Dobrý deň,",
-            "",
-            "ďakujeme za váš nákup.",
-            "",
-            `Galérie: ${galleryText}`,
-            `Zaplatených fotografií: ${paidItems.length}`,
-
-            unpaidCount > 0
-              ? `Nezaplatených fotografií: ${unpaidCount}`
-              : "",
-
-            "",
-            "Originály v plnom rozlíšení:",
-            "",
-            textPhotoList,
-            "",
-            "Odkazy sú platné 24 hodín.",
-            "",
-            "LEDON.",
-            "https://ledon.photos",
-          ]
-            .filter(Boolean)
-            .join("\n"),
-
+          text,
           html: `
             <!doctype html>
-
-            <html lang="sk">
+            <html lang="${emailLabel.htmlLang}">
               <body
                 style="
                   margin:0;
@@ -684,7 +737,7 @@ export async function POST(
                                 text-transform:uppercase;
                               "
                             >
-                              Fotografie sú pripravené
+                              ${emailLabel.eyebrow}
                             </p>
 
                             <h1
@@ -695,7 +748,7 @@ export async function POST(
                                 line-height:1.25;
                               "
                             >
-                              Ďakujeme za váš nákup.
+                              ${emailLabel.title}
                             </h1>
 
                             <table
@@ -717,7 +770,7 @@ export async function POST(
                                     font-size:13px;
                                   "
                                 >
-                                  Galérie
+                                  ${emailLabel.galleries}
                                 </td>
 
                                 <td
@@ -740,7 +793,7 @@ export async function POST(
                                     font-size:13px;
                                   "
                                 >
-                                  Zaplatených fotografií
+                                  ${emailLabel.paidPhotos}
                                 </td>
 
                                 <td
@@ -766,7 +819,7 @@ export async function POST(
                                           font-size:13px;
                                         "
                                       >
-                                        Nezaplatených fotografií
+                                        ${emailLabel.unpaidPhotos}
                                       </td>
 
                                       <td
@@ -795,7 +848,7 @@ export async function POST(
                                 line-height:1.7;
                               "
                             >
-                              Odkazy sú platné 24 hodín.
+                              ${emailLabel.validity}
                             </p>
                           </td>
                         </tr>
@@ -816,7 +869,7 @@ export async function POST(
                                 color:#aaaaaa;
                               "
                             >
-                              Ďakujeme za podporu.
+                              ${emailLabel.support}
                             </p>
 
                             <p
@@ -878,30 +931,23 @@ export async function POST(
 
     const updatedOrder: Order = {
       ...order,
-
+      language,
       status:
         "sent",
-
       sentAt:
         now.toISOString(),
-
       downloadedAt:
         null,
-
       downloadedPhotoIds:
         [],
-
       downloadedItemKeys:
         [],
-
       downloadTokenHash:
         createTokenHash(
           token,
         ),
-
       downloadExpiresAt:
         expiresAt,
-
       resendEmailId:
         emailData?.id ??
         null,
@@ -911,20 +957,16 @@ export async function POST(
       new PutObjectCommand({
         Bucket:
           bucket,
-
         Key:
           orderKey,
-
         Body:
           JSON.stringify(
             updatedOrder,
             null,
             2,
           ),
-
         ContentType:
           "application/json; charset=utf-8",
-
         CacheControl:
           "no-store",
       }),
@@ -932,7 +974,6 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-
       message:
         unpaidCount > 0
           ? `E-mail s ${paidItems.length} zaplatenými fotografiami bol odoslaný na ${order.email}.`

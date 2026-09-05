@@ -69,7 +69,10 @@ export default function HomePage({
             {t.contactNav}
           </a>
 
-          <CartLink className="transition hover:text-white/60" />
+          <CartLink
+  language={language}
+  className="transition hover:text-white/60"
+/>
 
           <div className="flex items-center gap-2 tracking-[0.15em]">
             <Link

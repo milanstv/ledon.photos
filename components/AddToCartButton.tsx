@@ -1,6 +1,10 @@
 "use client";
 
 import { useCart } from "@/components/CartProvider";
+import {
+  translations,
+  type Language,
+} from "@/lib/i18n";
 
 type AddToCartButtonProps = {
   gallerySlug: string;
@@ -8,6 +12,7 @@ type AddToCartButtonProps = {
   photoId: string;
   photoSrc: string;
   price: number;
+  language: Language;
   className?: string;
 };
 
@@ -17,8 +22,11 @@ export default function AddToCartButton({
   photoId,
   photoSrc,
   price,
+  language,
   className,
 }: AddToCartButtonProps) {
+  const t = translations[language];
+
   const {
     addItem,
     removeItem,
@@ -56,8 +64,8 @@ export default function AddToCartButton({
         className={className}
       >
         {inCart
-          ? "Odobrať z košíka"
-          : "Pridať do košíka"}
+          ? t.removeFromCart
+          : t.addToCart}
       </button>
     </div>
   );

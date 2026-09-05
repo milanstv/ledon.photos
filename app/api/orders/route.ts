@@ -14,6 +14,8 @@ import {
 
 export const runtime = "nodejs";
 
+type Language = "sk" | "en";
+
 type RequestedItem = {
   gallerySlug: string;
   photoId: string;
@@ -27,6 +29,7 @@ type CreateOrderRequest = {
   photoIds?: unknown;
 
   email?: unknown;
+  language?: unknown;
 };
 
 type OrderItem = {
@@ -38,6 +41,52 @@ type OrderItem = {
   filename: string;
   price: number;
 };
+
+const errorTexts = {
+  sk: {
+    missingItemsOrEmail:
+      "Chýbajú fotografie alebo e-mail.",
+    invalidEmail:
+      "E-mailová adresa nie je platná.",
+    galleryNotFound: (
+      gallerySlug: string,
+    ) =>
+      `Galéria ${gallerySlug} sa nenašla.`,
+    unsupportedPrice: (
+      galleryTitle: string,
+    ) =>
+      `Galéria ${galleryTitle} nemá podporovanú cenu.`,
+    photoNotFound: (
+      photoId: string,
+      galleryTitle: string,
+    ) =>
+      `Fotografia ${photoId} sa v galérii ${galleryTitle} nenašla.`,
+    orderCreateError:
+      "Objednávku sa nepodarilo vytvoriť. Skús to prosím znova.",
+  },
+
+  en: {
+    missingItemsOrEmail:
+      "Photos or email address are missing.",
+    invalidEmail:
+      "The email address is not valid.",
+    galleryNotFound: (
+      gallerySlug: string,
+    ) =>
+      `Gallery ${gallerySlug} was not found.`,
+    unsupportedPrice: (
+      galleryTitle: string,
+    ) =>
+      `Gallery ${galleryTitle} has an unsupported price.`,
+    photoNotFound: (
+      photoId: string,
+      galleryTitle: string,
+    ) =>
+      `Photo ${photoId} was not found in gallery ${galleryTitle}.`,
+    orderCreateError:
+      "We could not create your order. Please try again.",
+  },
+} as const;
 
 function getR2Client() {
   const accountId =
@@ -61,7 +110,8 @@ function getR2Client() {
 
   return new S3Client({
     region: "auto",
-    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+    endpoint:
+      `https://${accountId}.r2.cloudflarestorage.com`,
     credentials: {
       accessKeyId,
       secretAccessKey,
@@ -200,7 +250,6 @@ function deduplicateItems(
     }
 
     seen.add(itemKey);
-
     result.push(item);
   }
 
@@ -250,11 +299,13 @@ async function sendOrderEmails({
   customerEmail,
   items,
   totalPrice,
+  language,
 }: {
   orderId: string;
   customerEmail: string;
   items: OrderItem[];
   totalPrice: number;
+  language: Language;
 }) {
   const resendApiKey =
     process.env.RESEND_API_KEY;
@@ -342,28 +393,52 @@ async function sendOrderEmails({
         fromEmail,
 
       subject:
-        `Objednávka ${items.length} fotografií bola prijatá`,
+        language === "en"
+          ? `Your order for ${items.length} photos has been received`
+          : `Objednávka ${items.length} fotografií bola prijatá`,
 
-      text: [
-        "Dobrý deň,",
-        "",
-        "vašu objednávku sme prijali.",
-        "",
-        `Galérie: ${galleryList}`,
-        `Počet fotografií: ${items.length}`,
-        "",
-        "Fotografie:",
-        ...photoLines,
-        "",
-        `Celková cena: ${totalPrice} €`,
-        "",
-        "Po prijatí platby vám odošleme e-mail s odkazmi na stiahnutie originálov v plnom rozlíšení.",
-        "",
-        "Ďakujeme za podporu.",
-        "",
-        "LEDON.",
-        "https://ledon.photos",
-      ].join("\n"),
+      text:
+        language === "en"
+          ? [
+              "Hello,",
+              "",
+              "we have received your order.",
+              "",
+              `Galleries: ${galleryList}`,
+              `Number of photos: ${items.length}`,
+              "",
+              "Photos:",
+              ...photoLines,
+              "",
+              `Total price: ${totalPrice} €`,
+              "",
+              "Once your payment is received, we will send you an email with links to download the full-resolution originals.",
+              "",
+              "Thank you for your support.",
+              "",
+              "LEDON.",
+              "https://ledon.photos",
+            ].join("\n")
+          : [
+              "Dobrý deň,",
+              "",
+              "vašu objednávku sme prijali.",
+              "",
+              `Galérie: ${galleryList}`,
+              `Počet fotografií: ${items.length}`,
+              "",
+              "Fotografie:",
+              ...photoLines,
+              "",
+              `Celková cena: ${totalPrice} €`,
+              "",
+              "Po prijatí platby vám odošleme e-mail s odkazmi na stiahnutie originálov v plnom rozlíšení.",
+              "",
+              "Ďakujeme za podporu.",
+              "",
+              "LEDON.",
+              "https://ledon.photos",
+            ].join("\n"),
     });
 
   if (
@@ -458,9 +533,20 @@ async function sendOrderEmails({
 export async function POST(
   request: Request,
 ) {
+  let language: Language =
+    "sk";
+
   try {
     const body =
       (await request.json()) as CreateOrderRequest;
+
+    language =
+      body.language === "en"
+        ? "en"
+        : "sk";
+
+    const t =
+      errorTexts[language];
 
     const email =
       typeof body.email ===
@@ -496,7 +582,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Chýbajú fotografie alebo e-mail.",
+            t.missingItemsOrEmail,
         },
         {
           status: 400,
@@ -512,7 +598,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "E-mailová adresa nie je platná.",
+            t.invalidEmail,
         },
         {
           status: 400,
@@ -536,7 +622,9 @@ export async function POST(
         return NextResponse.json(
           {
             error:
-              `Galéria ${requestedItem.gallerySlug} sa nenašla.`,
+              t.galleryNotFound(
+                requestedItem.gallerySlug,
+              ),
           },
           {
             status: 404,
@@ -552,7 +640,9 @@ export async function POST(
         return NextResponse.json(
           {
             error:
-              `Galéria ${gallery.title} nemá podporovanú cenu.`,
+              t.unsupportedPrice(
+                gallery.title,
+              ),
           },
           {
             status: 400,
@@ -570,7 +660,10 @@ export async function POST(
         return NextResponse.json(
           {
             error:
-              `Fotografia ${requestedItem.photoId} sa v galérii ${gallery.title} nenašla.`,
+              t.photoNotFound(
+                requestedItem.photoId,
+                gallery.title,
+              ),
           },
           {
             status: 404,
@@ -641,9 +734,7 @@ export async function POST(
 
     if (!paymentUrl) {
       throw new Error(
-        fixedPaymentUrl
-          ? "Platobný odkaz sa nepodarilo pripraviť."
-          : "Chýba Revolut voluntary platobný odkaz.",
+        "Chýba Revolut platobný odkaz.",
       );
     }
 
@@ -694,6 +785,8 @@ export async function POST(
       status:
         "waiting_payment",
 
+      language,
+
       // Ponechávame kvôli kompatibilite so starými časťami systému.
       // Pri novej multi-gallery objednávke je to prvá galéria.
       gallerySlug:
@@ -706,11 +799,8 @@ export async function POST(
         firstGallery.date,
 
       galleries,
-
       items,
-
       count,
-
       email,
 
       price:
@@ -789,6 +879,8 @@ export async function POST(
         items,
 
         totalPrice,
+
+        language,
       });
     } catch (
       emailError
@@ -801,15 +893,10 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-
       orderId,
-
       paymentUrl,
-
       count,
-
       totalPrice,
-
       paymentMode,
 
       ...(unitPrice !==
@@ -830,9 +917,9 @@ export async function POST(
     return NextResponse.json(
       {
         error:
-          error instanceof Error
-            ? error.message
-            : "Objednávku sa nepodarilo vytvoriť.",
+          errorTexts[
+            language
+          ].orderCreateError,
       },
       {
         status: 500,

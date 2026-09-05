@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -12,86 +11,6 @@ type PhotoPageProps = {
     photoId: string;
   }>;
 };
-
-export async function generateMetadata({
-  params,
-}: PhotoPageProps): Promise<Metadata> {
-  const { slug, photoId } = await params;
-
-  const result = getPhoto(slug, photoId);
-
-  if (!result) {
-    return {};
-  }
-
-  const {
-    gallery,
-    photo,
-  } = result;
-
-  const skPath =
-    `/galleries/${gallery.slug}/${photo.id}`;
-
-  const enPath =
-    `/en/galleries/${gallery.slug}/${photo.id}`;
-
-  return {
-    title:
-      `${photo.id} – ${gallery.title}`,
-
-    description:
-      `${photo.id} – ${gallery.title}. Motorsport photography by LEDON.PHOTOS.`,
-
-    alternates: {
-      canonical: enPath,
-
-      languages: {
-        "sk-SK": skPath,
-        en: enPath,
-      },
-    },
-
-    openGraph: {
-      title:
-        `${photo.id} – ${gallery.title} | Ledon Photos`,
-
-      description:
-        `${photo.id} – ${gallery.title}. Motorsport photography by LEDON.PHOTOS.`,
-
-      url: enPath,
-
-      locale: "en_US",
-
-      alternateLocale: [
-        "sk_SK",
-      ],
-
-      type: "website",
-
-      images: [
-        {
-          url: photo.src,
-          alt: photo.alt,
-        },
-      ],
-    },
-
-    twitter: {
-      card:
-        "summary_large_image",
-
-      title:
-        `${photo.id} – ${gallery.title} | Ledon Photos`,
-
-      description:
-        `${photo.id} – ${gallery.title}. Motorsport photography by LEDON.PHOTOS.`,
-
-      images: [
-        photo.src,
-      ],
-    },
-  };
-}
 
 export default async function PhotoPage({
   params,
