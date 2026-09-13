@@ -16,6 +16,10 @@ export const runtime = "nodejs";
 
 type Language = "sk" | "en";
 
+type PaymentMethod =
+  | "revolut"
+  | "paypal";
+
 type RequestedItem = {
   gallerySlug: string;
   photoId: string;
@@ -30,6 +34,7 @@ type CreateOrderRequest = {
 
   email?: unknown;
   language?: unknown;
+  paymentMethod?: unknown;
 };
 
 type OrderItem = {
@@ -48,6 +53,8 @@ const errorTexts = {
       "Chýbajú fotografie alebo e-mail.",
     invalidEmail:
       "E-mailová adresa nie je platná.",
+    invalidPaymentMethod:
+      "Spôsob platby nie je platný.",
     galleryNotFound: (
       gallerySlug: string,
     ) =>
@@ -70,6 +77,8 @@ const errorTexts = {
       "Photos or email address are missing.",
     invalidEmail:
       "The email address is not valid.",
+    invalidPaymentMethod:
+      "The payment method is not valid.",
     galleryNotFound: (
       gallerySlug: string,
     ) =>
@@ -300,12 +309,14 @@ async function sendOrderEmails({
   items,
   totalPrice,
   language,
+  paymentMethod,
 }: {
   orderId: string;
   customerEmail: string;
   items: OrderItem[];
   totalPrice: number;
   language: Language;
+  paymentMethod: PaymentMethod;
 }) {
   const resendApiKey =
     process.env.RESEND_API_KEY;
@@ -380,6 +391,11 @@ async function sendOrderEmails({
       customerEmail,
     );
 
+  const paymentMethodText =
+    paymentMethod === "paypal"
+      ? "PayPal"
+      : "Revolut";
+
   const customerEmailResult =
     await resend.emails.send({
       from:
@@ -404,6 +420,9 @@ async function sendOrderEmails({
               "",
               "we have received your order.",
               "",
+              `Order ID: ${orderId}`,
+              `Payment method: ${paymentMethodText}`,
+              "",
               `Galleries: ${galleryList}`,
               `Number of photos: ${items.length}`,
               "",
@@ -423,6 +442,9 @@ async function sendOrderEmails({
               "Dobrý deň,",
               "",
               "vašu objednávku sme prijali.",
+              "",
+              `ID objednávky: ${orderId}`,
+              `Spôsob platby: ${paymentMethodText}`,
               "",
               `Galérie: ${galleryList}`,
               `Počet fotografií: ${items.length}`,
@@ -463,11 +485,12 @@ async function sendOrderEmails({
         customerEmail,
 
       subject:
-        `Nová objednávka – ${items.length} ks – ${totalPrice} €`,
+        `Nová objednávka – ${items.length} ks – ${totalPrice} € – ${paymentMethodText}`,
 
       text: [
         "Bola vytvorená nová objednávka.",
         "",
+        `Spôsob platby: ${paymentMethodText}`,
         `Galérie: ${galleryList}`,
         `Počet fotografií: ${items.length}`,
         "",
@@ -500,6 +523,7 @@ async function sendOrderEmails({
               </h1>
 
               <p style="color:#bbbbbb;line-height:1.8;">
+                <strong>Spôsob platby:</strong> ${paymentMethodText}<br>
                 <strong>Galérie:</strong> ${safeGalleryList}<br>
                 <strong>Počet:</strong> ${items.length}<br>
                 <strong>Fotografie:</strong> ${safePhotoList}<br>
@@ -547,6 +571,32 @@ export async function POST(
 
     const t =
       errorTexts[language];
+
+    const paymentMethod:
+      PaymentMethod =
+      body.paymentMethod ===
+      "paypal"
+        ? "paypal"
+        : "revolut";
+
+    if (
+      body.paymentMethod !==
+        undefined &&
+      body.paymentMethod !==
+        "revolut" &&
+      body.paymentMethod !==
+        "paypal"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            t.invalidPaymentMethod,
+        },
+        {
+          status: 400,
+        },
+      );
+    }
 
     const email =
       typeof body.email ===
@@ -711,31 +761,45 @@ export async function POST(
         totalPrice * 100,
       );
 
-    const fixedPaymentUrl =
-      count <= 20
-        ? process.env[
-            `REVOLUT_PAYMENT_LINK_${totalInCents}`
-          ]
-        : undefined;
+    let paymentMode:
+      "fixed" | "manual";
 
-    const voluntaryPaymentUrl =
-      process.env
-        .REVOLUT_PAYMENT_LINK_VOLUNTARY;
+    let paymentUrl:
+      string | null = null;
 
-    const paymentMode:
-      "fixed" | "manual" =
-      fixedPaymentUrl
-        ? "fixed"
-        : "manual";
+    if (
+      paymentMethod ===
+      "revolut"
+    ) {
+      const fixedPaymentUrl =
+        count <= 20
+          ? process.env[
+              `REVOLUT_PAYMENT_LINK_${totalInCents}`
+            ]
+          : undefined;
 
-    const paymentUrl =
-      fixedPaymentUrl ??
-      voluntaryPaymentUrl;
+      const voluntaryPaymentUrl =
+        process.env
+          .REVOLUT_PAYMENT_LINK_VOLUNTARY;
 
-    if (!paymentUrl) {
-      throw new Error(
-        "Chýba Revolut platobný odkaz.",
-      );
+      paymentMode =
+        fixedPaymentUrl
+          ? "fixed"
+          : "manual";
+
+      paymentUrl =
+        fixedPaymentUrl ??
+        voluntaryPaymentUrl ??
+        null;
+
+      if (!paymentUrl) {
+        throw new Error(
+          "Chýba Revolut platobný odkaz.",
+        );
+      }
+    } else {
+      paymentMode =
+        "manual";
     }
 
     const ordersBucket =
@@ -786,6 +850,8 @@ export async function POST(
         "waiting_payment",
 
       language,
+
+      paymentMethod,
 
       // Ponechávame kvôli kompatibilite so starými časťami systému.
       // Pri novej multi-gallery objednávke je to prvá galéria.
@@ -881,6 +947,8 @@ export async function POST(
         totalPrice,
 
         language,
+
+        paymentMethod,
       });
     } catch (
       emailError
@@ -894,6 +962,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       orderId,
+      paymentMethod,
       paymentUrl,
       count,
       totalPrice,

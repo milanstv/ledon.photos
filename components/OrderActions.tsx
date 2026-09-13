@@ -3,6 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+type PaymentMethod =
+  | "revolut"
+  | "paypal";
+
 type OrderActionsProps = {
   orderId: string;
   status: string;
@@ -10,6 +14,7 @@ type OrderActionsProps = {
   photoLabel: string;
   count: number;
 
+  paymentMethod?: PaymentMethod;
   paymentMode?: "fixed" | "manual";
   expectedAmount?: number;
   itemPrices: number[];
@@ -57,6 +62,7 @@ export default function OrderActions({
   email,
   photoLabel,
   count,
+  paymentMethod = "revolut",
   paymentMode,
   expectedAmount,
   itemPrices,
@@ -90,6 +96,9 @@ export default function OrderActions({
     setSuccessMessage,
   ] =
     useState("");
+
+  const isPaypal =
+    paymentMethod === "paypal";
 
   const isManual =
     paymentMode === "manual";
@@ -137,15 +146,27 @@ export default function OrderActions({
 
     const confirmed =
       window.confirm(
-        isManual
+        isPaypal
           ? [
+              "PayPal platba",
+              "",
               `Očakávaná suma: ${expectedAmount} €`,
               `Prijatá suma: ${receivedNumber} €`,
               `Zaplatených fotografií: ${calculatedPaidCount} z ${count}`,
               "",
-              "Potvrdiť prijatie platby?",
+              "Potvrdiť, že platba prišla cez PayPal?",
             ].join("\n")
-          : `Potvrdzuješ, že platba za ${count} fotografií prišla na Revolut?`,
+          : isManual
+            ? [
+                "Revolut – manuálna suma",
+                "",
+                `Očakávaná suma: ${expectedAmount} €`,
+                `Prijatá suma: ${receivedNumber} €`,
+                `Zaplatených fotografií: ${calculatedPaidCount} z ${count}`,
+                "",
+                "Potvrdiť prijatie platby?",
+              ].join("\n")
+            : `Potvrdzuješ, že platba za ${count} fotografií prišla na Revolut?`,
       );
 
     if (!confirmed) {
@@ -309,10 +330,40 @@ export default function OrderActions({
       {status ===
       "waiting_payment" ? (
         <>
+          {isPaypal ? (
+            <div className="w-[260px] border border-[#4ea3ff]/30 bg-[#4ea3ff]/5 p-4">
+              <p className="text-[9px] uppercase tracking-[0.2em] text-[#4ea3ff]">
+                PayPal
+              </p>
+
+              <p className="mt-3 text-xs text-white/45">
+                Zákazník
+              </p>
+
+              <p className="mt-1 break-all text-xs text-white/80">
+                {email}
+              </p>
+
+              <p className="mt-4 text-xs text-white/45">
+                Suma
+              </p>
+
+              <p className="mt-1 text-lg">
+                {expectedAmount} €
+              </p>
+
+              <p className="mt-4 text-xs leading-5 text-yellow-300">
+                PayPal žiadosť o platbu treba poslať ručne.
+              </p>
+            </div>
+          ) : null}
+
           {isManual ? (
             <div className="w-[260px] border border-yellow-400/30 bg-yellow-400/5 p-4">
               <p className="text-[9px] uppercase tracking-[0.2em] text-yellow-300">
-                Manuálna platba
+                {isPaypal
+                  ? "Prijatá PayPal platba"
+                  : "Manuálna platba"}
               </p>
 
               <p className="mt-3 text-xs text-white/45">
@@ -392,7 +443,9 @@ export default function OrderActions({
           >
             {isLoading
               ? "Potvrdzujem..."
-              : "Platba prijatá"}
+              : isPaypal
+                ? "PayPal platba prijatá"
+                : "Platba prijatá"}
           </button>
         </>
       ) : null}

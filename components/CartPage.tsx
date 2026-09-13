@@ -17,6 +17,15 @@ type CartPageProps = {
   language: Language;
 };
 
+type PaymentMethod =
+  | "revolut"
+  | "paypal";
+
+type PaypalOrderState = {
+  orderId: string;
+  totalPrice: number;
+};
+
 export default function CartPage({
   language,
 }: CartPageProps) {
@@ -36,6 +45,12 @@ export default function CartPage({
   const [consent, setConsent] =
     useState(false);
 
+  const [paymentMethod, setPaymentMethod] =
+    useState<PaymentMethod>("revolut");
+
+  const [paypalOrder, setPaypalOrder] =
+    useState<PaypalOrderState | null>(null);
+
   const [isLoading, setIsLoading] =
     useState(false);
 
@@ -51,8 +66,7 @@ export default function CartPage({
   const galleryCount =
     new Set(
       items.map(
-        (item) =>
-          item.gallerySlug,
+        (item) => item.gallerySlug,
       ),
     ).size;
 
@@ -64,23 +78,17 @@ export default function CartPage({
     setErrorMessage("");
 
     if (items.length === 0) {
-      setErrorMessage(
-        t.cartEmpty,
-      );
+      setErrorMessage(t.cartEmpty);
       return;
     }
 
     if (!email.trim()) {
-      setErrorMessage(
-        t.enterEmail,
-      );
+      setErrorMessage(t.enterEmail);
       return;
     }
 
     if (!consent) {
-      setErrorMessage(
-        t.emailConsentError,
-      );
+      setErrorMessage(t.emailConsentError);
       return;
     }
 
@@ -108,6 +116,7 @@ export default function CartPage({
               email:
                 email.trim(),
               language,
+              paymentMethod,
             }),
           },
         );
@@ -122,14 +131,40 @@ export default function CartPage({
         );
       }
 
-      if (!result.paymentUrl) {
+      if (
+        paymentMethod ===
+        "revolut"
+      ) {
+        if (!result.paymentUrl) {
+          throw new Error(
+            t.paymentLinkError,
+          );
+        }
+
+        window.location.href =
+          result.paymentUrl;
+
+        return;
+      }
+
+      if (
+        !result.orderId ||
+        typeof result.totalPrice !==
+          "number"
+      ) {
         throw new Error(
-          t.paymentLinkError,
+          t.orderCreateError,
         );
       }
 
-      window.location.href =
-        result.paymentUrl;
+      setPaypalOrder({
+        orderId:
+          result.orderId,
+        totalPrice:
+          result.totalPrice,
+      });
+
+      setIsLoading(false);
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -149,6 +184,133 @@ export default function CartPage({
       : language === "en"
         ? `${galleryCount} galleries`
         : `${galleryCount} galérie`;
+
+  const paypalTexts =
+    language === "en"
+      ? {
+          title:
+            "PayPal payment",
+          intro:
+            "Your order has been created.",
+          amount:
+            "Amount",
+          orderId:
+            "Order ID",
+          instruction:
+            "We will send a PayPal payment request to your email address.",
+          confirmation:
+            "After we receive and verify the payment, we will email you the download links for the full-resolution originals.",
+          back:
+            "Back to galleries",
+          paymentChoice:
+            "Payment method",
+          revolut:
+            "Revolut",
+          paypal:
+            "PayPal",
+          paypalManual:
+            "You will receive a PayPal payment request by email.",
+        }
+      : {
+          title:
+            "Platba cez PayPal",
+          intro:
+            "Vaša objednávka bola vytvorená.",
+          amount:
+            "Suma",
+          orderId:
+            "ID objednávky",
+          instruction:
+            "Na váš e-mail vám pošleme PayPal žiadosť o platbu.",
+          confirmation:
+            "Po prijatí a overení platby vám odošleme e-mail s odkazmi na stiahnutie originálov v plnom rozlíšení.",
+          back:
+            "Späť na galérie",
+          paymentChoice:
+            "Spôsob platby",
+          revolut:
+            "Revolut",
+          paypal:
+            "PayPal",
+          paypalManual:
+            "PayPal žiadosť o platbu vám pošleme e-mailom.",
+        };
+
+  if (paypalOrder) {
+    return (
+      <main className="min-h-screen bg-[#080808] text-white">
+        <header className="flex items-center justify-between border-b border-white/10 px-5 py-5 md:px-10 md:py-7">
+          <Link
+            href={homeHref}
+            className="text-2xl font-bold tracking-[0.12em] md:text-4xl"
+          >
+            LEDON.
+          </Link>
+        </header>
+
+        <section className="mx-auto w-full max-w-3xl px-5 py-12 md:px-10 md:py-16">
+          <div className="border border-white/15 bg-[#0d0d0d] p-7 md:p-10">
+            <p className="text-[10px] uppercase tracking-[0.35em] text-white/40">
+              PayPal
+            </p>
+
+            <h1 className="mt-4 text-4xl font-light uppercase tracking-[0.06em] md:text-5xl">
+              {paypalTexts.title}
+            </h1>
+
+            <p className="mt-5 text-sm leading-7 text-white/60">
+              {paypalTexts.intro}
+            </p>
+
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <div className="border border-white/10 p-5">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-white/40">
+                  {paypalTexts.amount}
+                </p>
+
+                <p className="mt-3 text-4xl font-light">
+                  {paypalOrder.totalPrice} €
+                </p>
+              </div>
+
+              <div className="border border-white/10 p-5">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-white/40">
+                  {paypalTexts.orderId}
+                </p>
+
+                <p className="mt-3 break-all text-sm leading-6 text-white/80">
+                  {paypalOrder.orderId}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8 border border-white/10 bg-black p-7 text-center">
+              <p className="text-lg leading-8 text-white/80">
+                {paypalTexts.instruction}
+              </p>
+
+              <p className="mt-4 text-sm leading-7 text-white/50">
+                {email}
+              </p>
+            </div>
+
+            <div className="mt-8 border-t border-white/10 pt-7">
+              <p className="text-center text-sm leading-7 text-white/55">
+                {paypalTexts.confirmation}
+              </p>
+            </div>
+
+            <Link
+              href={homeHref}
+              className="mt-8 block w-full bg-white px-6 py-5 text-center text-xs font-semibold uppercase tracking-[0.22em] text-black transition hover:bg-white/80"
+            >
+              ← {paypalTexts.back}
+            </Link>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#080808] text-white">
@@ -256,12 +418,8 @@ export default function CartPage({
                     >
                       <div className="relative h-24 w-32 shrink-0 overflow-hidden bg-white/5 sm:h-28 sm:w-40 md:h-32 md:w-48">
                         <Image
-                          src={
-                            item.photoSrc
-                          }
-                          alt={
-                            item.photoId
-                          }
+                          src={item.photoSrc}
+                          alt={item.photoId}
                           fill
                           sizes="192px"
                           className="object-cover"
@@ -270,22 +428,15 @@ export default function CartPage({
 
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-base tracking-[0.12em] md:text-xl">
-                          {
-                            item.photoId
-                          }
+                          {item.photoId}
                         </p>
 
                         <p className="mt-2 truncate text-[10px] uppercase tracking-[0.2em] text-white/40">
-                          {
-                            item.galleryTitle
-                          }
+                          {item.galleryTitle}
                         </p>
 
                         <p className="mt-3 text-xl font-light">
-                          {
-                            item.price
-                          }{" "}
-                          €
+                          {item.price} €
                         </p>
                       </div>
 
@@ -297,9 +448,7 @@ export default function CartPage({
                             item.photoId,
                           )
                         }
-                        disabled={
-                          isLoading
-                        }
+                        disabled={isLoading}
                         className="shrink-0 border border-white/20 px-4 py-3 text-[10px] uppercase tracking-[0.18em] text-white/60 transition hover:border-white hover:bg-white hover:text-black disabled:opacity-40"
                       >
                         {t.remove}
@@ -319,12 +468,8 @@ export default function CartPage({
 
                 <button
                   type="button"
-                  onClick={
-                    clearCart
-                  }
-                  disabled={
-                    isLoading
-                  }
+                  onClick={clearCart}
+                  disabled={isLoading}
                   className="border border-white/15 px-6 py-4 text-[10px] uppercase tracking-[0.22em] text-white/45 transition hover:border-white/50 hover:text-white disabled:opacity-40"
                 >
                   {t.clearCart}
@@ -358,9 +503,7 @@ export default function CartPage({
               </div>
 
               <form
-                onSubmit={
-                  handleCheckout
-                }
+                onSubmit={handleCheckout}
                 className="mt-7"
               >
                 <label
@@ -381,28 +524,20 @@ export default function CartPage({
                   }
                   autoComplete="email"
                   placeholder="your@email.com"
-                  disabled={
-                    isLoading
-                  }
+                  disabled={isLoading}
                   className="mt-3 w-full border border-white/25 bg-black px-4 py-4 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-white disabled:opacity-50"
                 />
 
                 <label className="mt-5 flex cursor-pointer items-start gap-3 text-xs leading-5 text-white/50">
                   <input
                     type="checkbox"
-                    checked={
-                      consent
-                    }
-                    onChange={(
-                      event,
-                    ) =>
+                    checked={consent}
+                    onChange={(event) =>
                       setConsent(
                         event.target.checked,
                       )
                     }
-                    disabled={
-                      isLoading
-                    }
+                    disabled={isLoading}
                     className="mt-1 h-4 w-4 shrink-0"
                   />
 
@@ -411,29 +546,78 @@ export default function CartPage({
                   </span>
                 </label>
 
+                <div className="mt-7">
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-white/45">
+                    {paypalTexts.paymentChoice}
+                  </p>
+
+                  <div className="mt-3 grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPaymentMethod(
+                          "revolut",
+                        )
+                      }
+                      disabled={isLoading}
+                      className={
+                        paymentMethod ===
+                        "revolut"
+                          ? "border border-white bg-white px-4 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-black"
+                          : "border border-white/20 bg-black px-4 py-4 text-xs uppercase tracking-[0.18em] text-white/55 transition hover:border-white/50 hover:text-white"
+                      }
+                    >
+                      {paypalTexts.revolut}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPaymentMethod(
+                          "paypal",
+                        )
+                      }
+                      disabled={isLoading}
+                      className={
+                        paymentMethod ===
+                        "paypal"
+                          ? "border border-white bg-white px-4 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-black"
+                          : "border border-white/20 bg-black px-4 py-4 text-xs uppercase tracking-[0.18em] text-white/55 transition hover:border-white/50 hover:text-white"
+                      }
+                    >
+                      {paypalTexts.paypal}
+                    </button>
+                  </div>
+                </div>
+
                 {errorMessage ? (
                   <p className="mt-5 text-sm leading-6 text-red-400">
-                    {
-                      errorMessage
-                    }
+                    {errorMessage}
                   </p>
                 ) : null}
 
                 <button
                   type="submit"
-                  disabled={
-                    isLoading
-                  }
+                  disabled={isLoading}
                   className="mt-7 w-full bg-white px-6 py-5 text-xs font-semibold uppercase tracking-[0.22em] text-black transition hover:bg-white/80 disabled:cursor-wait disabled:opacity-50"
                 >
                   {isLoading
                     ? t.creatingOrder
-                    : `${t.pay} ${total} € ${t.viaRevolut}`}
+                    : paymentMethod ===
+                        "paypal"
+                      ? language ===
+                        "en"
+                        ? `Create order – ${total} €`
+                        : `Vytvoriť objednávku – ${total} €`
+                      : `${t.pay} ${total} € ${t.viaRevolut}`}
                 </button>
               </form>
 
               <p className="mt-5 text-center text-[10px] uppercase tracking-[0.15em] text-white/25">
-                {t.revolutPayment}
+                {paymentMethod ===
+                "paypal"
+                  ? paypalTexts.paypalManual
+                  : t.revolutPayment}
               </p>
             </aside>
           </div>

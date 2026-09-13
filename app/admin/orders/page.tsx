@@ -9,6 +9,10 @@ import OrderActions from "@/components/OrderActions";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+type PaymentMethod =
+  | "revolut"
+  | "paypal";
+
 type OrderItem = {
   itemKey?: string;
   gallerySlug?: string;
@@ -34,6 +38,8 @@ type NormalizedOrderItem = {
 type Order = {
   id: string;
   status: string;
+
+  paymentMethod?: PaymentMethod;
 
   gallerySlug?: string;
   galleryTitle?: string;
@@ -82,8 +88,7 @@ function getR2Client() {
   return new S3Client({
     region: "auto",
     endpoint:
-      `https://${accountId}` +
-      ".r2.cloudflarestorage.com",
+      `https://${accountId}.r2.cloudflarestorage.com`,
     credentials: {
       accessKeyId,
       secretAccessKey,
@@ -497,6 +502,10 @@ export default async function OrdersPage() {
                         ? itemPrices[0]
                         : null;
 
+                    const isPaypal =
+                      order.paymentMethod ===
+                      "paypal";
+
                     return (
                       <tr
                         key={
@@ -619,11 +628,31 @@ export default async function OrdersPage() {
                         </td>
 
                         <td className="px-5 py-5">
-                          {order.paymentMode ===
-                          "manual" ? (
+                          {isPaypal ? (
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#4ea3ff]">
+                                PayPal
+                              </p>
+
+                              <p className="mt-2 text-sm text-white/70">
+                                Očakávané:{" "}
+                                {order.expectedAmount ??
+                                  order.price}{" "}
+                                €
+                              </p>
+
+                              {order.status ===
+                              "waiting_payment" ? (
+                                <p className="mt-2 text-xs text-yellow-300">
+                                  Žiadosť o platbu poslať ručne
+                                </p>
+                              ) : null}
+                            </div>
+                          ) : order.paymentMode ===
+                            "manual" ? (
                             <div>
                               <p className="text-xs font-medium uppercase tracking-[0.15em] text-yellow-300">
-                                Manuálna suma
+                                Revolut – manuálna suma
                               </p>
 
                               <p className="mt-2 text-sm">
@@ -634,9 +663,15 @@ export default async function OrdersPage() {
                               </p>
                             </div>
                           ) : (
-                            <p className="text-xs uppercase tracking-[0.15em] text-white/45">
-                              Pevná suma
-                            </p>
+                            <div>
+                              <p className="text-xs font-medium uppercase tracking-[0.15em] text-white/45">
+                                Revolut
+                              </p>
+
+                              <p className="mt-2 text-xs text-white/35">
+                                Pevná suma
+                              </p>
+                            </div>
                           )}
                         </td>
 
@@ -662,6 +697,10 @@ export default async function OrdersPage() {
                             }
                             count={
                               count
+                            }
+                            paymentMethod={
+                              order.paymentMethod ??
+                              "revolut"
                             }
                             paymentMode={
                               order.paymentMode
