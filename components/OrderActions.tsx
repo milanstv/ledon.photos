@@ -36,20 +36,16 @@ function calculatePaidCount(
     }
 
     const nextAmount =
-      usedAmount +
-      price;
+      usedAmount + price;
 
     if (
       nextAmount >
-      receivedAmount +
-        0.000001
+      receivedAmount + 0.000001
     ) {
       break;
     }
 
-    usedAmount =
-      nextAmount;
-
+    usedAmount = nextAmount;
     paidCount += 1;
   }
 
@@ -62,60 +58,45 @@ export default function OrderActions({
   email,
   photoLabel,
   count,
-  paymentMethod = "revolut",
   paymentMode,
   expectedAmount,
   itemPrices,
 }: OrderActionsProps) {
-  const router =
-    useRouter();
+  const router = useRouter();
 
   const [
     receivedAmount,
     setReceivedAmount,
-  ] =
-    useState(
-      expectedAmount?.toString() ??
-        "",
-    );
+  ] = useState(
+    expectedAmount?.toString() ?? "",
+  );
 
   const [
     isLoading,
     setIsLoading,
-  ] =
-    useState(false);
+  ] = useState(false);
 
   const [
     errorMessage,
     setErrorMessage,
-  ] =
-    useState("");
+  ] = useState("");
 
   const [
     successMessage,
     setSuccessMessage,
-  ] =
-    useState("");
-
-  const isPaypal =
-    paymentMethod === "paypal";
+  ] = useState("");
 
   const isManual =
     paymentMode === "manual";
 
   const receivedNumber =
     Number(
-      receivedAmount.replace(
-        ",",
-        ".",
-      ),
+      receivedAmount.replace(",", "."),
     );
 
   const calculatedPaidCount =
     isManual &&
-    Number.isFinite(
-      receivedNumber,
-    )
+    Number.isFinite(receivedNumber)
       ? calculatePaidCount(
           itemPrices,
           receivedNumber,
@@ -125,8 +106,7 @@ export default function OrderActions({
   const unpaidCount =
     Math.max(
       0,
-      count -
-        calculatedPaidCount,
+      count - calculatedPaidCount,
     );
 
   async function confirmPayment() {
@@ -146,27 +126,17 @@ export default function OrderActions({
 
     const confirmed =
       window.confirm(
-        isPaypal
+        isManual
           ? [
-              "PayPal platba",
+              "Manuálna platba",
               "",
               `Očakávaná suma: ${expectedAmount} €`,
               `Prijatá suma: ${receivedNumber} €`,
               `Zaplatených fotografií: ${calculatedPaidCount} z ${count}`,
               "",
-              "Potvrdiť, že platba prišla cez PayPal?",
+              "Potvrdiť prijatie platby?",
             ].join("\n")
-          : isManual
-            ? [
-                "Revolut – manuálna suma",
-                "",
-                `Očakávaná suma: ${expectedAmount} €`,
-                `Prijatá suma: ${receivedNumber} €`,
-                `Zaplatených fotografií: ${calculatedPaidCount} z ${count}`,
-                "",
-                "Potvrdiť prijatie platby?",
-              ].join("\n")
-            : `Potvrdzuješ, že platba za ${count} fotografií prišla na Revolut?`,
+          : `Potvrdzuješ, že platba za ${count} fotografií prišla na Revolut?`,
       );
 
     if (!confirmed) {
@@ -320,50 +290,16 @@ export default function OrderActions({
 
   return (
     <ActionContainer
-      errorMessage={
-        errorMessage
-      }
-      successMessage={
-        successMessage
-      }
+      errorMessage={errorMessage}
+      successMessage={successMessage}
     >
       {status ===
       "waiting_payment" ? (
         <>
-          {isPaypal ? (
-            <div className="w-[260px] border border-[#4ea3ff]/30 bg-[#4ea3ff]/5 p-4">
-              <p className="text-[9px] uppercase tracking-[0.2em] text-[#4ea3ff]">
-                PayPal
-              </p>
-
-              <p className="mt-3 text-xs text-white/45">
-                Zákazník
-              </p>
-
-              <p className="mt-1 break-all text-xs text-white/80">
-                {email}
-              </p>
-
-              <p className="mt-4 text-xs text-white/45">
-                Suma
-              </p>
-
-              <p className="mt-1 text-lg">
-                {expectedAmount} €
-              </p>
-
-              <p className="mt-4 text-xs leading-5 text-yellow-300">
-                PayPal žiadosť o platbu treba poslať ručne.
-              </p>
-            </div>
-          ) : null}
-
           {isManual ? (
             <div className="w-[260px] border border-yellow-400/30 bg-yellow-400/5 p-4">
               <p className="text-[9px] uppercase tracking-[0.2em] text-yellow-300">
-                {isPaypal
-                  ? "Prijatá PayPal platba"
-                  : "Manuálna platba"}
+                Manuálna platba
               </p>
 
               <p className="mt-3 text-xs text-white/45">
@@ -383,20 +319,13 @@ export default function OrderActions({
                   type="number"
                   min="0"
                   step="0.01"
-                  value={
-                    receivedAmount
-                  }
-                  onChange={(
-                    event,
-                  ) =>
+                  value={receivedAmount}
+                  onChange={(event) =>
                     setReceivedAmount(
-                      event.target
-                        .value,
+                      event.target.value,
                     )
                   }
-                  disabled={
-                    isLoading
-                  }
+                  disabled={isLoading}
                   className="w-full border border-white/25 bg-black px-3 py-3 text-sm text-white outline-none focus:border-white"
                 />
 
@@ -409,15 +338,12 @@ export default function OrderActions({
                 <p className="text-white/50">
                   Zaplatených:{" "}
                   <strong className="text-white">
-                    {
-                      calculatedPaidCount
-                    }{" "}
-                    / {count}
+                    {calculatedPaidCount} /{" "}
+                    {count}
                   </strong>
                 </p>
 
-                {unpaidCount >
-                0 ? (
+                {unpaidCount > 0 ? (
                   <p className="text-red-400">
                     Nezaplatených:{" "}
                     {unpaidCount}
@@ -433,19 +359,13 @@ export default function OrderActions({
 
           <button
             type="button"
-            onClick={
-              confirmPayment
-            }
-            disabled={
-              isLoading
-            }
+            onClick={confirmPayment}
+            disabled={isLoading}
             className="whitespace-nowrap bg-white px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-black transition hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isLoading
               ? "Potvrdzujem..."
-              : isPaypal
-                ? "PayPal platba prijatá"
-                : "Platba prijatá"}
+              : "Platba prijatá"}
           </button>
         </>
       ) : null}
@@ -453,12 +373,8 @@ export default function OrderActions({
       {status === "paid" ? (
         <button
           type="button"
-          onClick={
-            sendOriginal
-          }
-          disabled={
-            isLoading
-          }
+          onClick={sendOriginal}
+          disabled={isLoading}
           className="whitespace-nowrap bg-white px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-black transition hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isLoading
@@ -472,12 +388,8 @@ export default function OrderActions({
       {status === "sent" ? (
         <button
           type="button"
-          onClick={
-            sendOriginal
-          }
-          disabled={
-            isLoading
-          }
+          onClick={sendOriginal}
+          disabled={isLoading}
           className="whitespace-nowrap bg-white px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-black transition hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isLoading
@@ -495,12 +407,8 @@ export default function OrderActions({
 
       <button
         type="button"
-        onClick={
-          deleteOrder
-        }
-        disabled={
-          isLoading
-        }
+        onClick={deleteOrder}
+        disabled={isLoading}
         className="whitespace-nowrap border border-red-500/40 px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-red-400 transition hover:border-red-400 hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
       >
         Vymazať
@@ -514,14 +422,9 @@ function ActionContainer({
   errorMessage,
   successMessage,
 }: {
-  children:
-    React.ReactNode;
-
-  errorMessage:
-    string;
-
-  successMessage:
-    string;
+  children: React.ReactNode;
+  errorMessage: string;
+  successMessage: string;
 }) {
   return (
     <div className="flex flex-col items-start gap-3">
