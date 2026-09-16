@@ -166,7 +166,7 @@ export default function HomePage({
             </a>
 
             <a
-              href="mailto:info@ledon.photos"
+              href="mailto:moto@ledon.photos"
               className="border border-white/25 px-7 py-4 text-center text-xs uppercase tracking-[0.3em] text-white/80 transition hover:border-white hover:bg-white hover:text-black"
             >
               Email
