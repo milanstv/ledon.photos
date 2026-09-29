@@ -392,7 +392,7 @@ export default function CartPage({
                 >
                   {isLoading
                     ? t.creatingOrder
-                    : `${t.pay} ${total} € ${t.viaRevolut}`}
+                    : `${t.pay} ${total} €`}
                 </button>
               </form>
 

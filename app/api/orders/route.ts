@@ -472,6 +472,38 @@ async function sendOrderEmails({
     );
   }
 
+  const photoWord =
+    items.length === 1
+      ? "foto"
+      : items.length >= 2 &&
+          items.length <= 4
+        ? "fotky"
+        : "fotiek";
+
+  const galleryWord =
+    galleries.length >= 2 &&
+    galleries.length <= 4
+      ? "galérie"
+      : "galérií";
+
+  const adminSummary =
+    galleries.length === 1
+      ? `${galleries[0].title} (${galleries[0].date}) • ${items.length} ${photoWord} • ${totalPrice} €`
+      : `${galleries.length} ${galleryWord} • ${items.length} ${photoWord} • ${totalPrice} €`;
+
+  const safeAdminSummary =
+    escapeHtml(
+      adminSummary,
+    );
+
+  const adminPreview =
+    `${adminSummary} • Zákazník: ${customerEmail} • ${paymentMethodText}`;
+
+  const safeAdminPreview =
+    escapeHtml(
+      adminPreview,
+    );
+
   const adminEmailResult =
     await resend.emails.send({
       from:
@@ -488,20 +520,16 @@ async function sendOrderEmails({
         `Nová objednávka – ${items.length} ks – ${totalPrice} € – ${paymentMethodText}`,
 
       text: [
-        "Bola vytvorená nová objednávka.",
+        adminSummary,
         "",
-        `Spôsob platby: ${paymentMethodText}`,
         `Galérie: ${galleryList}`,
-        `Počet fotografií: ${items.length}`,
-        "",
-        "Fotografie:",
-        ...photoLines,
-        "",
-        `Celková cena: ${totalPrice} €`,
+        `Počet: ${items.length}`,
+        `Fotografie: ${photoList}`,
+        `Cena: ${totalPrice} €`,
         `Zákazník: ${customerEmail}`,
-        `Objednávka: ${orderId}`,
+        `ID objednávky: ${orderId}`,
         "",
-        "Po prijatí platby otvor administráciu:",
+        "Otvoriť objednávky:",
         "https://ledon.photos/admin/orders",
       ].join("\n"),
 
@@ -509,7 +537,13 @@ async function sendOrderEmails({
         <!doctype html>
         <html lang="sk">
           <body style="margin:0;padding:30px;background:#080808;color:#ffffff;font-family:Arial,Helvetica,sans-serif;">
+
+            <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">
+              ${safeAdminPreview}
+            </div>
+
             <div style="max-width:620px;margin:0 auto;background:#111111;border:1px solid #303030;padding:36px;">
+
               <div style="font-size:26px;font-weight:700;letter-spacing:4px;">
                 LEDON.
               </div>
@@ -518,17 +552,22 @@ async function sendOrderEmails({
                 Nová objednávka
               </p>
 
-              <h1 style="margin:0 0 28px;font-size:26px;font-weight:400;">
-                Bola vytvorená objednávka fotografií.
-              </h1>
+              <p style="margin:0 0 28px;font-size:16px;line-height:1.5;font-weight:400;color:#ffffff;">
+                ${safeAdminSummary}
+              </p>
 
               <p style="color:#bbbbbb;line-height:1.8;">
-                <strong>Spôsob platby:</strong> ${paymentMethodText}<br>
                 <strong>Galérie:</strong> ${safeGalleryList}<br>
                 <strong>Počet:</strong> ${items.length}<br>
                 <strong>Fotografie:</strong> ${safePhotoList}<br>
                 <strong>Cena:</strong> ${totalPrice} €<br>
-                <strong>Zákazník:</strong> ${safeCustomerEmail}<br>
+                <strong>Zákazník:</strong>
+                <a
+                  href="mailto:${safeCustomerEmail}"
+                  style="color:#ffffff !important;text-decoration:none;"
+                >
+                  ${safeCustomerEmail}
+                </a><br>
                 <strong>ID objednávky:</strong> ${safeOrderId}
               </p>
 
@@ -538,6 +577,7 @@ async function sendOrderEmails({
               >
                 Otvoriť objednávky
               </a>
+
             </div>
           </body>
         </html>
