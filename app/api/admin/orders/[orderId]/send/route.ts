@@ -5,6 +5,7 @@ import {
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
+
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
@@ -369,6 +370,10 @@ export async function POST(
         ? "en"
         : "sk";
 
+    const isResend =
+      order.status === "sent" ||
+      order.status === "downloaded";
+
     if (
       order.status !== "paid" &&
       order.status !== "sent" &&
@@ -558,20 +563,31 @@ export async function POST(
       );
 
     const subject =
-      language === "en"
-        ? paidItems.length === 1
-          ? `Your photo ${paidItems[0].photoId} is ready`
-          : `Your ${paidItems.length} photos are ready`
-        : paidItems.length === 1
-          ? `Vaša fotografia ${paidItems[0].photoId} je pripravená`
-          : `Vašich ${paidItems.length} fotografií je pripravených`;
+      isResend
+        ? language === "en"
+          ? "Corrected full-resolution photos"
+          : "Opravené fotografie v plnom rozlíšení"
+        : language === "en"
+          ? paidItems.length === 1
+            ? `Your photo ${paidItems[0].photoId} is ready`
+            : `Your ${paidItems.length} photos are ready`
+          : paidItems.length === 1
+            ? `Vaša fotografia ${paidItems[0].photoId} je pripravená`
+            : `Vašich ${paidItems.length} fotografií je pripravených`;
 
     const text =
       language === "en"
         ? [
             "Hello,",
             "",
-            "thank you for your purchase.",
+            ...(isResend
+              ? [
+                  "We apologize. The photos in the previous delivery were accidentally exported at a reduced resolution.",
+                  "Below are new download links to the corrected full-resolution photos.",
+                ]
+              : [
+                  "thank you for your purchase.",
+                ]),
             "",
             `Galleries: ${galleryText}`,
             `Paid photos: ${paidItems.length}`,
@@ -595,7 +611,14 @@ export async function POST(
         : [
             "Dobrý deň,",
             "",
-            "ďakujeme za váš nákup.",
+            ...(isResend
+              ? [
+                  "Ospravedlňujeme sa. Pri predchádzajúcom odoslaní boli fotografie omylom exportované v zníženom rozlíšení.",
+                  "Nižšie vám posielame nové odkazy na opravené fotografie v plnom rozlíšení.",
+                ]
+              : [
+                  "ďakujeme za váš nákup.",
+                ]),
             "",
             `Galérie: ${galleryText}`,
             `Zaplatených fotografií: ${paidItems.length}`,
@@ -622,9 +645,17 @@ export async function POST(
         ? {
             htmlLang: "en",
             eyebrow:
-              "Photos are ready",
+              isResend
+                ? "Corrected photos"
+                : "Photos are ready",
             title:
-              "Thank you for your purchase.",
+              isResend
+                ? "Corrected full-resolution photos"
+                : "Thank you for your purchase.",
+            intro:
+              isResend
+                ? "We apologize. The photos in the previous delivery were accidentally exported at a reduced resolution. Below are new download links to the corrected full-resolution photos."
+                : "",
             galleries:
               "Galleries",
             paidPhotos:
@@ -639,9 +670,17 @@ export async function POST(
         : {
             htmlLang: "sk",
             eyebrow:
-              "Fotografie sú pripravené",
+              isResend
+                ? "Opravené fotografie"
+                : "Fotografie sú pripravené",
             title:
-              "Ďakujeme za váš nákup.",
+              isResend
+                ? "Opravené fotografie v plnom rozlíšení"
+                : "Ďakujeme za váš nákup.",
+            intro:
+              isResend
+                ? "Ospravedlňujeme sa. Pri predchádzajúcom odoslaní boli fotografie omylom exportované v zníženom rozlíšení. Nižšie vám posielame nové odkazy na opravené fotografie v plnom rozlíšení."
+                : "",
             galleries:
               "Galérie",
             paidPhotos:
@@ -750,6 +789,23 @@ export async function POST(
                             >
                               ${emailLabel.title}
                             </h1>
+
+                            ${
+                              emailLabel.intro
+                                ? `
+                                  <p
+                                    style="
+                                      margin:0 0 26px;
+                                      color:#cccccc;
+                                      font-size:14px;
+                                      line-height:1.8;
+                                    "
+                                  >
+                                    ${escapeHtml(emailLabel.intro)}
+                                  </p>
+                                `
+                                : ""
+                            }
 
                             <table
                               role="presentation"

@@ -400,9 +400,22 @@ export default function OrderActions({
 
       {status ===
       "downloaded" ? (
-        <p className="whitespace-nowrap text-[10px] uppercase tracking-[0.22em] text-white/45">
-          Originály boli stiahnuté
-        </p>
+        <>
+          <p className="whitespace-nowrap text-[10px] uppercase tracking-[0.22em] text-white/45">
+            Originály boli stiahnuté
+          </p>
+
+          <button
+            type="button"
+            onClick={sendOriginal}
+            disabled={isLoading}
+            className="whitespace-nowrap bg-white px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-black transition hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isLoading
+              ? "Odosielam..."
+              : "Poslať nový odkaz"}
+          </button>
+        </>
       ) : null}
 
       <button
@@ -438,7 +451,7 @@ function ActionContainer({
         </p>
       ) : null}
 
-            {errorMessage ? (
+      {errorMessage ? (
         <p className="max-w-[260px] text-xs leading-5 text-red-400">
           {errorMessage}
         </p>
