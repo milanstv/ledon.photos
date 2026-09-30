@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 type PaymentMethod =
+  | "online"
+  | "bank_transfer"
   | "revolut"
   | "paypal";
 
@@ -58,6 +60,7 @@ export default function OrderActions({
   email,
   photoLabel,
   count,
+  paymentMethod = "revolut",
   paymentMode,
   expectedAmount,
   itemPrices,
@@ -86,8 +89,12 @@ export default function OrderActions({
     setSuccessMessage,
   ] = useState("");
 
+  const isBankTransfer =
+    paymentMethod === "bank_transfer";
+
   const isManual =
-    paymentMode === "manual";
+    paymentMode === "manual" &&
+    !isBankTransfer;
 
   const receivedNumber =
     Number(
@@ -112,10 +119,12 @@ export default function OrderActions({
   async function confirmPayment() {
     if (
       isManual &&
-      (!Number.isFinite(
-        receivedNumber,
-      ) ||
-        receivedNumber <= 0)
+      (
+        !Number.isFinite(
+          receivedNumber,
+        ) ||
+        receivedNumber <= 0
+      )
     ) {
       setErrorMessage(
         "Zadaj skutočne prijatú sumu.",
@@ -124,9 +133,16 @@ export default function OrderActions({
       return;
     }
 
-    const confirmed =
-      window.confirm(
-        isManual
+    const confirmationText =
+      isBankTransfer
+        ? [
+            "Bankový prevod",
+            "",
+            `Očakávaná suma: ${expectedAmount} €`,
+            "",
+            "Potvrdzuješ, že platba prišla na účet?",
+          ].join("\n")
+        : isManual
           ? [
               "Manuálna platba",
               "",
@@ -136,7 +152,11 @@ export default function OrderActions({
               "",
               "Potvrdiť prijatie platby?",
             ].join("\n")
-          : `Potvrdzuješ, že platba za ${count} fotografií prišla na Revolut?`,
+          : `Potvrdzuješ, že platba za ${count} fotografií prišla cez online platbu?`;
+
+    const confirmed =
+      window.confirm(
+        confirmationText,
       );
 
     if (!confirmed) {
@@ -319,13 +339,20 @@ export default function OrderActions({
                   type="number"
                   min="0"
                   step="0.01"
-                  value={receivedAmount}
-                  onChange={(event) =>
+                  value={
+                    receivedAmount
+                  }
+                  onChange={(
+                    event,
+                  ) =>
                     setReceivedAmount(
-                      event.target.value,
+                      event.target
+                        .value,
                     )
                   }
-                  disabled={isLoading}
+                  disabled={
+                    isLoading
+                  }
                   className="w-full border border-white/25 bg-black px-3 py-3 text-sm text-white outline-none focus:border-white"
                 />
 
@@ -338,8 +365,10 @@ export default function OrderActions({
                 <p className="text-white/50">
                   Zaplatených:{" "}
                   <strong className="text-white">
-                    {calculatedPaidCount} /{" "}
-                    {count}
+                    {
+                      calculatedPaidCount
+                    }{" "}
+                    / {count}
                   </strong>
                 </p>
 
@@ -359,7 +388,9 @@ export default function OrderActions({
 
           <button
             type="button"
-            onClick={confirmPayment}
+            onClick={
+              confirmPayment
+            }
             disabled={isLoading}
             className="whitespace-nowrap bg-white px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-black transition hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -402,12 +433,15 @@ export default function OrderActions({
       "downloaded" ? (
         <>
           <p className="whitespace-nowrap text-[10px] uppercase tracking-[0.22em] text-white/45">
-            Originály boli stiahnuté
+            Originály boli
+            stiahnuté
           </p>
 
           <button
             type="button"
-            onClick={sendOriginal}
+            onClick={
+              sendOriginal
+            }
             disabled={isLoading}
             className="whitespace-nowrap bg-white px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-black transition hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
           >

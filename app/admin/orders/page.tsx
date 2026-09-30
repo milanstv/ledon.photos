@@ -10,6 +10,8 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 type PaymentMethod =
+  | "online"
+  | "bank_transfer"
   | "revolut"
   | "paypal";
 
@@ -40,6 +42,7 @@ type Order = {
   status: string;
 
   paymentMethod?: PaymentMethod;
+  variableSymbol?: string;
 
   gallerySlug?: string;
   galleryTitle?: string;
@@ -506,6 +509,10 @@ export default async function OrdersPage() {
                       order.paymentMethod ===
                       "paypal";
 
+                    const isBankTransfer =
+                      order.paymentMethod ===
+                      "bank_transfer";
+
                     return (
                       <tr
                         key={
@@ -628,7 +635,27 @@ export default async function OrdersPage() {
                         </td>
 
                         <td className="px-5 py-5">
-                          {isPaypal ? (
+                          {isBankTransfer ? (
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-white">
+                                BANKOVÝ PREVOD
+                              </p>
+
+                              <p className="mt-2 text-sm text-white/70">
+                                VS: {order.variableSymbol ?? "—"}
+                              </p>
+
+                              <p className="mt-1 text-sm text-white/70">
+                                Suma: {order.expectedAmount ?? order.price} €
+                              </p>
+
+                              {order.status === "waiting_payment" ? (
+                                <p className="mt-2 text-xs text-yellow-300">
+                                  Čaká na platbu
+                                </p>
+                              ) : null}
+                            </div>
+                          ) : isPaypal ? (
                             <div>
                               <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#4ea3ff]">
                                 PayPal

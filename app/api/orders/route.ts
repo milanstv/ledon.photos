@@ -17,8 +17,138 @@ export const runtime = "nodejs";
 type Language = "sk" | "en";
 
 type PaymentMethod =
+  | "online"
+  | "bank_transfer"
   | "revolut"
   | "paypal";
+
+const BANK_TRANSFER = {
+  recipient: "Milan Štvrtecký",
+  bank: "Tatra banka",
+  iban: "SK10 1100 0000 0026 1800 3552",
+} as const;
+
+function getVariableSymbolBase(
+  date: Date,
+) {
+  const parts =
+    new Intl.DateTimeFormat(
+      "en-GB",
+      {
+        timeZone: "Europe/Bratislava",
+        year: "2-digit",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+      },
+    ).formatToParts(date);
+
+  const value = (
+    type: Intl.DateTimeFormatPartTypes,
+  ) =>
+    parts.find(
+      (part) => part.type === type,
+    )?.value ?? "00";
+
+  return [
+    value("year"),
+    value("month"),
+    value("day"),
+    value("hour"),
+    value("minute"),
+  ].join("");
+}
+
+function isPreconditionFailed(
+  error: unknown,
+) {
+  if (
+    !error ||
+    typeof error !== "object"
+  ) {
+    return false;
+  }
+
+  const candidate = error as {
+    name?: string;
+    $metadata?: {
+      httpStatusCode?: number;
+    };
+  };
+
+  return (
+    candidate.name ===
+      "PreconditionFailed" ||
+    candidate.$metadata
+      ?.httpStatusCode === 412
+  );
+}
+
+async function reserveVariableSymbol({
+  r2Client,
+  bucket,
+  orderId,
+  createdAt,
+}: {
+  r2Client: S3Client;
+  bucket: string;
+  orderId: string;
+  createdAt: Date;
+}) {
+  const base = Number(
+    getVariableSymbolBase(createdAt),
+  );
+
+  for (
+    let offset = 0;
+    offset < 1000;
+    offset += 1
+  ) {
+    const variableSymbol = String(
+      base + offset,
+    ).padStart(10, "0");
+
+    if (variableSymbol.length !== 10) {
+      break;
+    }
+
+    try {
+      await r2Client.send(
+        new PutObjectCommand({
+          Bucket: bucket,
+          Key:
+            `_payment_refs/${variableSymbol}.json`,
+          Body: JSON.stringify({
+            variableSymbol,
+            orderId,
+            createdAt:
+              createdAt.toISOString(),
+          }),
+          ContentType:
+            "application/json; charset=utf-8",
+          CacheControl: "no-store",
+          IfNoneMatch: "*",
+        }),
+      );
+
+      return variableSymbol;
+    } catch (error) {
+      if (
+        isPreconditionFailed(error)
+      ) {
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  throw new Error(
+    "Nepodarilo sa vytvoriť jedinečný variabilný symbol.",
+  );
+}
 
 type RequestedItem = {
   gallerySlug: string;
@@ -310,6 +440,7 @@ async function sendOrderEmails({
   totalPrice,
   language,
   paymentMethod,
+  variableSymbol,
 }: {
   orderId: string;
   customerEmail: string;
@@ -317,6 +448,7 @@ async function sendOrderEmails({
   totalPrice: number;
   language: Language;
   paymentMethod: PaymentMethod;
+  variableSymbol?: string;
 }) {
   const resendApiKey =
     process.env.RESEND_API_KEY;
@@ -392,9 +524,32 @@ async function sendOrderEmails({
     );
 
   const paymentMethodText =
-    paymentMethod === "paypal"
-      ? "PayPal"
-      : "Revolut";
+    paymentMethod ===
+      "bank_transfer"
+      ? "Bankový prevod"
+      : paymentMethod ===
+          "paypal"
+        ? "PayPal"
+        : paymentMethod ===
+            "online"
+          ? "Online platba"
+          : "Revolut";
+
+  const isBankTransfer =
+    paymentMethod ===
+    "bank_transfer";
+
+  const bankTransferLines =
+    isBankTransfer &&
+    variableSymbol
+      ? [
+          `Príjemca: ${BANK_TRANSFER.recipient}`,
+          `Banka: ${BANK_TRANSFER.bank}`,
+          `IBAN: ${BANK_TRANSFER.iban}`,
+          `Suma: ${totalPrice} €`,
+          `Variabilný symbol: ${variableSymbol}`,
+        ]
+      : [];
 
   const customerEmailResult =
     await resend.emails.send({
@@ -409,58 +564,128 @@ async function sendOrderEmails({
         fromEmail,
 
       subject:
-        language === "en"
-          ? `Your order for ${items.length} photos has been received`
-          : `Objednávka ${items.length} fotografií bola prijatá`,
+        isBankTransfer
+          ? language === "en"
+            ? `Payment details for your LEDON. order`
+            : `Platobné údaje k objednávke LEDON.`
+          : language === "en"
+            ? `Your order for ${items.length} photos has been received`
+            : `Objednávka ${items.length} fotografií bola prijatá`,
 
       text:
         language === "en"
-          ? [
-              "Hello,",
-              "",
-              "we have received your order.",
-              "",
-              `Order ID: ${orderId}`,
-              `Payment method: ${paymentMethodText}`,
-              "",
-              `Galleries: ${galleryList}`,
-              `Number of photos: ${items.length}`,
-              "",
-              "Photos:",
-              ...photoLines,
-              "",
-              `Total price: ${totalPrice} €`,
-              "",
-              "Once your payment is received, we will send you an email with links to download the full-resolution originals.",
-              "",
-              "Thank you for your support.",
-              "",
-              "LEDON.",
-              "https://ledon.photos",
-            ].join("\n")
-          : [
-              "Dobrý deň,",
-              "",
-              "vašu objednávku sme prijali.",
-              "",
-              `ID objednávky: ${orderId}`,
-              `Spôsob platby: ${paymentMethodText}`,
-              "",
-              `Galérie: ${galleryList}`,
-              `Počet fotografií: ${items.length}`,
-              "",
-              "Fotografie:",
-              ...photoLines,
-              "",
-              `Celková cena: ${totalPrice} €`,
-              "",
-              "Po prijatí platby vám odošleme e-mail s odkazmi na stiahnutie originálov v plnom rozlíšení.",
-              "",
-              "Ďakujeme za podporu.",
-              "",
-              "LEDON.",
-              "https://ledon.photos",
-            ].join("\n"),
+          ? isBankTransfer &&
+            variableSymbol
+            ? [
+                "Hello,",
+                "",
+                "we have received your order.",
+                "",
+                `Order ID: ${orderId}`,
+                "Payment method: Bank transfer",
+                "",
+                `Galleries: ${galleryList}`,
+                `Number of photos: ${items.length}`,
+                "",
+                "Photos:",
+                ...photoLines,
+                "",
+                `Total price: ${totalPrice} €`,
+                "",
+                "Please make the payment using the following bank details:",
+                "",
+                `Recipient: ${BANK_TRANSFER.recipient}`,
+                `Bank: ${BANK_TRANSFER.bank}`,
+                `IBAN: ${BANK_TRANSFER.iban}`,
+                `Amount: ${totalPrice} €`,
+                `Payment reference / variable symbol: ${variableSymbol}`,
+                "",
+                "Please include the payment reference / variable symbol with your payment.",
+                "",
+                "Once your payment is received, we will send you an email with links to download the full-resolution originals.",
+                "",
+                "Thank you for your support.",
+                "",
+                "LEDON.",
+                "https://ledon.photos",
+              ].join("\n")
+            : [
+                "Hello,",
+                "",
+                "we have received your order.",
+                "",
+                `Order ID: ${orderId}`,
+                `Payment method: ${paymentMethodText}`,
+                "",
+                `Galleries: ${galleryList}`,
+                `Number of photos: ${items.length}`,
+                "",
+                "Photos:",
+                ...photoLines,
+                "",
+                `Total price: ${totalPrice} €`,
+                "",
+                "Once your payment is received, we will send you an email with links to download the full-resolution originals.",
+                "",
+                "Thank you for your support.",
+                "",
+                "LEDON.",
+                "https://ledon.photos",
+              ].join("\n")
+          : isBankTransfer &&
+              variableSymbol
+            ? [
+                "Dobrý deň,",
+                "",
+                "vašu objednávku sme prijali.",
+                "",
+                `ID objednávky: ${orderId}`,
+                "Spôsob platby: Bankový prevod",
+                "",
+                `Galérie: ${galleryList}`,
+                `Počet fotografií: ${items.length}`,
+                "",
+                "Fotografie:",
+                ...photoLines,
+                "",
+                `Celková cena: ${totalPrice} €`,
+                "",
+                "Platbu prosím odošlite na:",
+                "",
+                ...bankTransferLines,
+                "",
+                "Pri platbe prosím uveďte variabilný symbol.",
+                "",
+                "Po prijatí platby vám odošleme e-mail s odkazmi na stiahnutie originálov v plnom rozlíšení.",
+                "",
+                "Ďakujeme za podporu.",
+                "",
+                "LEDON.",
+                "https://ledon.photos",
+              ].join("\n")
+            : [
+                "Dobrý deň,",
+                "",
+                "vašu objednávku sme prijali.",
+                "",
+                `ID objednávky: ${orderId}`,
+                `Spôsob platby: ${paymentMethodText}`,
+                "",
+                `Galérie: ${galleryList}`,
+                `Počet fotografií: ${items.length}`,
+                "",
+                "Fotografie:",
+                ...photoLines,
+                "",
+                `Celková cena: ${totalPrice} €`,
+                "",
+                "Po prijatí platby vám odošleme e-mail s odkazmi na stiahnutie originálov v plnom rozlíšení.",
+                "",
+                "Ďakujeme za podporu.",
+                "",
+                "LEDON.",
+                "https://ledon.photos",
+              ].join("\n"),
     });
 
   if (
@@ -504,6 +729,34 @@ async function sendOrderEmails({
       adminPreview,
     );
 
+  const adminBankText =
+    isBankTransfer &&
+    variableSymbol
+      ? [
+          "",
+          "Platba: BANKOVÝ PREVOD",
+          `Variabilný symbol: ${variableSymbol}`,
+          `Suma: ${totalPrice} €`,
+        ]
+      : [];
+
+  const adminBankHtml =
+    isBankTransfer &&
+    variableSymbol
+      ? `
+        <div style="margin-top:24px;padding:18px;border:1px solid #3b3b3b;background:#181818;">
+          <p style="margin:0 0 10px;color:#ffffff;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">
+            Bankový prevod
+          </p>
+          <p style="margin:0;color:#bbbbbb;line-height:1.8;">
+            <strong>Variabilný symbol:</strong> ${escapeHtml(variableSymbol)}<br>
+            <strong>Suma:</strong> ${totalPrice} €<br>
+            <strong>Stav:</strong> Čaká na platbu
+          </p>
+        </div>
+      `
+      : "";
+
   const adminEmailResult =
     await resend.emails.send({
       from:
@@ -528,6 +781,7 @@ async function sendOrderEmails({
         `Cena: ${totalPrice} €`,
         `Zákazník: ${customerEmail}`,
         `ID objednávky: ${orderId}`,
+        ...adminBankText,
         "",
         "Otvoriť objednávky:",
         "https://ledon.photos/admin/orders",
@@ -561,6 +815,7 @@ async function sendOrderEmails({
                 <strong>Počet:</strong> ${items.length}<br>
                 <strong>Fotografie:</strong> ${safePhotoList}<br>
                 <strong>Cena:</strong> ${totalPrice} €<br>
+                <strong>Platba:</strong> ${escapeHtml(paymentMethodText)}<br>
                 <strong>Zákazník:</strong>
                 <a
                   href="mailto:${safeCustomerEmail}"
@@ -570,6 +825,8 @@ async function sendOrderEmails({
                 </a><br>
                 <strong>ID objednávky:</strong> ${safeOrderId}
               </p>
+
+              ${adminBankHtml}
 
               <a
                 href="https://ledon.photos/admin/orders"
@@ -615,13 +872,23 @@ export async function POST(
     const paymentMethod:
       PaymentMethod =
       body.paymentMethod ===
-      "paypal"
-        ? "paypal"
-        : "revolut";
+      "bank_transfer"
+        ? "bank_transfer"
+        : body.paymentMethod ===
+            "online"
+          ? "online"
+          : body.paymentMethod ===
+              "paypal"
+            ? "paypal"
+            : "revolut";
 
     if (
       body.paymentMethod !==
         undefined &&
+      body.paymentMethod !==
+        "online" &&
+      body.paymentMethod !==
+        "bank_transfer" &&
       body.paymentMethod !==
         "revolut" &&
       body.paymentMethod !==
@@ -809,7 +1076,9 @@ export async function POST(
 
     if (
       paymentMethod ===
-      "revolut"
+        "revolut" ||
+      paymentMethod ===
+        "online"
     ) {
       const fixedPaymentUrl =
         count <= 20
@@ -837,6 +1106,12 @@ export async function POST(
           "Chýba Revolut platobný odkaz.",
         );
       }
+    } else if (
+      paymentMethod ===
+      "bank_transfer"
+    ) {
+      paymentMode =
+        "fixed";
     } else {
       paymentMode =
         "manual";
@@ -855,9 +1130,26 @@ export async function POST(
     const orderId =
       crypto.randomUUID();
 
+    const createdAt =
+      new Date();
+
     const now =
-      new Date()
-        .toISOString();
+      createdAt.toISOString();
+
+    const r2Client =
+      getR2Client();
+
+    const variableSymbol =
+      paymentMethod ===
+      "bank_transfer"
+        ? await reserveVariableSymbol({
+            r2Client,
+            bucket:
+              ordersBucket,
+            orderId,
+            createdAt,
+          })
+        : undefined;
 
     const galleries =
       getGallerySummary(
@@ -892,6 +1184,14 @@ export async function POST(
       language,
 
       paymentMethod,
+
+      ...(variableSymbol
+        ? {
+            variableSymbol,
+            bankTransfer:
+              BANK_TRANSFER,
+          }
+        : {}),
 
       // Ponechávame kvôli kompatibilite so starými časťami systému.
       // Pri novej multi-gallery objednávke je to prvá galéria.
@@ -949,9 +1249,6 @@ export async function POST(
     const orderKey =
       `_orders/${orderId}.json`;
 
-    const r2Client =
-      getR2Client();
-
     await r2Client.send(
       new PutObjectCommand({
         Bucket:
@@ -989,6 +1286,7 @@ export async function POST(
         language,
 
         paymentMethod,
+        variableSymbol,
       });
     } catch (
       emailError
@@ -1007,6 +1305,15 @@ export async function POST(
       count,
       totalPrice,
       paymentMode,
+      variableSymbol,
+
+      ...(paymentMethod ===
+      "bank_transfer"
+        ? {
+            bankTransfer:
+              BANK_TRANSFER,
+          }
+        : {}),
 
       ...(unitPrice !==
       undefined

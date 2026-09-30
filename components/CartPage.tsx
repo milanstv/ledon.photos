@@ -17,6 +17,10 @@ type CartPageProps = {
   language: Language;
 };
 
+type PaymentMethod =
+  | "online"
+  | "bank_transfer";
+
 export default function CartPage({
   language,
 }: CartPageProps) {
@@ -36,11 +40,14 @@ export default function CartPage({
   const [consent, setConsent] =
     useState(false);
 
-  const [isLoading, setIsLoading] =
-    useState(false);
+  const [loadingMethod, setLoadingMethod] =
+    useState<PaymentMethod | null>(null);
 
   const [errorMessage, setErrorMessage] =
     useState("");
+
+  const isLoading =
+    loadingMethod !== null;
 
   const homeHref =
     language === "en" ? "/en" : "/";
@@ -55,11 +62,9 @@ export default function CartPage({
       ),
     ).size;
 
-  async function handleCheckout(
-    event: FormEvent<HTMLFormElement>,
+  async function createOrder(
+    paymentMethod: PaymentMethod,
   ) {
-    event.preventDefault();
-
     setErrorMessage("");
 
     if (items.length === 0) {
@@ -73,11 +78,13 @@ export default function CartPage({
     }
 
     if (!consent) {
-      setErrorMessage(t.emailConsentError);
+      setErrorMessage(
+        t.emailConsentError,
+      );
       return;
     }
 
-    setIsLoading(true);
+    setLoadingMethod(paymentMethod);
 
     try {
       const response =
@@ -85,24 +92,29 @@ export default function CartPage({
           "/api/orders",
           {
             method: "POST",
+
             headers: {
               "Content-Type":
                 "application/json",
             },
+
             body: JSON.stringify({
               items: items.map(
                 (item) => ({
                   gallerySlug:
                     item.gallerySlug,
+
                   photoId:
                     item.photoId,
                 }),
               ),
+
               email:
                 email.trim(),
+
               language,
-              paymentMethod:
-                "revolut",
+
+              paymentMethod,
             }),
           },
         );
@@ -115,6 +127,31 @@ export default function CartPage({
           result.error ??
             t.orderCreateError,
         );
+      }
+
+      if (
+        paymentMethod ===
+        "bank_transfer"
+      ) {
+        if (!result.orderId) {
+          throw new Error(
+            t.orderCreateError,
+          );
+        }
+
+        const destination =
+          language === "en"
+            ? `/en/bank-transfer/${encodeURIComponent(
+                result.orderId,
+              )}`
+            : `/bank-transfer/${encodeURIComponent(
+                result.orderId,
+              )}`;
+
+        window.location.href =
+          destination;
+
+        return;
       }
 
       if (!result.paymentUrl) {
@@ -132,8 +169,22 @@ export default function CartPage({
           : t.orderCreateError,
       );
 
-      setIsLoading(false);
+      setLoadingMethod(null);
     }
+  }
+
+  function handleCheckout(
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+
+    void createOrder("online");
+  }
+
+  function handleBankTransfer() {
+    void createOrder(
+      "bank_transfer",
+    );
   }
 
   const galleryCountText =
@@ -144,6 +195,21 @@ export default function CartPage({
       : language === "en"
         ? `${galleryCount} galleries`
         : `${galleryCount} galérie`;
+
+  const onlineButtonText =
+    language === "en"
+      ? `PAY ${total} €`
+      : `ZAPLATIŤ ${total} €`;
+
+  const bankTransferButtonText =
+    language === "en"
+      ? `BANK TRANSFER ${total} €`
+      : `BANKOVÝ PREVOD ${total} €`;
+
+  const paymentMethodsText =
+    language === "en"
+      ? "Online payment"
+      : "Online platba";
 
   return (
     <main className="min-h-screen bg-[#080808] text-white">
@@ -251,8 +317,12 @@ export default function CartPage({
                     >
                       <div className="relative h-24 w-32 shrink-0 overflow-hidden bg-white/5 sm:h-28 sm:w-40 md:h-32 md:w-48">
                         <Image
-                          src={item.photoSrc}
-                          alt={item.photoId}
+                          src={
+                            item.photoSrc
+                          }
+                          alt={
+                            item.photoId
+                          }
                           fill
                           sizes="192px"
                           className="object-cover"
@@ -261,11 +331,15 @@ export default function CartPage({
 
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-base tracking-[0.12em] md:text-xl">
-                          {item.photoId}
+                          {
+                            item.photoId
+                          }
                         </p>
 
                         <p className="mt-2 truncate text-[10px] uppercase tracking-[0.2em] text-white/40">
-                          {item.galleryTitle}
+                          {
+                            item.galleryTitle
+                          }
                         </p>
 
                         <p className="mt-3 text-xl font-light">
@@ -281,7 +355,9 @@ export default function CartPage({
                             item.photoId,
                           )
                         }
-                        disabled={isLoading}
+                        disabled={
+                          isLoading
+                        }
                         className="shrink-0 border border-white/20 px-4 py-3 text-[10px] uppercase tracking-[0.18em] text-white/60 transition hover:border-white hover:bg-white hover:text-black disabled:opacity-40"
                       >
                         {t.remove}
@@ -296,7 +372,10 @@ export default function CartPage({
                   href={homeHref}
                   className="border border-white/25 px-6 py-4 text-center text-[10px] uppercase tracking-[0.22em] text-white/75 transition hover:border-white hover:text-white"
                 >
-                  ← {t.continueSelecting}
+                  ←{" "}
+                  {
+                    t.continueSelecting
+                  }
                 </Link>
 
                 <button
@@ -336,7 +415,9 @@ export default function CartPage({
               </div>
 
               <form
-                onSubmit={handleCheckout}
+                onSubmit={
+                  handleCheckout
+                }
                 className="mt-7"
               >
                 <label
@@ -352,7 +433,8 @@ export default function CartPage({
                   value={email}
                   onChange={(event) =>
                     setEmail(
-                      event.target.value,
+                      event.target
+                        .value,
                     )
                   }
                   autoComplete="email"
@@ -365,12 +447,17 @@ export default function CartPage({
                   <input
                     type="checkbox"
                     checked={consent}
-                    onChange={(event) =>
+                    onChange={(
+                      event,
+                    ) =>
                       setConsent(
-                        event.target.checked,
+                        event.target
+                          .checked,
                       )
                     }
-                    disabled={isLoading}
+                    disabled={
+                      isLoading
+                    }
                     className="mt-1 h-4 w-4 shrink-0"
                   />
 
@@ -388,17 +475,60 @@ export default function CartPage({
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="mt-7 w-full bg-white px-6 py-5 text-xs font-semibold uppercase tracking-[0.22em] text-black transition hover:bg-white/80 disabled:cursor-wait disabled:opacity-50"
+                  className="mt-7 flex w-full overflow-hidden border border-white bg-white text-black transition hover:bg-white/85 disabled:cursor-wait disabled:opacity-50"
                 >
-                  {isLoading
+                  <span className="flex min-h-[68px] flex-1 items-center justify-center px-4 text-xs font-semibold uppercase tracking-[0.18em]">
+                    {loadingMethod ===
+                    "online"
+                      ? t.creatingOrder
+                      : onlineButtonText}
+                  </span>
+
+                  <span className="grid w-[118px] shrink-0 grid-cols-2 gap-x-2 gap-y-1 border-l border-black/15 bg-[#eeeeee] px-3 py-3 text-[8px] font-semibold leading-tight tracking-normal text-black sm:w-[128px]">
+                    <span className="flex items-center justify-center whitespace-nowrap">
+                      <Image src="/images/payment/apple-pay.svg" alt="Apple Pay" width={42} height={28} unoptimized className="h-7 w-[42px] object-contain" />
+                    </span>
+
+                    <span className="flex items-center justify-center whitespace-nowrap">
+                      <svg
+  width="42" height="28" viewBox="0 0 42 28"
+  fill="none" stroke="currentColor" strokeWidth="1.8"
+  role="img" aria-label={language === "en" ? "Payment card" : "Platobná karta"}
+  className="h-7 w-[42px]"
+>
+  <rect x="2" y="2" width="38" height="24" rx="4" />
+  <path d="M2 9h38M8 19h8M20 19h5" />
+</svg>
+                    </span>
+
+                    <span className="flex items-center justify-center whitespace-nowrap">
+                      <Image src="/images/payment/google-pay.svg" alt="Google Pay" width={42} height={28} unoptimized className="h-7 w-[42px] object-contain" />
+                    </span>
+
+                    <span className="flex items-center justify-center whitespace-nowrap">
+                      <Image src="/images/payment/revolut.svg" alt="Revolut" width={42} height={28} unoptimized className="h-7 w-[42px] object-contain" />
+                    </span>
+                  </span>
+                </button>
+
+                <p className="mt-3 text-center text-[9px] uppercase tracking-[0.15em] text-white/25">
+                  {paymentMethodsText}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={
+                    handleBankTransfer
+                  }
+                  disabled={isLoading}
+                  className="mt-4 flex min-h-[62px] w-full items-center justify-center border border-white/30 bg-transparent px-5 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:border-white hover:bg-white hover:text-black disabled:cursor-wait disabled:opacity-50"
+                >
+                  {loadingMethod ===
+                  "bank_transfer"
                     ? t.creatingOrder
-                    : `${t.pay} ${total} €`}
+                    : bankTransferButtonText}
                 </button>
               </form>
-
-              <p className="mt-5 text-center text-[10px] uppercase tracking-[0.15em] text-white/25">
-                {t.revolutPayment}
-              </p>
             </aside>
           </div>
         )}

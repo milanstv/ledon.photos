@@ -582,8 +582,7 @@ export async function POST(
             "",
             ...(isResend
               ? [
-                  "We apologize. The photos in the previous delivery were accidentally exported at a reduced resolution.",
-                  "Below are new download links to the corrected full-resolution photos.",
+                  "We are sending you new download links to your full-resolution photos.",
                 ]
               : [
                   "thank you for your purchase.",
@@ -613,8 +612,7 @@ export async function POST(
             "",
             ...(isResend
               ? [
-                  "Ospravedlňujeme sa. Pri predchádzajúcom odoslaní boli fotografie omylom exportované v zníženom rozlíšení.",
-                  "Nižšie vám posielame nové odkazy na opravené fotografie v plnom rozlíšení.",
+                  "Posielame vám nové odkazy na vaše fotografie v plnom rozlíšení.",
                 ]
               : [
                   "ďakujeme za váš nákup.",
@@ -654,7 +652,7 @@ export async function POST(
                 : "Thank you for your purchase.",
             intro:
               isResend
-                ? "We apologize. The photos in the previous delivery were accidentally exported at a reduced resolution. Below are new download links to the corrected full-resolution photos."
+                ? "We are sending you new download links to your full-resolution photos."
                 : "",
             galleries:
               "Galleries",
@@ -679,7 +677,7 @@ export async function POST(
                 : "Ďakujeme za váš nákup.",
             intro:
               isResend
-                ? "Ospravedlňujeme sa. Pri predchádzajúcom odoslaní boli fotografie omylom exportované v zníženom rozlíšení. Nižšie vám posielame nové odkazy na opravené fotografie v plnom rozlíšení."
+                ? "Posielame vám nové odkazy na vaše fotografie v plnom rozlíšení."
                 : "",
             galleries:
               "Galérie",
