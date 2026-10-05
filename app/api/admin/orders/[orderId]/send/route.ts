@@ -22,6 +22,7 @@ type OrderItem = {
   gallerySlug?: string;
   galleryTitle?: string;
   galleryDate?: string;
+  mediaTitle?: string;
   photoId: string;
   filename: string;
   price: number;
@@ -32,6 +33,7 @@ type NormalizedOrderItem = {
   gallerySlug: string;
   galleryTitle: string;
   galleryDate: string;
+  mediaTitle?: string;
   photoId: string;
   filename: string;
   price: number;
@@ -166,6 +168,7 @@ function getOrderItems(
         galleryDate,
         photoId:
           item.photoId,
+        mediaTitle: item.mediaTitle,
         filename:
           item.filename,
         price:
@@ -414,7 +417,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Objednávka neobsahuje žiadne fotografie.",
+            "Objednávka neobsahuje žiadne položky.",
         },
         {
           status: 400,
@@ -434,7 +437,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Nie je zaplatená ani jedna fotografia.",
+            "Nie je zaplatená ani jedna položka.",
         },
         {
           status: 400,
@@ -484,7 +487,7 @@ export async function POST(
       downloadLinks
         .map(
           (item) =>
-            `${item.galleryTitle} — ${item.photoId}: ${item.url}`,
+            `${item.galleryTitle} — ${item.mediaTitle ?? item.photoId}: ${item.url}`,
         )
         .join("\n");
 
@@ -493,7 +496,7 @@ export async function POST(
         .map((item) => {
           const safePhotoId =
             escapeHtml(
-              item.photoId,
+              item.mediaTitle ?? item.photoId,
             );
 
           const safeGalleryTitle =
@@ -565,15 +568,15 @@ export async function POST(
     const subject =
       isResend
         ? language === "en"
-          ? "Corrected full-resolution photos"
-          : "Opravené fotografie v plnom rozlíšení"
+          ? "Corrected original files"
+          : "Opravené originálne súbory"
         : language === "en"
           ? paidItems.length === 1
-            ? `Your photo ${paidItems[0].photoId} is ready`
-            : `Your ${paidItems.length} photos are ready`
+            ? `Your file ${paidItems[0].mediaTitle ?? paidItems[0].photoId} is ready`
+            : `Your ${paidItems.length} files are ready`
           : paidItems.length === 1
-            ? `Vaša fotografia ${paidItems[0].photoId} je pripravená`
-            : `Vašich ${paidItems.length} fotografií je pripravených`;
+            ? `Váš súbor ${paidItems[0].mediaTitle ?? paidItems[0].photoId} je pripravený`
+            : `Vašich ${paidItems.length} súborov je pripravených`;
 
     const text =
       language === "en"
@@ -582,16 +585,16 @@ export async function POST(
             "",
             ...(isResend
               ? [
-                  "We are sending you new download links to your full-resolution photos.",
+                  "We are sending you new download links to your original files.",
                 ]
               : [
                   "thank you for your purchase.",
                 ]),
             "",
             `Galleries: ${galleryText}`,
-            `Paid photos: ${paidItems.length}`,
+            `Paid files: ${paidItems.length}`,
             unpaidCount > 0
-              ? `Unpaid photos: ${unpaidCount}`
+              ? `Unpaid files: ${unpaidCount}`
               : "",
             "",
             "Full-resolution originals:",
@@ -612,16 +615,16 @@ export async function POST(
             "",
             ...(isResend
               ? [
-                  "Posielame vám nové odkazy na vaše fotografie v plnom rozlíšení.",
+                  "Posielame vám nové odkazy na vaše originálne súbory.",
                 ]
               : [
                   "ďakujeme za váš nákup.",
                 ]),
             "",
             `Galérie: ${galleryText}`,
-            `Zaplatených fotografií: ${paidItems.length}`,
+            `Zaplatených súborov: ${paidItems.length}`,
             unpaidCount > 0
-              ? `Nezaplatených fotografií: ${unpaidCount}`
+              ? `Nezaplatených súborov: ${unpaidCount}`
               : "",
             "",
             "Originály v plnom rozlíšení:",
@@ -644,22 +647,22 @@ export async function POST(
             htmlLang: "en",
             eyebrow:
               isResend
-                ? "Corrected photos"
-                : "Photos are ready",
+                ? "Corrected files"
+                : "Files are ready",
             title:
               isResend
-                ? "Corrected full-resolution photos"
+                ? "Corrected original files"
                 : "Thank you for your purchase.",
             intro:
               isResend
-                ? "We are sending you new download links to your full-resolution photos."
+                ? "We are sending you new download links to your original files."
                 : "",
             galleries:
               "Galleries",
             paidPhotos:
-              "Paid photos",
+              "Paid files",
             unpaidPhotos:
-              "Unpaid photos",
+              "Unpaid files",
             validity:
               "The download links are valid for 24 hours.",
             support:
@@ -669,22 +672,22 @@ export async function POST(
             htmlLang: "sk",
             eyebrow:
               isResend
-                ? "Opravené fotografie"
-                : "Fotografie sú pripravené",
+                ? "Opravené položky"
+                : "Súbory sú pripravené",
             title:
               isResend
-                ? "Opravené fotografie v plnom rozlíšení"
+                ? "Opravené originálne súbory"
                 : "Ďakujeme za váš nákup.",
             intro:
               isResend
-                ? "Posielame vám nové odkazy na vaše fotografie v plnom rozlíšení."
+                ? "Posielame vám nové odkazy na vaše originálne súbory."
                 : "",
             galleries:
               "Galérie",
             paidPhotos:
-              "Zaplatených fotografií",
+              "Zaplatených súborov",
             unpaidPhotos:
-              "Nezaplatených fotografií",
+              "Nezaplatených súborov",
             validity:
               "Odkazy sú platné 24 hodín.",
             support:
@@ -1030,8 +1033,8 @@ export async function POST(
       success: true,
       message:
         unpaidCount > 0
-          ? `E-mail s ${paidItems.length} zaplatenými fotografiami bol odoslaný na ${order.email}.`
-          : `E-mail s ${paidItems.length} fotografiami bol odoslaný na ${order.email}.`,
+          ? `E-mail s ${paidItems.length} zaplatenými položkami bol odoslaný na ${order.email}.`
+          : `E-mail s ${paidItems.length} položkami bol odoslaný na ${order.email}.`,
     });
   } catch (error) {
     console.error(

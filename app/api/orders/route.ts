@@ -12,6 +12,9 @@ import {
   getPhoto,
 } from "@/data/galleries";
 
+import { slideshowOrderItem } from "@/lib/slideshow-commerce";
+import { SlideshowError } from "@/lib/slideshow-galleries";
+
 export const runtime = "nodejs";
 
 type Language = "sk" | "en";
@@ -172,6 +175,7 @@ type OrderItem = {
   gallerySlug: string;
   galleryTitle: string;
   galleryDate: string;
+  mediaTitle?: string;
   photoId: string;
   filename: string;
   price: number;
@@ -180,7 +184,7 @@ type OrderItem = {
 const errorTexts = {
   sk: {
     missingItemsOrEmail:
-      "Chýbajú fotografie alebo e-mail.",
+      "Chýbajú položky alebo e-mail.",
     invalidEmail:
       "E-mailová adresa nie je platná.",
     invalidPaymentMethod:
@@ -204,7 +208,7 @@ const errorTexts = {
 
   en: {
     missingItemsOrEmail:
-      "Photos or email address are missing.",
+      "Files or email address are missing.",
     invalidEmail:
       "The email address is not valid.",
     invalidPaymentMethod:
@@ -493,14 +497,14 @@ async function sendOrderEmails({
     items
       .map(
         (item) =>
-          `${item.galleryTitle} — ${item.photoId}`,
+          `${item.galleryTitle} — ${item.mediaTitle ?? item.photoId}`,
       )
       .join(", ");
 
   const photoLines =
     items.map(
       (item) =>
-        `${item.galleryTitle} — ${item.photoId} — ${item.price} €`,
+        `${item.galleryTitle} — ${item.mediaTitle ?? item.photoId} — ${item.price} €`,
     );
 
   const safeGalleryList =
@@ -569,8 +573,8 @@ async function sendOrderEmails({
             ? `Payment details for your LEDON. order`
             : `Platobné údaje k objednávke LEDON.`
           : language === "en"
-            ? `Your order for ${items.length} photos has been received`
-            : `Objednávka ${items.length} fotografií bola prijatá`,
+            ? `Your order for ${items.length} files has been received`
+            : `Objednávka ${items.length} súborov bola prijatá`,
 
       text:
         language === "en"
@@ -585,9 +589,9 @@ async function sendOrderEmails({
                 "Payment method: Bank transfer",
                 "",
                 `Galleries: ${galleryList}`,
-                `Number of photos: ${items.length}`,
+                `Number of files: ${items.length}`,
                 "",
-                "Photos:",
+                "Files:",
                 ...photoLines,
                 "",
                 `Total price: ${totalPrice} €`,
@@ -618,9 +622,9 @@ async function sendOrderEmails({
                 `Payment method: ${paymentMethodText}`,
                 "",
                 `Galleries: ${galleryList}`,
-                `Number of photos: ${items.length}`,
+                `Number of files: ${items.length}`,
                 "",
-                "Photos:",
+                "Files:",
                 ...photoLines,
                 "",
                 `Total price: ${totalPrice} €`,
@@ -643,7 +647,7 @@ async function sendOrderEmails({
                 "Spôsob platby: Bankový prevod",
                 "",
                 `Galérie: ${galleryList}`,
-                `Počet fotografií: ${items.length}`,
+                `Počet súborov: ${items.length}`,
                 "",
                 "Fotografie:",
                 ...photoLines,
@@ -672,7 +676,7 @@ async function sendOrderEmails({
                 `Spôsob platby: ${paymentMethodText}`,
                 "",
                 `Galérie: ${galleryList}`,
-                `Počet fotografií: ${items.length}`,
+                `Počet súborov: ${items.length}`,
                 "",
                 "Fotografie:",
                 ...photoLines,
@@ -970,6 +974,12 @@ export async function POST(
       const requestedItem
       of requestedItems
     ) {
+      if (requestedItem.gallerySlug.startsWith("slideshow-")) {
+        const item = await slideshowOrderItem(requestedItem.gallerySlug, requestedItem.photoId);
+        if (!item) throw new SlideshowError("Slideshow sa nenašlo.", 404);
+        items.push(item);
+        continue;
+      }
       const gallery =
         getGallery(
           requestedItem.gallerySlug,
@@ -1059,9 +1069,9 @@ export async function POST(
     const totalPrice =
       items.reduce(
         (sum, item) =>
-          sum + item.price,
+          sum + Math.round(item.price * 100),
         0,
-      );
+      ) / 100;
 
     const totalInCents =
       Math.round(
@@ -1325,6 +1335,7 @@ export async function POST(
   } catch (
     error
   ) {
+    if (error instanceof SlideshowError) return NextResponse.json({ error: language === "en" ? "This slideshow is unavailable. Remove it from your cart and refresh the gallery." : error.message }, { status: error.status });
     console.error(
       "Chyba pri vytváraní objednávky:",
       error,

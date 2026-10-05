@@ -8,6 +8,8 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { NextResponse } from "next/server";
 
+import { orderOriginalKey, attachmentFilename, slideshowOrderGalleryId } from "@/lib/slideshow-order";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -17,6 +19,7 @@ type OrderItem = {
   galleryTitle?: string;
   galleryDate?: string;
 
+  mediaTitle?: string;
   photoId: string;
   filename: string;
   price: number;
@@ -28,6 +31,7 @@ type NormalizedOrderItem = {
   galleryTitle: string;
   galleryDate: string;
 
+  mediaTitle?: string;
   photoId: string;
   filename: string;
   price: number;
@@ -195,6 +199,7 @@ function getOrderItems(
         photoId:
           item.photoId,
 
+        mediaTitle: item.mediaTitle,
         filename:
           item.filename,
 
@@ -453,7 +458,7 @@ export async function GET(
       return NextResponse.json(
         {
           error:
-            "Objednávka neobsahuje žiadne fotografie.",
+            "Objednávka neobsahuje žiadne položky.",
         },
         {
           status: 400,
@@ -473,7 +478,7 @@ export async function GET(
       return NextResponse.json(
         {
           error:
-            "V objednávke nie je žiadna zaplatená fotografia.",
+            "V objednávke nie je žiadna zaplatená položka.",
         },
         {
           status: 403,
@@ -514,7 +519,7 @@ export async function GET(
           error:
             requestedItemKey ||
             requestedPhotoId
-              ? "Táto fotografia nebola zaplatená alebo nie je súčasťou objednávky."
+              ? "Táto položka nebola zaplatená alebo nie je súčasťou objednávky."
               : "Fotografia sa v objednávke nenašla.",
         },
         {
@@ -523,9 +528,7 @@ export async function GET(
       );
     }
 
-    const objectKey =
-      `${selectedItem.gallerySlug}/` +
-      `${selectedItem.filename}`;
+    const objectKey = orderOriginalKey(selectedItem);
      
 
 
@@ -535,7 +538,8 @@ export async function GET(
         Key: objectKey,
 
         ResponseContentDisposition:
-          `attachment; filename="${selectedItem.filename}"`,
+          attachmentFilename(selectedItem.filename),
+        ...(slideshowOrderGalleryId(selectedItem.gallerySlug) ? { ResponseContentType: "video/mp4" } : {}),
       });
 
     const downloadUrl =

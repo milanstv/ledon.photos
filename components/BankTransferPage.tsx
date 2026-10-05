@@ -129,7 +129,7 @@ export default function BankTransferPage({
         notice:
           "Pri platbe nezabudnite uviesť variabilný symbol.",
         delivery:
-          "Fotografie v plnom rozlíšení vám odošleme po prijatí platby.",
+          "Originálne súbory vám sprístupníme po prijatí platby.",
         back: "Späť na galérie",
       };
 

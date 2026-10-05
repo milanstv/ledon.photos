@@ -39,7 +39,7 @@ export default function HomePage({
       <div className="fixed inset-0 bg-gradient-to-r from-black/90 via-black/40 to-black/10" />
       <div className="fixed inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/30" />
 
-      <header className="fixed left-0 top-0 z-50 flex w-full items-center justify-between px-6 py-6 md:px-11 md:py-7">
+      <header className="fixed left-0 top-0 z-50 flex w-full flex-wrap items-center justify-between gap-4 px-6 py-6 md:px-11 md:py-7">
         <Link
           href={homeHref}
           className="flex items-center"
@@ -54,13 +54,20 @@ export default function HomePage({
           />
         </Link>
 
-        <nav className="flex items-center gap-4 text-[10px] font-medium uppercase tracking-[0.25em] md:gap-10 md:text-xs md:tracking-[0.35em]">
+        <nav className="flex w-full items-center justify-between gap-3 text-[10px] font-medium uppercase tracking-[0.25em] md:w-auto md:gap-10 md:text-xs md:tracking-[0.35em]">
           <a
             href="#galleries"
             className="transition hover:text-white/60"
           >
             {t.galleriesNav}
           </a>
+
+          <Link
+            href={language === "en" ? "/en/slideshow" : "/slideshow"}
+            className="transition hover:text-white/60"
+          >
+            Slideshow
+          </Link>
 
           <a
             href="#contact"
@@ -106,7 +113,7 @@ export default function HomePage({
 
       <section
         id="galleries"
-        className="relative z-10 flex min-h-screen items-start px-6 pb-12 pt-24 md:px-11 md:pt-24"
+        className="relative z-10 flex min-h-screen items-start px-6 pb-12 pt-36 md:px-11 md:pt-24"
       >
         <div className="w-full max-w-[585px]">
           <p className="mb-5 text-[10px] uppercase tracking-[0.48em] text-white/55 md:text-xs">

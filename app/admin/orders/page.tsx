@@ -22,6 +22,7 @@ type OrderItem = {
   galleryTitle?: string;
   galleryDate?: string;
 
+  mediaTitle?: string;
   photoId: string;
   filename: string;
   price: number;
@@ -33,6 +34,7 @@ type NormalizedOrderItem = {
   galleryTitle: string;
   galleryDate: string;
 
+  mediaTitle?: string;
   photoId: string;
   filename: string;
   price: number;
@@ -148,6 +150,7 @@ function getOrderItems(
         photoId:
           item.photoId,
 
+        mediaTitle: item.mediaTitle,
         filename:
           item.filename,
 
@@ -375,7 +378,7 @@ export default async function OrdersPage() {
   return (
     <main className="min-h-screen bg-[#080808] px-5 py-8 text-white md:px-10 md:py-12">
       <div className="mx-auto max-w-7xl">
-        <nav className="mb-8 text-sm text-white/60"><Link href="/admin/private-galleries" prefetch={false}>Súkromné galérie</Link></nav>
+        <nav className="mb-8 text-sm text-white/60"><Link href="/admin/private-galleries" prefetch={false}>Súkromné galérie</Link><Link href="/admin/slideshow-galleries" prefetch={false} className="ml-6">Slideshow</Link></nav>
         <header className="flex flex-col justify-between gap-6 border-b border-white/15 pb-8 md:flex-row md:items-end">
           <div>
             <p className="text-[10px] uppercase tracking-[0.4em] text-white/40">
@@ -434,7 +437,7 @@ export default async function OrdersPage() {
                   </th>
 
                   <th className="px-5 py-4">
-                    Fotografie
+                    Položky
                   </th>
 
                   <th className="px-5 py-4">
@@ -478,7 +481,7 @@ export default async function OrdersPage() {
                       items
                         .map(
                           (item) =>
-                            `${item.galleryTitle} — ${item.photoId}`,
+                            `${item.galleryTitle} — ${item.mediaTitle ?? item.photoId}`,
                         )
                         .join(
                           ", ",
@@ -535,8 +538,8 @@ export default async function OrdersPage() {
                             {count}{" "}
                             {count ===
                             1
-                              ? "fotografia"
-                              : "fotografií"}
+                              ? "položka"
+                              : "položiek"}
                           </p>
 
                           <div className="mt-2 space-y-1 text-xs leading-5 text-white/55">
@@ -554,7 +557,7 @@ export default async function OrdersPage() {
                                   }{" "}
                                   —{" "}
                                   {
-                                    item.photoId
+                                    item.mediaTitle ?? item.photoId
                                   }{" "}
                                   —{" "}
                                   {

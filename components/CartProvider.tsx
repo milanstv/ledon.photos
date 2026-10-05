@@ -13,6 +13,7 @@ export type CartItem = {
   photoId: string;
   photoSrc: string;
   price: number;
+  mediaTitle?: string;
 };
 
 type CartContextType = {
@@ -102,7 +103,8 @@ function isValidCartItem(
     typeof item.photoSrc ===
       "string" &&
     typeof item.price === "number" &&
-    Number.isFinite(item.price)
+    Number.isFinite(item.price) &&
+    (item.mediaTitle === undefined || typeof item.mediaTitle === "string")
   );
 }
 
@@ -230,9 +232,9 @@ export function CartProvider({
   const total =
     items.reduce(
       (sum, item) =>
-        sum + item.price,
+        sum + Math.round(item.price * 100),
       0,
-    );
+    ) / 100;
 
   return (
     <CartContext.Provider

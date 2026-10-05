@@ -19,6 +19,7 @@ type OrderItem = {
   galleryTitle?: string;
   galleryDate?: string;
 
+  mediaTitle?: string;
   photoId: string;
   filename: string;
   price: number;
@@ -30,6 +31,7 @@ type NormalizedOrderItem = {
   galleryTitle: string;
   galleryDate: string;
 
+  mediaTitle?: string;
   photoId: string;
   filename: string;
   price: number;
@@ -153,6 +155,7 @@ function getOrderItems(
         photoId:
           item.photoId,
 
+        mediaTitle: item.mediaTitle,
         filename:
           item.filename,
 
@@ -313,7 +316,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Objednávka neobsahuje fotografie.",
+            "Objednávka neobsahuje položky.",
         },
         {
           status: 400,
@@ -384,7 +387,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Prijatá suma nestačí ani na jednu fotografiu.",
+            "Prijatá suma nestačí ani na jednu položku.",
         },
         {
           status: 400,

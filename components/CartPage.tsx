@@ -281,7 +281,7 @@ export default function CartPage({
             {count > 0 ? (
               <div className="text-left md:text-right">
                 <p className="text-[10px] uppercase tracking-[0.3em] text-white/40">
-                  {t.selectedPhotos}
+                  {language === "en" ? "Selected items" : "Vybrané položky"}
                 </p>
 
                 <p className="mt-2 text-2xl font-light">
@@ -321,9 +321,10 @@ export default function CartPage({
                             item.photoSrc
                           }
                           alt={
-                            item.photoId
+                            item.mediaTitle ?? item.photoId
                           }
                           fill
+                          unoptimized={item.gallerySlug.startsWith("slideshow-")}
                           sizes="192px"
                           className="object-cover"
                         />
@@ -332,7 +333,7 @@ export default function CartPage({
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-base tracking-[0.12em] md:text-xl">
                           {
-                            item.photoId
+                            item.mediaTitle ?? item.photoId
                           }
                         </p>
 
@@ -396,7 +397,7 @@ export default function CartPage({
 
               <div className="mt-8 flex items-center justify-between border-b border-white/10 pb-5">
                 <span className="text-sm text-white/50">
-                  {t.photoCount}
+                  {language === "en" ? "Number of items" : "Počet položiek"}
                 </span>
 
                 <span className="text-lg">
