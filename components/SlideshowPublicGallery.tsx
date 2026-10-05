@@ -38,12 +38,12 @@ export default function SlideshowPublicGallery({ gallery, language }: { gallery:
   const en = language === "en";
   const [active, setActive] = useState<string | null>(null);
   useEffect(() => { const hide = () => { if (document.hidden) setActive(null); }; document.addEventListener("visibilitychange", hide); return () => document.removeEventListener("visibilitychange", hide); }, []);
-  return <main className="mx-auto max-w-6xl px-5 py-10 text-white">
+  return <main className="min-h-screen w-full bg-black text-white"><div className="mx-auto max-w-6xl px-5 py-10">
     <nav className="flex flex-wrap justify-between gap-5"><CartLink language={language} /><Link href={en ? "/en/slideshow" : "/slideshow"} className="underline">← Slideshow</Link><Link href={en ? `/slideshow/${gallery.id}` : `/en/slideshow/${gallery.id}`} className="underline">{en ? "Slovenčina" : "English"}</Link></nav>
     <h1 className="mt-8 text-3xl font-semibold">{gallery.title}</h1>
     <p className="mt-2 text-white/60">{new Intl.DateTimeFormat(en ? "en-GB" : "sk-SK").format(new Date(`${gallery.date}T12:00:00Z`))}</p>
     <p className="mt-5 text-white/70">{en ? "Hover over a slideshow to preview it. On mobile, tap to play or stop." : "Pre náhľad podrž kurzor nad slideshow. Na mobile ťuknutím spustíš alebo zastavíš prehrávanie."}</p>
     <p className="mt-2 text-sm text-white/60">{en ? "After payment is confirmed, you receive a download link to the original MP4 with sound, if present in the original." : "Po potvrdení platby dostaneš odkaz na stiahnutie originálu MP4 so zvukom, ak ho originál obsahuje."}</p>
     <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{gallery.items.map(item => <Preview key={item.id} item={item} gallery={gallery} active={active === item.id} activate={setActive} en={en} />)}</div>
-  </main>;
+  </div></main>;
 }
