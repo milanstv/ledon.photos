@@ -20,6 +20,7 @@ export type SlideshowGallery = {
   createdAt: string;
   updatedAt: string;
   nextClipNumber?: number;
+  pendingDeletion?: { kind: "gallery" | "item"; itemId?: string; startedAt: string };
   items: SlideshowItem[];
 };
 

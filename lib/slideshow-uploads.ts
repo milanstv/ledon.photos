@@ -19,6 +19,7 @@ const bucket = () => getOriginalsBucket();
 export async function requireSlideshow(id: string) {
   const record = await readSlideshowGallery(id);
   if (!record) throw new SlideshowError("Galéria sa nenašla.", 404);
+  if (record.gallery.pendingDeletion) throw new SlideshowError("Najprv dokonči mazanie v galérii.", 409);
   return record;
 }
 function ensureEditable(state: string) {
@@ -207,7 +208,9 @@ export async function abortSlideshowUpload(galleryId: string, itemId: string) {
 }
 
 export async function slideshowAdminDetail(galleryId: string) {
-  const { gallery } = await requireSlideshow(galleryId);
+  const record = await readSlideshowGallery(galleryId);
+  if (!record) throw new SlideshowError("Galéria sa nenašla.", 404);
+  const { gallery } = record;
   const items = await Promise.all(gallery.items.map(async item => {
     const expected = keys(galleryId, item.id);
     if (item.originalKey !== expected.original || item.previewKey !== expected.preview || item.posterKey !== expected.poster) {
@@ -220,5 +223,5 @@ export async function slideshowAdminDetail(galleryId: string) {
     return { id: item.id, title: item.title, filename: item.filename, priceCents: item.priceCents,
       durationSeconds: item.durationSeconds, size: item.size, previewUrl, posterUrl };
   }));
-  return { id: gallery.id, title: gallery.title, date: gallery.date, status: gallery.status, items };
+  return { id: gallery.id, title: gallery.title, date: gallery.date, status: gallery.status, pendingDeletion: gallery.pendingDeletion, items };
 }

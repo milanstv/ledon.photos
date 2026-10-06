@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type Item = { id: string; title: string; filename: string; priceCents: number; durationSeconds: number; previewUrl: string; posterUrl: string };
-type Gallery = { id: string; title: string; date: string; status: string; items: Item[] };
+type Gallery = { id: string; title: string; date: string; status: string; pendingDeletion?: { kind: "gallery" | "item"; itemId?: string }; items: Item[] };
 type Role = "original" | "preview" | "poster";
 const roles: Role[] = ["original", "preview", "poster"];
 const labels = { original: "Originál", preview: "Náhľad", poster: "Úvodný obrázok" };
@@ -47,6 +48,7 @@ async function retry<T>(operation: () => Promise<T>): Promise<T> {
 }
 
 export default function SlideshowGalleryEditor({ galleryId }: { galleryId: string }) {
+  const router = useRouter();
   const [gallery, setGallery] = useState<Gallery | null>(null);
   const [error, setError] = useState(""); const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false); const busyRef = useRef(false);
@@ -133,18 +135,42 @@ export default function SlideshowGalleryEditor({ galleryId }: { galleryId: strin
     } catch (e) { setError(e instanceof Error ? e.message : "Zmena stavu zlyhala."); }
     finally { busyRef.current = false; setBusy(false); }
   }
+  async function remove(item?: Item) {
+    if (!gallery || busyRef.current) return;
+    const name = item ? item.title : gallery.title;
+    const answer = window.prompt(`Natrvalo zmazať ${item ? "klip" : "celú galériu"} „${name}“ aj súbory z R2?
+
+Originály, náhľady a obrázky sa vymažú. Staré platené odkazy prestanú fungovať. Rozpracované nahrávanie sa zruší. Túto akciu nemožno vrátiť.
+
+Na potvrdenie napíš presný názov: ${name}`);
+    if (answer === null) return;
+    if (answer !== name) { setError("Názov nesúhlasí. Nič sa nevymazalo."); return; }
+    busyRef.current = true; setBusy(true); setError(""); setMessage("");
+    try {
+      const result = await action({ action: item ? "delete-item" : "delete-gallery", itemId: item?.id, confirmation: answer });
+      if (result.done && !item) { router.replace("/admin/slideshow-galleries"); return; }
+      await load();
+      setMessage(result.done ? `Klip ${name} aj jeho súbory z R2 sú vymazané.` : "Mazanie pokračuje. Použi Dokončiť mazanie.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Mazanie zlyhalo.");
+      try { await load(); } catch {}
+    } finally { busyRef.current = false; setBusy(false); }
+  }
   const input = "mt-2 w-full rounded-lg border border-white/20 bg-white/5 p-3";
-  return <main className="mx-auto max-w-5xl px-5 py-10 text-white">
+  return <main className="min-h-screen w-full bg-black text-white"><div className="mx-auto max-w-5xl px-5 py-10">
     <Link href="/admin/slideshow-galleries" className="underline">← Slideshow galérie</Link>
     <h1 className="mt-6 text-3xl font-semibold">{gallery?.title || "Slideshow"}</h1>
     {gallery && <p className="mt-2 text-white/70">{gallery.date} · {gallery.items.length} slideshow · {gallery.status === "draft" ? "Koncept" : gallery.status === "archived" ? "Skrytá" : "Zverejnená"}</p>}
     {gallery && <div className="mt-5 flex flex-wrap gap-4">
-      <button disabled={busy || !gallery.items.length} onClick={visibility} className="rounded-lg border border-white/30 px-4 py-2 disabled:opacity-40">{gallery.status === "published" ? "Skryť galériu" : "Zverejniť galériu"}</button>
+      <button disabled={busy || !!gallery.pendingDeletion || !gallery.items.length} onClick={visibility} className="rounded-lg border border-white/30 px-4 py-2 disabled:opacity-40">{gallery.status === "published" ? "Skryť galériu" : "Zverejniť galériu"}</button>
+      <button disabled={busy || gallery.status === "published" || (!!gallery.pendingDeletion && gallery.pendingDeletion.kind !== "gallery")} onClick={() => remove()} className="rounded-lg border border-red-400/50 px-4 py-2 text-red-200 disabled:opacity-40">{gallery.pendingDeletion?.kind === "gallery" ? "Dokončiť mazanie galérie" : "Zmazať celú galériu"}</button>
       {gallery.status === "published" && <Link href={`/slideshow/${gallery.id}`} target="_blank" rel="noreferrer" className="rounded-lg border border-white/30 px-4 py-2">Otvoriť zákaznícky náhľad ↗</Link>}
     </div>}
+    {gallery?.status === "published" && <p className="mt-4 text-sm text-white/60">Pred mazaním galériu najprv skry.</p>}
+    {gallery?.pendingDeletion && <p role="status" className="mt-4 rounded-lg bg-amber-500/15 p-4 text-amber-200">Mazanie nie je dokončené. Galéria zostáva skrytá a nahrávanie aj zverejnenie sú zablokované. Použi tlačidlo Dokončiť mazanie.</p>}
     {error && <p role="alert" className="mt-5 rounded-lg bg-red-500/15 p-4 text-red-200">{error}</p>}
     {message && <p role="status" className="mt-5 rounded-lg bg-green-500/15 p-4 text-green-200">{message}</p>}
-    {gallery && gallery.status !== "published" && <form ref={formRef} onSubmit={upload} className="mt-8 rounded-xl border border-white/15 p-5">
+    {gallery && gallery.status !== "published" && !gallery.pendingDeletion && <form ref={formRef} onSubmit={upload} className="mt-8 rounded-xl border border-white/15 p-5">
       <h2 className="text-xl font-semibold">Pridať slideshow</h2>
       <fieldset disabled={busy} className="mt-5 grid gap-5 sm:grid-cols-2">
         <p className="text-sm text-white/70">Názov Klip001, Klip002… sa pridelí automaticky po dokončení nahrávania.</p>
@@ -161,8 +187,10 @@ export default function SlideshowGalleryEditor({ galleryId }: { galleryId: strin
       {!gallery.items.length && <p className="mt-4 text-white/60">Galéria zatiaľ neobsahuje žiadne slideshow.</p>}
       <div className="mt-5 grid gap-5 sm:grid-cols-2">{gallery.items.map(item => <article key={item.id} className="overflow-hidden rounded-xl border border-white/15">
         <video controls muted playsInline preload="none" poster={item.posterUrl} src={item.previewUrl} className="aspect-video w-full bg-black object-contain" />
-        <div className="p-4"><h3 className="font-semibold">{item.title}</h3><p className="mt-1 text-white/70">{money(item.priceCents)} · {item.durationSeconds.toFixed(1)} s</p><p className="mt-1 break-all text-sm text-white/50">{item.filename}</p></div>
+        <div className="p-4"><h3 className="font-semibold">{item.title}</h3><p className="mt-1 text-white/70">{money(item.priceCents)} · {item.durationSeconds.toFixed(1)} s</p><p className="mt-1 break-all text-sm text-white/50">{item.filename}</p>
+          <button disabled={busy || gallery.status === "published" || (!!gallery.pendingDeletion && (gallery.pendingDeletion.kind !== "item" || gallery.pendingDeletion.itemId !== item.id))} onClick={() => remove(item)} className="mt-4 rounded-lg border border-red-400/50 px-4 py-2 text-red-200 disabled:opacity-40">{gallery.pendingDeletion?.kind === "item" && gallery.pendingDeletion.itemId === item.id ? "Dokončiť mazanie klipu" : "Zmazať klip"}</button>
+        </div>
       </article>)}</div>
     </section>}
-  </main>;
+  </div></main>;
 }

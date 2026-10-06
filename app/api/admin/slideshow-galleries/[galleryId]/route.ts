@@ -1,3 +1,4 @@
+import { deleteSlideshow, withSlideshowMutation } from "@/lib/slideshow-deletion";
 import { changeSlideshowVisibility } from "@/lib/slideshow-public";
 import { NextResponse } from "next/server";
 import { SlideshowError } from "@/lib/slideshow-galleries";
@@ -28,6 +29,9 @@ export async function POST(request: Request, context: Context) {
     try { body = JSON.parse(raw); if (!body || typeof body !== "object" || Array.isArray(body)) throw new Error(); }
     catch { return NextResponse.json({ error: "Neplatný JSON." }, { status: 400, headers }); }
     const { galleryId } = await context.params;
+    return await withSlideshowMutation(galleryId, async () => {
+    if (body.action === "delete-gallery") return NextResponse.json(await deleteSlideshow(galleryId, "gallery", undefined, body.confirmation), { headers });
+    if (body.action === "delete-item") return NextResponse.json(await deleteSlideshow(galleryId, "item", body.itemId, body.confirmation), { headers });
     if (body.action === "visibility") return NextResponse.json(await changeSlideshowVisibility(galleryId, body.status), { headers });
     if (body.action === "upload-start") return NextResponse.json(await startSlideshowUpload(galleryId, body), { headers });
     if (typeof body.itemId !== "string") throw new SlideshowError("Chýba ID slideshow.");
@@ -40,5 +44,6 @@ export async function POST(request: Request, context: Context) {
       default: throw new SlideshowError("Neplatná akcia.");
     }
     return NextResponse.json(result, { headers });
+    });
   } catch (error) { return failure(error); }
 }

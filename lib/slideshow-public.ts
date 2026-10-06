@@ -16,6 +16,7 @@ export async function changeSlideshowVisibility(id: string, value: unknown) {
   const record = await readSlideshowGallery(id);
   if (!record) throw new SlideshowError("Galéria sa nenašla.", 404);
   const { gallery, etag } = record;
+  if (gallery.pendingDeletion) throw new SlideshowError("Najprv dokonči mazanie v galérii.", 409);
   if (value === "published") {
     if (!gallery.items.length) throw new SlideshowError("Prázdnu galériu nemožno zverejniť.");
     for (const item of gallery.items) {
