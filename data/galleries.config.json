@@ -52,5 +52,11 @@
     "title": "Pezinská Baba ",
     "date": "3. 10. 2026",
     "price": 2
+  },
+  {
+    "slug": "2026-10-05-dlha",
+    "title": "Volné jazdy Dlhá ",
+    "date": "5. 10. 2026",
+    "price": 2
   }
 ]
