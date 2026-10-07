@@ -16,6 +16,7 @@ export default function PhotoGalleryEditor({ galleryId }: { galleryId: string })
   const [jobs, setJobs] = useState<Job[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [processing, setProcessing] = useState("");
   const [loading, setLoading] = useState(true);
   const running = useRef(false);
   const mounted = useRef(true);
@@ -101,6 +102,22 @@ export default function PhotoGalleryEditor({ galleryId }: { galleryId: string })
     } catch (e) { if (mounted.current) setError(e instanceof Error ? e.message : "Chyba načítania."); }
     finally { running.current = false; if (mounted.current) setBusy(false); }
   }
+  async function previews() {
+    if(running.current || !detail) return;
+    running.current=true;stop.current=false;setBusy(true);setError("");
+    const pending=detail.items;
+    const errors:string[]=[];
+    try {
+      for(let n=0;n<pending.length;n++) {
+        if(stop.current || !mounted.current) break;
+        setProcessing(`Vytváram náhľady ${n+1} / ${pending.length}`);
+        try {await action({action:"preview",itemId:pending[n].id});}
+        catch(e){errors.push(`${pending[n].filename}: ${e instanceof Error?e.message:"Chyba"}`);}
+      }
+      if(mounted.current){await refresh();setError(errors.join(" · "));}
+    }catch(e){if(mounted.current)setError(e instanceof Error?e.message:"Chyba načítania.");}
+    finally{running.current=false;if(mounted.current){setBusy(false);setProcessing("");}}
+  }
   return <main className={styles.admin}><aside className={styles.sidebar}><Link href="/" className={styles.brand}>LEDON.PHOTOS</Link>
     <nav aria-label="Administrácia"><Link href="/admin/orders">Objednávky</Link><Link href="/admin/photo-galleries" aria-current="page">Fotogalérie</Link>
       <Link href="/admin/slideshow-galleries">Slideshow</Link><Link href="/admin/private-galleries">Súkromné galérie</Link></nav></aside>
@@ -121,10 +138,14 @@ export default function PhotoGalleryEditor({ galleryId }: { galleryId: string })
             <span>{j.state === "done" ? "Uložená" : j.state === "uploading" ? `Nahrávam ${j.progress} %` : j.state === "error" ? "Chyba" : "Čaká"}</span></div>
             {j.state === "uploading" && <progress max={100} value={j.progress} aria-label={`Nahrávanie ${j.file.name}`} />}
             {j.error && <p className={styles.error}>{j.error}</p>}</li>)}</ul>}
+        </section><section className={styles.panel}><h2>Vytvoriť náhľady</h2>
+          <p className={styles.help}>Web: stredové LD a logo v rohu. Sociálne siete: jemné stredové LD (15 %) a logo v rohu. Dlhšia strana najviac 2 000 px, bez orezania. Originály sa nemenia a galéria zostáva neverejná.</p>
+          <div className={styles.uploadActions}><button type="button" className={styles.primary} disabled={busy || detail.status!=="draft" || !detail.items.length} onClick={()=>void previews()}>{detail.items.some(i=>i.status==="ready")?"Prerobiť náhľady a sociálne verzie":"Vytvoriť náhľady a sociálne verzie"}</button></div>
+          <p role="status">{processing || `Pripravené: ${detail.items.filter(i=>i.status==="ready").length} / ${detail.items.length}`}</p>
         </section><section className={styles.panel}><div className={styles.sectionHead}><h2>Uložené originály ({detail.items.length})</h2>
           <button type="button" disabled={busy} onClick={() => { setError(""); void refresh().catch(e => setError(e.message)); }}>Obnoviť zoznam</button></div>
-          {detail.items.length === 0 ? <p className={styles.help}>Zatiaľ tu nie sú fotografie.</p> : <ul className={styles.uploadList}>{detail.items.map(i => <li key={i.id}><strong>#{i.customerNumber} · {i.filename}</strong><p className={styles.help}>{i.sourceFilename} · {mb(i.size)} · Originál uložený</p></li>)}</ul>}
-          <p className={styles.help}>Náhľady s vodoznakom, verzie pre sociálne siete a publikovanie doplníme v ďalšej časti. Táto galéria sa zatiaľ na verejnom webe nezobrazuje.</p>
+          {detail.items.length === 0 ? <p className={styles.help}>Zatiaľ tu nie sú fotografie.</p> : <ul className={styles.uploadList}>{detail.items.map(i => <li key={i.id}>{i.status==="ready" && <img className={styles.photoPreview} src={`${api}/media/${i.id}`} alt={`Náhľad ${i.filename}`} loading="lazy" />}<strong>#{i.customerNumber} · {i.filename}</strong><p className={styles.help}>{i.sourceFilename} · {mb(i.size)} · {i.status==="ready"?"Náhľady pripravené":"Originál uložený"}</p>{i.status==="ready" && <a className={styles.socialDownload} href={`${api}/media/${i.id}?kind=social`}>Stiahnuť pre sociálne siete</a>}</li>)}</ul>}
+          <p className={styles.help}>Výber titulnej fotografie, hromadné stiahnutie sociálnych verzií a publikovanie doplníme v ďalšej časti. Táto galéria sa zatiaľ na verejnom webe nezobrazuje.</p>
         </section></>}
     </div></main>;
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PhotoGalleryError } from "@/lib/photo-galleries";
 import { completePhotoUpload, photoGalleryDetail, signPhotoPart, startPhotoUpload } from "@/lib/photo-uploads";
+import { createPhotoPreviews } from "@/lib/photo-previews";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -27,6 +28,7 @@ export async function POST(request: NextRequest, context: Context) {
     const { galleryId } = await context.params;
     if (body.action === "start") return NextResponse.json(await startPhotoUpload(galleryId, body.itemId, body.filename, body.size), { headers });
     if (typeof body.itemId !== "string") throw new PhotoGalleryError("Chýba ID súboru.");
+    if (body.action === "preview") return NextResponse.json(await createPhotoPreviews(galleryId, body.itemId), { headers });
     if (body.action === "part") return NextResponse.json(await signPhotoPart(galleryId, body.itemId, body.partNumber), { headers });
     if (body.action === "complete") return NextResponse.json(await completePhotoUpload(galleryId, body.itemId), { headers });
     throw new PhotoGalleryError("Neplatná operácia.");
