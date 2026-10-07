@@ -1,0 +1,85 @@
+import { randomUUID } from "node:crypto";
+import { GetObjectCommand, ListObjectsV2Command, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getOriginalsBucket, getR2Client } from "@/lib/r2";
+import type { PhotoGalleryRecord, PhotoGallerySummary } from "@/lib/photo-gallery-types";
+
+const PREFIX = "_photo_galleries/";
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+export class PhotoGalleryError extends Error {
+  constructor(message: string, public status = 400) { super(message); }
+}
+export function photoGalleryPrefix(id: string) {
+  if (!UUID.test(id)) throw new PhotoGalleryError("Neplatné ID galérie.");
+  return `${PREFIX}${id}/`;
+}
+export function validatePhotoGalleryDetails(titleValue: unknown, dateValue: unknown, priceValue: unknown) {
+  const title = typeof titleValue === "string" ? titleValue.trim() : "";
+  const date = typeof dateValue === "string" ? dateValue : "";
+  if (!title || title.length > 160 || /[\u0000-\u001f\u007f]/.test(title)) {
+    throw new PhotoGalleryError("Zadaj názov galérie (najviac 160 znakov).");
+  }
+  const parsed = new Date(`${date}T00:00:00.000Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) {
+    throw new PhotoGalleryError("Zadaj platný dátum fotenia.");
+  }
+  if (typeof priceValue !== "number" || !Number.isSafeInteger(priceValue) || priceValue < 1 || priceValue > 1000000) {
+    throw new PhotoGalleryError("Zadaj cenu od 0,01 € do 10 000 €.");
+  }
+  return { title, date, priceCents: priceValue };
+}
+export function photoGallerySummary(gallery: PhotoGalleryRecord): PhotoGallerySummary {
+  return { id: gallery.id, slug: gallery.slug, title: gallery.title, date: gallery.date,
+    priceCents: gallery.priceCents, status: gallery.status, createdAt: gallery.createdAt,
+    updatedAt: gallery.updatedAt, count: gallery.items.length,
+    readyCount: gallery.items.filter(item => item.status === "ready").length };
+}
+export async function readPhotoGallery(id: string) {
+  try {
+    const response = await getR2Client().send(new GetObjectCommand({
+      Bucket: getOriginalsBucket(), Key: `${photoGalleryPrefix(id)}gallery.json`,
+    }));
+    if (!response.Body || !response.ETag) throw new Error("Chýbajú údaje fotogalérie.");
+    const gallery = JSON.parse(await response.Body.transformToString()) as PhotoGalleryRecord;
+    if (!gallery || gallery.version !== 1 || gallery.id !== id || gallery.slug !== `photos-${id}` ||
+      !["draft", "published", "archived"].includes(gallery.status) || !Array.isArray(gallery.items) ||
+      !Number.isSafeInteger(gallery.nextPhotoNumber) || gallery.nextPhotoNumber < 1 ||
+      typeof gallery.createdAt !== "string" || typeof gallery.updatedAt !== "string") {
+      throw new Error("Poškodené údaje fotogalérie.");
+    }
+    validatePhotoGalleryDetails(gallery.title, gallery.date, gallery.priceCents);
+    return { gallery, etag: response.ETag };
+  } catch (error) {
+    const e = error as { name?: string; $metadata?: { httpStatusCode?: number } };
+    if (e.name === "NoSuchKey" || e.$metadata?.httpStatusCode === 404) return null;
+    throw error;
+  }
+}
+export async function createPhotoGallery(title: unknown, date: unknown, priceCents: unknown) {
+  const details = validatePhotoGalleryDetails(title, date, priceCents);
+  const now = new Date().toISOString();
+  const id = randomUUID();
+  const gallery: PhotoGalleryRecord = { version: 1, id, slug: `photos-${id}`, ...details,
+    status: "draft", createdAt: now, updatedAt: now, coverItemId: null, nextPhotoNumber: 1, items: [] };
+  await getR2Client().send(new PutObjectCommand({ Bucket: getOriginalsBucket(),
+    Key: `${photoGalleryPrefix(id)}gallery.json`, Body: JSON.stringify(gallery),
+    ContentType: "application/json; charset=utf-8", CacheControl: "no-store", IfNoneMatch: "*" }));
+  return photoGallerySummary(gallery);
+}
+export async function listPhotoGalleries(): Promise<PhotoGallerySummary[]> {
+  const result: PhotoGallerySummary[] = [];
+  let cursor: string | undefined;
+  do {
+    const page = await getR2Client().send(new ListObjectsV2Command({
+      Bucket: getOriginalsBucket(), Prefix: PREFIX, Delimiter: "/", MaxKeys: 100, ContinuationToken: cursor,
+    }));
+    const ids = (page.CommonPrefixes ?? []).map(p => p.Prefix?.slice(PREFIX.length).replace(/\/$/, ""))
+      .filter((id): id is string => !!id && UUID.test(id));
+    for (let start = 0; start < ids.length; start += 10) {
+      const records = await Promise.all(ids.slice(start, start + 10).map(readPhotoGallery));
+      for (const record of records) if (record) result.push(photoGallerySummary(record.gallery));
+    }
+    cursor = page.IsTruncated ? page.NextContinuationToken : undefined;
+    if (page.IsTruncated && !cursor) throw new Error("Chýba pokračovanie zoznamu fotogalérií.");
+  } while (cursor);
+  return result.sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
+}
