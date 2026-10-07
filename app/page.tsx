@@ -1,3 +1,5 @@
+import { allPublicPhotoGalleries } from "@/lib/photo-public";
+export const dynamic="force-dynamic";
 import type { Metadata } from "next";
 
 import HomePage from "@/components/HomePage";
@@ -40,6 +42,6 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Home() {
-  return <HomePage language="sk" />;
+export default async function Home() {
+  return <HomePage galleries={await allPublicPhotoGalleries()} language="sk" />;
 }

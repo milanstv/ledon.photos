@@ -487,7 +487,7 @@ export async function POST(
       downloadLinks
         .map(
           (item) =>
-            `${item.galleryTitle} — ${item.mediaTitle ?? item.photoId}: ${item.url}`,
+            `${item.galleryTitle} — ${item.mediaTitle ?? item.filename.replace(/[.]jpe?g$/i, "")}: ${item.url}`,
         )
         .join("\n");
 
@@ -496,7 +496,7 @@ export async function POST(
         .map((item) => {
           const safePhotoId =
             escapeHtml(
-              item.mediaTitle ?? item.photoId,
+              item.mediaTitle ?? item.filename.replace(/[.]jpe?g$/i, ""),
             );
 
           const safeGalleryTitle =
@@ -572,10 +572,10 @@ export async function POST(
           : "Opravené originálne súbory"
         : language === "en"
           ? paidItems.length === 1
-            ? `Your file ${paidItems[0].mediaTitle ?? paidItems[0].photoId} is ready`
+            ? `Your file ${paidItems[0].mediaTitle ?? paidItems[0].filename.replace(/[.]jpe?g$/i, "")} is ready`
             : `Your ${paidItems.length} files are ready`
           : paidItems.length === 1
-            ? `Váš súbor ${paidItems[0].mediaTitle ?? paidItems[0].photoId} je pripravený`
+            ? `Váš súbor ${paidItems[0].mediaTitle ?? paidItems[0].filename.replace(/[.]jpe?g$/i, "")} je pripravený`
             : `Vašich ${paidItems.length} súborov je pripravených`;
 
     const text =

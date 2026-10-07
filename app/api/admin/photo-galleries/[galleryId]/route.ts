@@ -4,6 +4,7 @@ import { completePhotoUpload, photoGalleryDetail, signPhotoPart, startPhotoUploa
 import { createPhotoPreviews } from "@/lib/photo-previews";
 import { deletePhoto } from "@/lib/photo-deletion";
 import { deletePhotoGallery } from "@/lib/photo-gallery-deletion";
+import { publishPhotoGallery,hidePhotoGallery } from "@/lib/photo-publication";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -28,6 +29,8 @@ export async function POST(request: NextRequest, context: Context) {
     try { const parsed = JSON.parse(raw); if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error(); body = parsed; }
     catch { throw new PhotoGalleryError("Neplatný JSON."); }
     const { galleryId } = await context.params;
+    if (body.action === "publish") return NextResponse.json(await publishPhotoGallery(galleryId),{headers});
+    if (body.action === "hide") return NextResponse.json(await hidePhotoGallery(galleryId),{headers});
     if (body.action === "start") return NextResponse.json(await startPhotoUpload(galleryId, body.itemId, body.filename, body.size), { headers });
     if (body.action === "delete-gallery") return NextResponse.json(await deletePhotoGallery(galleryId, body.title), { headers });
     if (typeof body.itemId !== "string") throw new PhotoGalleryError("Chýba ID súboru.");

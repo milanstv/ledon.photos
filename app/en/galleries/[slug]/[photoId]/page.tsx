@@ -1,9 +1,10 @@
+export const dynamic="force-dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import BuyPhotoButton from "@/components/BuyPhotoButton";
-import { getPhoto } from "@/data/galleries";
+import { getPhoto } from "@/lib/photo-public";
 
 type PhotoPageProps = {
   params: Promise<{
@@ -17,7 +18,7 @@ export default async function PhotoPage({
 }: PhotoPageProps) {
   const { slug, photoId } = await params;
 
-  const result = getPhoto(
+  const result = await getPhoto(
     slug,
     photoId,
   );
@@ -119,7 +120,7 @@ export default async function PhotoPage({
           </p>
 
           <h1 className="mt-5 text-3xl font-light tracking-[0.12em]">
-            {photo.id}
+            {photo.filename.replace(/[.]jpe?g$/i, "")}
           </h1>
 
           <div className="mt-8">

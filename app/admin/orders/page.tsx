@@ -378,7 +378,7 @@ export default async function OrdersPage() {
   return (
     <main className="min-h-screen bg-[#080808] px-5 py-8 text-white md:px-10 md:py-12">
       <div className="mx-auto max-w-7xl">
-        <nav className="mb-8 text-sm text-white/60"><Link href="/admin/private-galleries" prefetch={false}>Súkromné galérie</Link><Link href="/admin/slideshow-galleries" prefetch={false} className="ml-6">Slideshow</Link></nav>
+        <nav className="mb-8 text-sm text-white/60"><Link href="/admin/photo-galleries" prefetch={false} className="mr-6">Fotogalérie</Link><Link href="/admin/private-galleries" prefetch={false}>Súkromné galérie</Link><Link href="/admin/slideshow-galleries" prefetch={false} className="ml-6">Slideshow</Link></nav>
         <header className="flex flex-col justify-between gap-6 border-b border-white/15 pb-8 md:flex-row md:items-end">
           <div>
             <p className="text-[10px] uppercase tracking-[0.4em] text-white/40">
@@ -481,7 +481,7 @@ export default async function OrdersPage() {
                       items
                         .map(
                           (item) =>
-                            `${item.galleryTitle} — ${item.mediaTitle ?? item.photoId}`,
+                            `${item.galleryTitle} — ${item.mediaTitle ?? item.filename.replace(/[.]jpe?g$/i, "")}`,
                         )
                         .join(
                           ", ",
@@ -557,7 +557,7 @@ export default async function OrdersPage() {
                                   }{" "}
                                   —{" "}
                                   {
-                                    item.mediaTitle ?? item.photoId
+                                    item.mediaTitle ?? item.filename.replace(/[.]jpe?g$/i, "")
                                   }{" "}
                                   —{" "}
                                   {

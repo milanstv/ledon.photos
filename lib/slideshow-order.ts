@@ -7,6 +7,11 @@ export function slideshowOrderGalleryId(slug: string): string | null {
   return id;
 }
 export function orderOriginalKey(item: { gallerySlug: string; photoId: string; filename: string }) {
+  if(item.gallerySlug.startsWith("photos-")) {
+    const gid=item.gallerySlug.slice(7);
+    if(!UUID.test(gid)||!UUID.test(item.photoId)||!item.filename.toLowerCase().endsWith(".jpg")||/[\/\\\u0000-\u001f\u007f]/.test(item.filename))throw new Error("Neplatný súbor fotografie.");
+    return `_photo_galleries/${gid}/files/${item.photoId}/original.jpg`;
+  }
   const id = slideshowOrderGalleryId(item.gallerySlug);
   if (!id) return `${item.gallerySlug}/${item.filename}`;
   if (!UUID.test(item.photoId) || !item.filename.toLowerCase().endsWith(".mp4") || /[\/\\\u0000-\u001f\u007f]/.test(item.filename)) throw new Error("Neplatný súbor slideshow.");

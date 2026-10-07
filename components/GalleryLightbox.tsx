@@ -387,7 +387,7 @@ export default function GalleryLightbox({
                 <div className="absolute inset-0 bg-black/10 transition duration-300 group-hover:bg-black/45" />
 
                 <span className="absolute bottom-5 left-5 text-[10px] tracking-[0.25em] text-white/75">
-                  {photo.id}
+                  {photo.filename.replace(/\.jpe?g$/i, "")}
                 </span>
 
                 <span className="absolute inset-0 hidden items-center justify-center text-xs uppercase tracking-[0.3em] text-white opacity-0 transition duration-300 group-hover:opacity-100 sm:flex">
@@ -500,7 +500,7 @@ export default function GalleryLightbox({
             </p>
 
             <h2 className="mt-6 text-3xl font-light tracking-[0.12em]">
-              {currentPhoto.id}
+              {currentPhoto.filename.replace(/[.]jpe?g$/i, "")}
             </h2>
 
             {currentPhoto.takenAt ? (
@@ -547,7 +547,7 @@ export default function GalleryLightbox({
             <div className="flex items-center justify-between gap-4">
               <div className="min-w-0">
                 <p className="truncate text-[10px] uppercase tracking-[0.2em] text-white/40">
-                  {currentPhoto.id}
+                  {currentPhoto.filename.replace(/[.]jpe?g$/i, "")}
                 </p>
 
                 <p className="mt-1 text-xl">

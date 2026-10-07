@@ -2,17 +2,19 @@ import Image from "next/image";
 import Link from "next/link";
 
 import CartLink from "@/components/CartLink";
-import { galleries } from "@/data/galleries";
+import type { Gallery } from "@/data/galleries";
 import {
   translations,
   type Language,
 } from "@/lib/i18n";
 
 type HomePageProps = {
+  galleries: Gallery[];
   language: Language;
 };
 
 export default function HomePage({
+  galleries,
   language,
 }: HomePageProps) {
   const t = translations[language];

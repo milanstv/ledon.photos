@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-import { getGallery } from "@/data/galleries";
+import { getGallery } from "@/lib/photo-public";
 
 export const runtime = "nodejs";
 
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const gallery = getGallery(gallerySlug);
+    const gallery = await getGallery(gallerySlug);
 
     if (!gallery) {
       return NextResponse.json(
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
             product_data: {
               name: `Fotografia č. ${photo.customerNumber ?? photo.id}`,
               description: `${gallery.title} – originál v plnom rozlíšení`,
-              images: [photo.src],
+              images: [new URL(photo.src,origin).href],
             },
           },
         },

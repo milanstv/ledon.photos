@@ -10,7 +10,7 @@ import { Resend } from "resend";
 import {
   getGallery,
   getPhoto,
-} from "@/data/galleries";
+} from "@/lib/photo-public";
 
 import { slideshowOrderItem } from "@/lib/slideshow-commerce";
 import { SlideshowError } from "@/lib/slideshow-galleries";
@@ -497,14 +497,14 @@ async function sendOrderEmails({
     items
       .map(
         (item) =>
-          `${item.galleryTitle} — ${item.mediaTitle ?? item.photoId}`,
+          `${item.galleryTitle} — ${item.mediaTitle ?? item.filename.replace(/[.]jpe?g$/i, "")}`,
       )
       .join(", ");
 
   const photoLines =
     items.map(
       (item) =>
-        `${item.galleryTitle} — ${item.mediaTitle ?? item.photoId} — ${item.price} €`,
+        `${item.galleryTitle} — ${item.mediaTitle ?? item.filename.replace(/[.]jpe?g$/i, "")} — ${item.price} €`,
     );
 
   const safeGalleryList =
@@ -981,7 +981,7 @@ export async function POST(
         continue;
       }
       const gallery =
-        getGallery(
+        await getGallery(
           requestedItem.gallerySlug,
         );
 
@@ -1018,7 +1018,7 @@ export async function POST(
       }
 
       const photoResult =
-        getPhoto(
+        await getPhoto(
           requestedItem.gallerySlug,
           requestedItem.photoId,
         );

@@ -1,8 +1,10 @@
 import type { MetadataRoute } from "next";
 
-import { galleries } from "@/data/galleries";
+import { allPublicPhotoGalleries } from "@/lib/photo-public";
+export const dynamic="force-dynamic";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const galleries=await allPublicPhotoGalleries();
   const baseUrl = "https://ledon.photos";
 
   const homePages: MetadataRoute.Sitemap = [
