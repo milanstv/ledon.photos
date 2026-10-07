@@ -83,3 +83,21 @@ export async function listPhotoGalleries(): Promise<PhotoGallerySummary[]> {
   } while (cursor);
   return result.sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
 }
+
+export async function requirePhotoGallery(id: string) {
+  const record = await readPhotoGallery(id);
+  if (!record) throw new PhotoGalleryError("Galéria sa nenašla.", 404);
+  return record;
+}
+export async function savePhotoGallery(gallery: PhotoGalleryRecord, etag: string) {
+  try {
+    await getR2Client().send(new PutObjectCommand({ Bucket: getOriginalsBucket(),
+      Key: `${photoGalleryPrefix(gallery.id)}gallery.json`, Body: JSON.stringify(gallery),
+      ContentType: "application/json; charset=utf-8", CacheControl: "no-store", IfMatch: etag }));
+  } catch (error) {
+    const e = error as { name?: string; $metadata?: { httpStatusCode?: number } };
+    if (e.name === "PreconditionFailed" || e.$metadata?.httpStatusCode === 412)
+      throw new PhotoGalleryError("Galériu práve zmenila iná požiadavka. Skús znova.", 409);
+    throw error;
+  }
+}

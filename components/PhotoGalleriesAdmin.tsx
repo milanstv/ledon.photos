@@ -64,11 +64,11 @@ export default function PhotoGalleriesAdmin() {
       {error && <p role="alert" className={styles.error}>{error}</p>}{message && <p role="status" className={styles.success}>{message}</p>}
       <section className={styles.panel}><div className={styles.sectionHead}><h2>Nové galérie ({galleries.length})</h2><button type="button" disabled={loading||busy} onClick={()=>{setError("");void refresh();}}>Obnoviť zoznam</button></div>
         {loading ? <p className={styles.help}>Načítavam…</p> : galleries.length===0 ? <p className={styles.help}>Zatiaľ tu nemáš žiadnu novú fotogalériu.</p> :
-          <ul className={styles.list}>{galleries.map(g=><li key={g.id}><div><h3>{g.title}</h3><p>{new Intl.DateTimeFormat("sk-SK",{timeZone:"Europe/Bratislava"}).format(new Date(`${g.date}T12:00:00Z`))} · {new Intl.NumberFormat("sk-SK",{style:"currency",currency:"EUR"}).format(g.priceCents/100)} / fotka</p></div>
+          <ul className={styles.list}>{galleries.map(g=><li key={g.id}><div><h3><Link href={`/admin/photo-galleries/${g.id}`}>{g.title}</Link></h3><p>{new Intl.DateTimeFormat("sk-SK",{timeZone:"Europe/Bratislava"}).format(new Date(`${g.date}T12:00:00Z`))} · {new Intl.NumberFormat("sk-SK",{style:"currency",currency:"EUR"}).format(g.priceCents/100)} / fotka</p></div>
             <div className={styles.status}><span>{g.status==="draft" ? "Koncept — neverejná" : g.status==="published" ? "Zverejnená" : "Skrytá"}</span><small>{g.count} fotografií · {g.readyCount} pripravených</small></div>
           </li>)}</ul>}
       </section>
-      <p className={styles.help}>Prvá časť: vytvorenie a zoznam konceptov. Nahrávanie, náhľady a publikovanie doplníme v ďalšej časti.</p>
+      <p className={styles.help}>Kliknutím na názov galérie otvoríš nahrávanie originálov. Náhľady a publikovanie doplníme v ďalšej časti.</p>
     </div>
   </main>;
 }
