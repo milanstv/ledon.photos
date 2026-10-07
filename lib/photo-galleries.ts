@@ -101,3 +101,18 @@ export async function savePhotoGallery(gallery: PhotoGalleryRecord, etag: string
     throw error;
   }
 }
+
+export async function setPhotoGalleryCover(galleryId: string, itemId: string) {
+  for (let n=0;n<5;n++) {
+    const record=await requirePhotoGallery(galleryId);
+    if(record.gallery.status!=="draft") throw new PhotoGalleryError("Titulnú fotografiu možno meniť iba v koncepte.",409);
+    const item=record.gallery.items.find(i=>i.id===itemId);
+    if(!item || item.status!=="ready" || !item.previewKey || !item.socialKey) throw new PhotoGalleryError("Vyber fotografiu s pripravenými náhľadmi.");
+    if(record.gallery.coverItemId===itemId) return {ok:true};
+    record.gallery.coverItemId=itemId;
+    record.gallery.updatedAt=new Date().toISOString();
+    try {await savePhotoGallery(record.gallery,record.etag);return {ok:true};}
+    catch(e){if(!(e instanceof PhotoGalleryError)||e.status!==409||n===4) throw e;}
+  }
+  throw new PhotoGalleryError("Titulnú fotografiu sa nepodarilo uložiť.",409);
+}

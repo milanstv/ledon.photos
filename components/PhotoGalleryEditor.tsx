@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "./PhotoGalleriesAdmin.module.css";
-type Detail = { id: string; title: string; date: string; priceCents: number; status: string;
+type Detail = { id: string; title: string; date: string; priceCents: number; status: string; coverItemId: string | null;
   items: { id: string; filename: string; sourceFilename: string; customerNumber: number; size: number; status: string }[] };
 type Job = { id: string; file: File; state: "waiting" | "uploading" | "done" | "error"; progress: number; error: string };
 const mb = (n: number) => `${(n / 1024 / 1024).toFixed(1)} MB`;
@@ -102,6 +102,13 @@ export default function PhotoGalleryEditor({ galleryId }: { galleryId: string })
     } catch (e) { if (mounted.current) setError(e instanceof Error ? e.message : "Chyba načítania."); }
     finally { running.current = false; if (mounted.current) setBusy(false); }
   }
+  async function selectCover(itemId:string) {
+    if(running.current)return;
+    running.current=true;setBusy(true);setError("");
+    try {await action({action:"cover",itemId});await refresh();}
+    catch(e){if(mounted.current)setError(e instanceof Error?e.message:"Výber sa nepodaril.");}
+    finally{running.current=false;if(mounted.current)setBusy(false);}
+  }
   async function previews() {
     if(running.current || !detail) return;
     running.current=true;stop.current=false;setBusy(true);setError("");
@@ -144,8 +151,8 @@ export default function PhotoGalleryEditor({ galleryId }: { galleryId: string })
           <p role="status">{processing || `Pripravené: ${detail.items.filter(i=>i.status==="ready").length} / ${detail.items.length}`}</p>
         </section><section className={styles.panel}><div className={styles.sectionHead}><h2>Uložené originály ({detail.items.length})</h2>
           <button type="button" disabled={busy} onClick={() => { setError(""); void refresh().catch(e => setError(e.message)); }}>Obnoviť zoznam</button></div>
-          {detail.items.length === 0 ? <p className={styles.help}>Zatiaľ tu nie sú fotografie.</p> : <ul className={styles.uploadList}>{detail.items.map(i => <li key={i.id}>{i.status==="ready" && <img className={styles.photoPreview} src={`${api}/media/${i.id}`} alt={`Náhľad ${i.filename}`} loading="lazy" />}<strong>#{i.customerNumber} · {i.filename}</strong><p className={styles.help}>{i.sourceFilename} · {mb(i.size)} · {i.status==="ready"?"Náhľady pripravené":"Originál uložený"}</p>{i.status==="ready" && <a className={styles.socialDownload} href={`${api}/media/${i.id}?kind=social`}>Stiahnuť pre sociálne siete</a>}</li>)}</ul>}
-          <p className={styles.help}>Výber titulnej fotografie, hromadné stiahnutie sociálnych verzií a publikovanie doplníme v ďalšej časti. Táto galéria sa zatiaľ na verejnom webe nezobrazuje.</p>
+          {detail.items.length === 0 ? <p className={styles.help}>Zatiaľ tu nie sú fotografie.</p> : <ul className={styles.uploadList}>{detail.items.map(i => <li key={i.id}>{i.status==="ready" && <img className={styles.photoPreview} src={`${api}/media/${i.id}`} alt={`Náhľad ${i.filename}`} loading="lazy" />}<strong>#{i.customerNumber} · {i.filename}{detail.coverItemId===i.id?" · Titulná fotografia":""}</strong><p className={styles.help}>{i.sourceFilename} · {mb(i.size)} · {i.status==="ready"?"Náhľady pripravené":"Originál uložený"}</p>{i.status==="ready" && <div className={styles.uploadActions}><button type="button" disabled={busy || detail.status!=="draft" || detail.coverItemId===i.id} onClick={()=>void selectCover(i.id)}>{detail.coverItemId===i.id?"Titulná fotografia":"Nastaviť ako titulnú"}</button></div>}{i.status==="ready" && <a className={styles.socialDownload} href={`${api}/media/${i.id}?kind=social`}>Stiahnuť pre sociálne siete</a>}</li>)}</ul>}
+          <p className={styles.help}>Titulná fotografia bude náhľadom galérie na verejnom webe po publikovaní. Hromadné stiahnutie sociálnych verzií a publikovanie doplníme v ďalšej časti. Táto galéria sa zatiaľ na verejnom webe nezobrazuje.</p>
         </section></>}
     </div></main>;
 }

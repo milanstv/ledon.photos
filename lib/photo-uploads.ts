@@ -148,6 +148,6 @@ export async function completePhotoUpload(galleryId: string, itemId: string) {
 export async function photoGalleryDetail(galleryId: string) {
   const { gallery } = await requirePhotoGallery(galleryId);
   // Original objects remain private. This stage exposes names and sizes to admin only.
-  return { id: gallery.id, title: gallery.title, date: gallery.date, priceCents: gallery.priceCents, status: gallery.status,
+  return { id: gallery.id, title: gallery.title, date: gallery.date, priceCents: gallery.priceCents, status: gallery.status, coverItemId: gallery.coverItemId,
     items: gallery.items.map(i => ({ id: i.id, filename: i.filename, sourceFilename: i.sourceFilename, customerNumber: i.customerNumber, size: i.size, status: i.status })) };
 }
