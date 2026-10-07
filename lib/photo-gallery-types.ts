@@ -12,6 +12,8 @@ export type PhotoGalleryItem = {
   operation?: { id: string; kind: "preview" | "delete"; startedAt: string };
 };
 export type PhotoGalleryRecord = {
+  deletionPending?: boolean;
+  activeUploads?: string[];
   version: 1;
   id: string;
   slug: string;

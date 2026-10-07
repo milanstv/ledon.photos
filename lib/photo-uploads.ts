@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { beginGalleryUpload,endGalleryUpload } from "@/lib/photo-galleries";
 import sharp from "sharp";
 import { AbortMultipartUploadCommand, CompleteMultipartUploadCommand, CreateMultipartUploadCommand,
   GetObjectCommand, HeadObjectCommand, ListPartsCommand, PutObjectCommand, S3Client, UploadPartCommand } from "@aws-sdk/client-s3";
@@ -37,7 +39,7 @@ async function session(galleryId: string, itemId: string) {
   if (!s) throw new PhotoGalleryError("Nahrávanie sa nenašlo.", 404);
   return s;
 }
-export async function startPhotoUpload(galleryId: string, itemId: unknown, filename: unknown, size: unknown) {
+async function startPhotoUploadImpl(galleryId: string, itemId: unknown, filename: unknown, size: unknown) {
   const { gallery } = await requirePhotoGallery(galleryId);
   ensureDraft(gallery.status);
   if (typeof itemId !== "string") throw new PhotoGalleryError("Chýba ID nahrávania.");
@@ -88,7 +90,7 @@ export async function signPhotoPart(galleryId: string, itemId: string, partNumbe
     UploadId: s.uploadId, PartNumber: partNumber }), { expiresIn: 900 });
   return { url };
 }
-export async function completePhotoUpload(galleryId: string, itemId: string) {
+async function completePhotoUploadImpl(galleryId: string, itemId: string) {
   const initial = await requirePhotoGallery(galleryId); ensureDraft(initial.gallery.status);
   if (initial.gallery.items.some(i => i.id === itemId)) return { ok: true };
   const s = await session(galleryId, itemId);
@@ -150,4 +152,13 @@ export async function photoGalleryDetail(galleryId: string) {
   // Original objects remain private. This stage exposes names and sizes to admin only.
   return { id: gallery.id, title: gallery.title, date: gallery.date, priceCents: gallery.priceCents, status: gallery.status, coverItemId: gallery.coverItemId,
     items: gallery.items.filter(i=>i.status!=="deleted").map(i => ({ id: i.id, filename: i.filename, sourceFilename: i.sourceFilename, customerNumber: i.customerNumber, size: i.size, status: i.status })) };
+}
+
+export async function startPhotoUpload(galleryId:string,itemId:unknown,filename:unknown,size:unknown) {
+  const token=randomUUID();await beginGalleryUpload(galleryId,token);
+  try{return await startPhotoUploadImpl(galleryId,itemId,filename,size);}finally{await endGalleryUpload(galleryId,token);}
+}
+export async function completePhotoUpload(galleryId:string,itemId:string) {
+  const token=randomUUID();await beginGalleryUpload(galleryId,token);
+  try{return await completePhotoUploadImpl(galleryId,itemId);}finally{await endGalleryUpload(galleryId,token);}
 }

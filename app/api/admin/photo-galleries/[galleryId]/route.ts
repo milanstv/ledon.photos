@@ -3,6 +3,7 @@ import { PhotoGalleryError, setPhotoGalleryCover } from "@/lib/photo-galleries";
 import { completePhotoUpload, photoGalleryDetail, signPhotoPart, startPhotoUpload } from "@/lib/photo-uploads";
 import { createPhotoPreviews } from "@/lib/photo-previews";
 import { deletePhoto } from "@/lib/photo-deletion";
+import { deletePhotoGallery } from "@/lib/photo-gallery-deletion";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -28,6 +29,7 @@ export async function POST(request: NextRequest, context: Context) {
     catch { throw new PhotoGalleryError("Neplatný JSON."); }
     const { galleryId } = await context.params;
     if (body.action === "start") return NextResponse.json(await startPhotoUpload(galleryId, body.itemId, body.filename, body.size), { headers });
+    if (body.action === "delete-gallery") return NextResponse.json(await deletePhotoGallery(galleryId, body.title), { headers });
     if (typeof body.itemId !== "string") throw new PhotoGalleryError("Chýba ID súboru.");
     if (body.action === "delete") return NextResponse.json(await deletePhoto(galleryId, body.itemId), { headers });
     if (body.action === "cover") return NextResponse.json(await setPhotoGalleryCover(galleryId, body.itemId), { headers });

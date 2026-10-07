@@ -116,3 +116,19 @@ export async function setPhotoGalleryCover(galleryId: string, itemId: string) {
   }
   throw new PhotoGalleryError("Titulnú fotografiu sa nepodarilo uložiť.",409);
 }
+
+export async function beginGalleryUpload(id:string,token:string) {
+  for(let n=0;n<5;n++) {
+    const r=await requirePhotoGallery(id);
+    if(r.gallery.status!=="draft" || r.gallery.deletionPending)throw new PhotoGalleryError("Galéria nie je otvorená na nahrávanie.",409);
+    r.gallery.activeUploads=[...(r.gallery.activeUploads??[]),token];
+    try{await savePhotoGallery(r.gallery,r.etag);return;}catch(e){if(!(e instanceof PhotoGalleryError)||e.status!==409||n===4)throw e;}
+  }
+}
+export async function endGalleryUpload(id:string,token:string) {
+  for(let n=0;n<5;n++) {
+    const r=await requirePhotoGallery(id);
+    r.gallery.activeUploads=(r.gallery.activeUploads??[]).filter(t=>t!==token);
+    try{await savePhotoGallery(r.gallery,r.etag);return;}catch(e){if(!(e instanceof PhotoGalleryError)||e.status!==409||n===4)throw e;}
+  }
+}

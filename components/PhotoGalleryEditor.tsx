@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "./PhotoGalleriesAdmin.module.css";
@@ -12,6 +13,7 @@ function uuid() {
   return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;
 }
 export default function PhotoGalleryEditor({ galleryId }: { galleryId: string }) {
+  const router=useRouter();
   const [detail, setDetail] = useState<Detail | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [error, setError] = useState("");
@@ -102,6 +104,22 @@ export default function PhotoGalleryEditor({ galleryId }: { galleryId: string })
     } catch (e) { if (mounted.current) setError(e instanceof Error ? e.message : "Chyba načítania."); }
     finally { running.current = false; if (mounted.current) setBusy(false); }
   }
+  async function removeGallery() {
+    if(running.current || !detail)return;
+    const title=window.prompt(`Natrvalo zmazať celú galériu a všetky originály aj náhľady z R2? Súbory na Macu zostanú. Napíš presne názov: ${detail.title}`);
+    if(title===null)return;
+    if(title!==detail.title){setError("Názov nesúhlasí. Nič sa nevymazalo.");return;}
+    running.current=true;setBusy(true);setError("");
+    try {
+      for(let n=0;n<1000;n++) {
+        setProcessing("Mažem celú galériu z R2… Nezatváraj stránku.");
+        const result=await action({action:"delete-gallery",title});
+        if(result.done){router.replace("/admin/photo-galleries");return;}
+      }
+      throw new Error("Mazanie ešte nie je dokončené. Zopakuj mazanie galérie.");
+    }catch(e){setError(e instanceof Error?e.message:"Mazanie zlyhalo. Zopakuj mazanie galérie.");await refresh().catch(()=>{});}
+    finally{running.current=false;if(mounted.current){setBusy(false);setProcessing("");}}
+  }
   async function removePhoto(item:Detail["items"][number]) {
     if(running.current || !window.confirm(`Natrvalo zmazať ${item.filename}? Z R2 sa odstráni originál, webový náhľad aj sociálna verzia. Súbor na tvojom Macu sa nemení. Ak je fotka titulná, výber sa zruší.`))return;
     running.current=true;setBusy(true);setError("");
@@ -159,7 +177,7 @@ export default function PhotoGalleryEditor({ galleryId }: { galleryId: string })
         </section><section className={styles.panel}><div className={styles.sectionHead}><h2>Uložené originály ({detail.items.length})</h2>
           <button type="button" disabled={busy} onClick={() => { setError(""); void refresh().catch(e => setError(e.message)); }}>Obnoviť zoznam</button></div>
           {detail.items.length === 0 ? <p className={styles.help}>Zatiaľ tu nie sú fotografie.</p> : <ul className={styles.uploadList}>{detail.items.map(i => <li key={i.id}>{i.status==="ready" && <img className={styles.photoPreview} src={`${api}/media/${i.id}`} alt={`Náhľad ${i.filename}`} loading="lazy" />}<strong>#{i.customerNumber} · {i.filename}{detail.coverItemId===i.id?" · Titulná fotografia":""}</strong><p className={styles.help}>{i.sourceFilename} · {mb(i.size)} · {i.status==="ready"?"Náhľady pripravené":i.status==="deleting"?"Mazanie nie je dokončené — zopakuj mazanie":"Originál uložený"}</p>{i.status==="ready" && <div className={styles.uploadActions}><button type="button" disabled={busy || detail.status!=="draft" || detail.coverItemId===i.id} onClick={()=>void selectCover(i.id)}>{detail.coverItemId===i.id?"Titulná fotografia":"Nastaviť ako titulnú"}</button></div>}{i.status==="ready" && <a className={styles.socialDownload} href={`${api}/media/${i.id}?kind=social`}>Stiahnuť pre sociálne siete</a>}<div className={styles.uploadActions}><button type="button" style={{color:"#ff9b9b",borderColor:"#a35353"}} disabled={busy || detail.status!=="draft"} onClick={()=>void removePhoto(i)}>{i.status==="deleting"?"Dokončiť mazanie":"Zmazať fotografiu"}</button></div></li>)}</ul>}
-          <p className={styles.help}>Titulná fotografia bude náhľadom galérie na verejnom webe po publikovaní. Hromadné stiahnutie sociálnych verzií a publikovanie doplníme v ďalšej časti. Táto galéria sa zatiaľ na verejnom webe nezobrazuje.</p>
-        </section></>}
+          <p className={styles.help}>Titulná fotografia bude náhľadom galérie na verejnom webe po publikovaní. Publikovanie doplníme v ďalšej časti. Táto galéria sa zatiaľ na verejnom webe nezobrazuje.</p>
+        </section><section className={styles.panel}><h2>Zmazať celú galériu</h2><p className={styles.help}>Natrvalo odstráni všetky súbory tejto galérie z R2. Súbory na Macu zostanú. Pri chybe môžeš mazanie zopakovať.</p><button type="button" style={{color:"#ff9b9b",borderColor:"#a35353"}} disabled={busy || (detail.status!=="draft" && detail.status!=="archived")} onClick={()=>void removeGallery()}>Zmazať celú galériu</button></section></>}
     </div></main>;
 }
