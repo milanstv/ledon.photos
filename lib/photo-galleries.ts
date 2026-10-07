@@ -30,7 +30,7 @@ export function validatePhotoGalleryDetails(titleValue: unknown, dateValue: unkn
 export function photoGallerySummary(gallery: PhotoGalleryRecord): PhotoGallerySummary {
   return { id: gallery.id, slug: gallery.slug, title: gallery.title, date: gallery.date,
     priceCents: gallery.priceCents, status: gallery.status, createdAt: gallery.createdAt,
-    updatedAt: gallery.updatedAt, count: gallery.items.length,
+    updatedAt: gallery.updatedAt, count: gallery.items.filter(item=>item.status!=="deleted").length,
     readyCount: gallery.items.filter(item => item.status === "ready").length };
 }
 export async function readPhotoGallery(id: string) {

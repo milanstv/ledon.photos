@@ -2,12 +2,19 @@ import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getOriginalsBucket,getR2Client } from "@/lib/r2";
 import { PhotoGalleryError,photoGalleryPrefix,requirePhotoGallery,savePhotoGallery } from "@/lib/photo-galleries";
 import { renderPhotoPreviews } from "@/lib/photo-preview-render";
+import { acquirePhotoOperation,releasePhotoOperation } from "@/lib/photo-operations";
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 export function photoMediaKey(galleryId:string,itemId:string,kind:"original"|"preview"|"social") {
   if(!UUID.test(itemId)) throw new PhotoGalleryError("Neplatné ID fotografie.");
   return `${photoGalleryPrefix(galleryId)}files/${itemId}/${kind}.jpg`;
 }
 export async function createPhotoPreviews(galleryId:string,itemId:string) {
+  photoMediaKey(galleryId,itemId,"original");
+  const operationId=await acquirePhotoOperation(galleryId,itemId,"preview");
+  try {return await renderAndStorePhotoPreviews(galleryId,itemId,operationId);}
+  finally {await releasePhotoOperation(galleryId,itemId,operationId);}
+}
+async function renderAndStorePhotoPreviews(galleryId:string,itemId:string,operationId:string) {
   const initial=await requirePhotoGallery(galleryId);
   if(initial.gallery.status!=="draft") throw new PhotoGalleryError("Náhľady možno vytvárať iba v koncepte.",409);
   const item=initial.gallery.items.find(i=>i.id===itemId);
@@ -27,7 +34,7 @@ export async function createPhotoPreviews(galleryId:string,itemId:string) {
     const record=await requirePhotoGallery(galleryId);
     if(record.gallery.status!=="draft") throw new PhotoGalleryError("Stav galérie sa zmenil.",409);
     const current=record.gallery.items.find(i=>i.id===itemId);
-    if(!current || current.originalKey!==originalKey) throw new PhotoGalleryError("Fotografia sa zmenila.",409);
+    if(!current || current.operation?.id!==operationId || current.status==="deleting" || current.status==="deleted" || current.originalKey!==originalKey) throw new PhotoGalleryError("Fotografia sa zmenila.",409);
     current.previewKey=previewKey;current.socialKey=socialKey;current.status="ready";
     record.gallery.updatedAt=new Date().toISOString();
     try {await savePhotoGallery(record.gallery,record.etag);return {ok:true};}

@@ -8,7 +8,8 @@ export type PhotoGalleryItem = {
   socialKey: string | null;
   takenAt: string | null;
   size: number;
-  status: "uploaded" | "ready";
+  status: "uploaded" | "ready" | "deleting" | "deleted";
+  operation?: { id: string; kind: "preview" | "delete"; startedAt: string };
 };
 export type PhotoGalleryRecord = {
   version: 1;
