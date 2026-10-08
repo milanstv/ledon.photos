@@ -1,7 +1,7 @@
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getOriginalsBucket,getR2Client } from "@/lib/r2";
 import { PhotoGalleryError,photoGalleryPrefix,requirePhotoGallery,savePhotoGallery } from "@/lib/photo-galleries";
-import { renderPhotoPreviews } from "@/lib/photo-preview-render";
+
 import { acquirePhotoOperation,releasePhotoOperation } from "@/lib/photo-operations";
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 export function photoMediaKey(galleryId:string,itemId:string,kind:"original"|"preview"|"social") {
@@ -26,6 +26,7 @@ async function renderAndStorePhotoPreviews(galleryId:string,itemId:string,operat
   if(!response.Body || !response.ContentLength || response.ContentLength>64*1024*1024 || response.ContentLength!==item.size) throw new PhotoGalleryError("Originál má neočakávanú veľkosť.");
   const bytes=Buffer.from(await response.Body.transformToByteArray());
   if(bytes.length!==item.size) throw new PhotoGalleryError("Originál je neúplný.");
+  const { renderPhotoPreviews } = await import("@/lib/photo-preview-render");
   const rendered=await renderPhotoPreviews(bytes);
   for(const [Key,Body] of [[previewKey,rendered.preview],[socialKey,rendered.social]] as const) {
     await client.send(new PutObjectCommand({Bucket,Key,Body,ContentType:"image/jpeg",CacheControl:"private, no-store"}));
