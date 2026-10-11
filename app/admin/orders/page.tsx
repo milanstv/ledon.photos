@@ -1,4 +1,5 @@
 import Link from "next/link";
+import styles from "./MobileOrders.module.css";
 import {
   GetObjectCommand,
   ListObjectsV2Command,
@@ -428,7 +429,7 @@ export default async function OrdersPage() {
             Zatiaľ neexistuje žiadna objednávka.
           </div>
         ) : (
-          <div className="mt-8 overflow-x-auto border border-white/15">
+          <div className={`${styles.orders} mt-8 overflow-x-auto border border-white/15`}>
             <table className="w-full min-w-[1200px] border-collapse text-left">
               <thead className="border-b border-white/15 bg-white/5 text-[10px] uppercase tracking-[0.22em] text-white/40">
                 <tr>
@@ -525,7 +526,7 @@ export default async function OrdersPage() {
                         }
                         className="border-b border-white/10 last:border-b-0"
                       >
-                        <td className="px-5 py-5">
+                        <td className="px-5 py-5" data-label="Stav">
                           <span className="inline-flex border border-white/20 px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-white/70">
                             {getStatusText(
                               order.status,
@@ -533,7 +534,7 @@ export default async function OrdersPage() {
                           </span>
                         </td>
 
-                        <td className="max-w-[360px] px-5 py-5">
+                        <td className="max-w-[360px] px-5 py-5" data-label="Položky">
                           <p className="font-medium">
                             {count}{" "}
                             {count ===
@@ -576,7 +577,7 @@ export default async function OrdersPage() {
                           </p>
                         </td>
 
-                        <td className="px-5 py-5">
+                        <td className="px-5 py-5" data-label="Galérie">
                           <div className="space-y-3">
                             {galleries.map(
                               (
@@ -605,7 +606,7 @@ export default async function OrdersPage() {
                           </div>
                         </td>
 
-                        <td className="px-5 py-5">
+                        <td className="px-5 py-5" data-label="E-mail">
                           <a
                             href={`mailto:${order.email}`}
                             className="transition hover:text-white/60"
@@ -616,7 +617,7 @@ export default async function OrdersPage() {
                           </a>
                         </td>
 
-                        <td className="px-5 py-5">
+                        <td className="px-5 py-5" data-label="Cena">
                           <p className="text-lg">
                             {
                               order.price
@@ -639,7 +640,7 @@ export default async function OrdersPage() {
                           )}
                         </td>
 
-                        <td className="px-5 py-5">
+                        <td className="px-5 py-5" data-label="Platba">
                           {isBankTransfer ? (
                             <div>
                               <p className="text-xs font-semibold uppercase tracking-[0.15em] text-white">
@@ -707,13 +708,13 @@ export default async function OrdersPage() {
                           )}
                         </td>
 
-                        <td className="px-5 py-5 text-sm text-white/50">
+                        <td className="px-5 py-5 text-sm text-white/50" data-label="Vytvorené">
                           {formatDate(
                             order.createdAt,
                           )}
                         </td>
 
-                        <td className="px-5 py-5">
+                        <td className="px-5 py-5" data-label="Akcia">
                           <OrderActions
                             orderId={
                               order.id

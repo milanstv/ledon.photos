@@ -11,6 +11,7 @@ type AddToCartButtonProps = {
   galleryTitle: string;
   photoId: string;
   photoSrc: string;
+  filename?: string;
   price: number;
   language: Language;
   className?: string;
@@ -21,6 +22,7 @@ export default function AddToCartButton({
   galleryTitle,
   photoId,
   photoSrc,
+  filename,
   price,
   language,
   className,
@@ -48,6 +50,7 @@ export default function AddToCartButton({
     }
 
     addItem({
+      mediaTitle: filename?.replace(/[.]jpe?g$/i, ""),
       gallerySlug,
       galleryTitle,
       photoId,

@@ -306,16 +306,16 @@ export default function CartPage({
             </Link>
           </div>
         ) : (
-          <div className="grid gap-12 pt-10 lg:grid-cols-[1fr_360px]">
+          <div className="grid min-w-0 grid-cols-1 gap-8 pt-10 lg:grid-cols-[minmax(0,1fr)_360px]">
             <div>
               <div className="divide-y divide-white/10 border-t border-white/10">
                 {items.map(
                   (item) => (
                     <div
                       key={`${item.gallerySlug}-${item.photoId}`}
-                      className="flex items-center gap-4 py-5 md:gap-7 md:py-7"
+                      className="flex min-w-0 flex-wrap items-center gap-4 py-5 sm:flex-nowrap md:gap-7 md:py-7"
                     >
-                      <div className="relative h-24 w-32 shrink-0 overflow-hidden bg-white/5 sm:h-28 sm:w-40 md:h-32 md:w-48">
+                      <div className="relative h-24 w-24 shrink-0 overflow-hidden bg-white/5 sm:h-28 sm:w-40 md:h-32 md:w-48">
                         <Image
                           src={
                             item.photoSrc
@@ -359,7 +359,7 @@ export default function CartPage({
                         disabled={
                           isLoading
                         }
-                        className="shrink-0 border border-white/20 px-4 py-3 text-[10px] uppercase tracking-[0.18em] text-white/60 transition hover:border-white hover:bg-white hover:text-black disabled:opacity-40"
+                        className="w-full shrink-0 border border-white/20 px-4 py-3 sm:w-auto text-[10px] uppercase tracking-[0.18em] text-white/60 transition hover:border-white hover:bg-white hover:text-black disabled:opacity-40"
                       >
                         {t.remove}
                       </button>
@@ -390,7 +390,7 @@ export default function CartPage({
               </div>
             </div>
 
-            <aside className="h-fit border border-white/15 bg-[#0d0d0d] p-7 md:p-8">
+            <aside className="min-w-0 h-fit border border-white/15 bg-[#0d0d0d] p-4 sm:p-7 md:p-8">
               <p className="text-[10px] uppercase tracking-[0.3em] text-white/40">
                 {t.summary}
               </p>
@@ -476,7 +476,7 @@ export default function CartPage({
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="mt-7 flex w-full overflow-hidden border border-white bg-white text-black transition hover:bg-white/85 disabled:cursor-wait disabled:opacity-50"
+                  className="mt-7 flex w-full flex-col overflow-hidden sm:flex-row border border-white bg-white text-black transition hover:bg-white/85 disabled:cursor-wait disabled:opacity-50"
                 >
                   <span className="flex min-h-[68px] flex-1 items-center justify-center px-4 text-xs font-semibold uppercase tracking-[0.18em]">
                     {loadingMethod ===
@@ -485,7 +485,7 @@ export default function CartPage({
                       : onlineButtonText}
                   </span>
 
-                  <span className="grid w-[118px] shrink-0 grid-cols-2 gap-x-2 gap-y-1 border-l border-black/15 bg-[#eeeeee] px-3 py-3 text-[8px] font-semibold leading-tight tracking-normal text-black sm:w-[128px]">
+                  <span className="grid w-full shrink-0 grid-cols-4 sm:grid-cols-2 gap-x-2 gap-y-1 border-l border-black/15 bg-[#eeeeee] px-3 py-3 text-[8px] font-semibold leading-tight tracking-normal text-black sm:w-[128px]">
                     <span className="flex items-center justify-center whitespace-nowrap">
                       <Image src="/images/payment/apple-pay.svg" alt="Apple Pay" width={42} height={28} unoptimized className="h-7 w-[42px] object-contain" />
                     </span>

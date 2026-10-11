@@ -519,6 +519,7 @@ export default function GalleryLightbox({
               galleryTitle={gallery.title}
               photoId={currentPhoto.id}
               photoSrc={currentPhoto.src}
+              filename={currentPhoto.filename}
               price={gallery.price}
               language={language}
               className="mt-10 w-full bg-white px-6 py-5 text-xs font-semibold uppercase tracking-[0.28em] text-black transition hover:bg-white/80"
@@ -561,6 +562,7 @@ export default function GalleryLightbox({
                   galleryTitle={gallery.title}
                   photoId={currentPhoto.id}
                   photoSrc={currentPhoto.src}
+              filename={currentPhoto.filename}
                   price={gallery.price}
                   language={language}
                   className="bg-white px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-black"
