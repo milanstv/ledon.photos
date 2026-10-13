@@ -1,6 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
-    { "path": "/api/cron/private-galleries", "schedule": "0 3 * * *" }
+    {
+      "path": "/api/cron/private-galleries",
+      "schedule": "0 3 * * *"
+    }
+  ],
+  "regions": [
+    "fra1"
   ]
 }
