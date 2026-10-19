@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PhotoGalleryError, setPhotoGalleryCover } from "@/lib/photo-galleries";
+import { PhotoGalleryError, setPhotoGalleryCover, renamePhotoGallery } from "@/lib/photo-galleries";
 import { completePhotoUpload, photoGalleryDetail, signPhotoPart, startPhotoUpload } from "@/lib/photo-uploads";
 import { createPhotoPreviews } from "@/lib/photo-previews";
 import { deletePhoto } from "@/lib/photo-deletion";
@@ -29,6 +29,12 @@ export async function POST(request: NextRequest, context: Context) {
     try { const parsed = JSON.parse(raw); if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error(); body = parsed; }
     catch { throw new PhotoGalleryError("Neplatný JSON."); }
     const { galleryId } = await context.params;
+    if (body.action === "rename") {
+      return NextResponse.json(
+        await renamePhotoGallery(galleryId, body.title, body.expectedTitle),
+        { headers }
+      );
+    }
     if (body.action === "publish") return NextResponse.json(await publishPhotoGallery(galleryId),{headers});
     if (body.action === "hide") return NextResponse.json(await hidePhotoGallery(galleryId),{headers});
     if (body.action === "start") return NextResponse.json(await startPhotoUpload(galleryId, body.itemId, body.filename, body.size), { headers });

@@ -157,6 +157,34 @@ export default function PhotoGalleryEditor({ galleryId }: { galleryId: string })
     }
   }
 
+  async function renameGallery() {
+    if (running.current || !detail) return;
+    const expectedTitle = detail.title;
+    const entered = window.prompt("Zadaj nový názov galérie:", expectedTitle);
+    if (entered === null) return;
+    const title = entered.trim();
+    if (!title || title.length > 160 || /[\\u0000-\\u001f\\u007f]/.test(title)) {
+      setError("Zadaj názov galérie (najviac 160 znakov).");
+      return;
+    }
+    if (title === expectedTitle) return;
+
+    running.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      await action({ action: "rename", title, expectedTitle });
+      await refresh();
+    } catch (e) {
+      if (mounted.current) {
+        setError(e instanceof Error ? e.message : "Názov sa nepodarilo uložiť.");
+      }
+    } finally {
+      running.current = false;
+      if (mounted.current) setBusy(false);
+    }
+  }
+
   async function publication(actionName:"publish"|"hide") {
     if(running.current)return;
     running.current=true;setBusy(true);setError("");
@@ -247,8 +275,11 @@ export default function PhotoGalleryEditor({ galleryId }: { galleryId: string })
     <nav aria-label="Administrácia"><Link href="/admin/orders">Objednávky</Link><Link href="/admin/photo-galleries" aria-current="page">Fotogalérie</Link>
       <Link href="/admin/slideshow-galleries">Slideshow</Link><Link href="/admin/private-galleries">Súkromné galérie</Link></nav></aside>
     <div className={styles.content}><Link href="/admin/photo-galleries">← Zoznam fotogalérií</Link><h1>{detail?.title ?? "Fotogaléria"}</h1>
+      {detail && <button type="button" disabled={busy}
+        onClick={() => void renameGallery()}>Upraviť názov</button>}
       {loading && <p>Načítavam…</p>}{error && <p role="alert" className={styles.error}>{error}</p>}
       {detail && <><p className={styles.subtitle}>{detail.date} · {(detail.priceCents / 100).toFixed(2)} € / fotka · {detail.status === "draft" ? "Neverejný koncept" : detail.status}</p>
+        <section className={styles.panel}><h2>Publikovanie</h2><p className={styles.help}>Publikuj až po kontrole všetkých náhľadov a výbere titulnej fotografie. Podporované ceny existujúceho predaja: 2 €, 4 € alebo 5 €.</p>{detail.status==="draft" && <button type="button" className={styles.primary} disabled={busy || !detail.coverItemId || !detail.items.length || detail.items.some(i=>i.status!=="ready")} onClick={()=>void publication("publish")}>Publikovať galériu</button>}{detail.status==="published" && <><Link href={`/galleries/photos-${galleryId}`} target="_blank">Otvoriť publikovanú galériu</Link><button type="button" disabled={busy} onClick={()=>void publication("hide")}>Skryť galériu</button></>}</section><section className={styles.panel}><h2>Zmazať celú galériu</h2><p className={styles.help}>Natrvalo odstráni všetky súbory tejto galérie z R2. Súbory na Macu zostanú. Pri chybe môžeš mazanie zopakovať.</p><button type="button" style={{color:"#ff9b9b",borderColor:"#a35353"}} disabled={busy || (detail.status!=="draft" && detail.status!=="archived")} onClick={()=>void removeGallery()}>Zmazať celú galériu</button></section>
         <section className={styles.panel}><h2>Nahrať originály</h2><p className={styles.help}>Vyber upravené JPG v plnom rozlíšení bez vodoznaku. Najviac 64 MB za fotografiu. Originály sa ukladajú do súkromného R2.</p>
           <input ref={fileInput} type="file" accept="image/jpeg,.jpg,.jpeg" multiple style={{ display: "none" }}
             disabled={busy || detail.status !== "draft"} aria-label="Vybrať fotografie"
@@ -271,6 +302,6 @@ export default function PhotoGalleryEditor({ galleryId }: { galleryId: string })
           <button type="button" disabled={busy} onClick={() => { setError(""); void refresh().catch(e => setError(e.message)); }}>Obnoviť zoznam</button></div>
           {detail.items.length === 0 ? <p className={styles.help}>Zatiaľ tu nie sú fotografie.</p> : <ul className={styles.uploadList}>{detail.items.map(i => <li key={i.id}>{i.status==="ready" && <img className={styles.photoPreview} src={`${api}/media/${i.id}`} alt={`Náhľad ${i.filename}`} loading="lazy" />}<strong>#{i.customerNumber} · {i.filename}{detail.coverItemId===i.id?" · Titulná fotografia":""}</strong><p className={styles.help}>{i.sourceFilename} · {mb(i.size)} · {i.status==="ready"?"Náhľady pripravené":i.status==="deleting"?"Mazanie nie je dokončené — zopakuj mazanie":"Originál uložený"}</p>{i.status==="ready" && <div className={styles.uploadActions}><button type="button" disabled={busy || detail.status!=="draft" || detail.coverItemId===i.id} onClick={()=>void selectCover(i.id)}>{detail.coverItemId===i.id?"Titulná fotografia":"Nastaviť ako titulnú"}</button></div>}{i.status==="ready" && <a className={styles.socialDownload} href={`${api}/media/${i.id}?kind=social`}>Stiahnuť pre sociálne siete</a>}<div className={styles.uploadActions}><button type="button" style={{color:"#ff9b9b",borderColor:"#a35353"}} disabled={busy || detail.status!=="draft"} onClick={()=>void removePhoto(i)}>{i.status==="deleting"?"Dokončiť mazanie":"Zmazať fotografiu"}</button></div></li>)}</ul>}
           <p className={styles.help}>Titulná fotografia bude náhľadom galérie na verejnom webe po publikovaní. Publikovaná galéria sa zobrazí v existujúcom zozname na stránke. Skrytá galéria zostane uložená pre platené sťahovanie.</p>
-        </section><section className={styles.panel}><h2>Publikovanie</h2><p className={styles.help}>Publikuj až po kontrole všetkých náhľadov a výbere titulnej fotografie. Podporované ceny existujúceho predaja: 2 €, 4 € alebo 5 €.</p>{detail.status==="draft" && <button type="button" className={styles.primary} disabled={busy || !detail.coverItemId || !detail.items.length || detail.items.some(i=>i.status!=="ready")} onClick={()=>void publication("publish")}>Publikovať galériu</button>}{detail.status==="published" && <><Link href={`/galleries/photos-${galleryId}`} target="_blank">Otvoriť publikovanú galériu</Link><button type="button" disabled={busy} onClick={()=>void publication("hide")}>Skryť galériu</button></>}</section><section className={styles.panel}><h2>Zmazať celú galériu</h2><p className={styles.help}>Natrvalo odstráni všetky súbory tejto galérie z R2. Súbory na Macu zostanú. Pri chybe môžeš mazanie zopakovať.</p><button type="button" style={{color:"#ff9b9b",borderColor:"#a35353"}} disabled={busy || (detail.status!=="draft" && detail.status!=="archived")} onClick={()=>void removeGallery()}>Zmazať celú galériu</button></section></>}
+        </section></>}
     </div></main>;
 }

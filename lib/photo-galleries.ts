@@ -132,3 +132,43 @@ export async function endGalleryUpload(id:string,token:string) {
     try{await savePhotoGallery(r.gallery,r.etag);return;}catch(e){if(!(e instanceof PhotoGalleryError)||e.status!==409||n===4)throw e;}
   }
 }
+
+export async function renamePhotoGallery(
+  id: string,
+  titleValue: unknown,
+  expectedTitle: unknown
+) {
+  if (typeof expectedTitle !== "string") {
+    throw new PhotoGalleryError("Chýba pôvodný názov galérie.");
+  }
+
+  for (let n = 0; n < 5; n++) {
+    const record = await requirePhotoGallery(id);
+    const gallery = record.gallery;
+    if (gallery.deletionPending) {
+      throw new PhotoGalleryError("Galéria sa práve maže.", 409);
+    }
+    if (gallery.title !== expectedTitle) {
+      throw new PhotoGalleryError(
+        "Názov medzitým niekto zmenil. Obnov zoznam a skús znova.", 409
+      );
+    }
+
+    const { title } = validatePhotoGalleryDetails(
+      titleValue, gallery.date, gallery.priceCents
+    );
+    if (title === gallery.title) return { ok: true };
+
+    gallery.title = title;
+    gallery.updatedAt = new Date().toISOString();
+    try {
+      await savePhotoGallery(gallery, record.etag);
+      return { ok: true };
+    } catch (e) {
+      if (!(e instanceof PhotoGalleryError) || e.status !== 409 || n === 4) {
+        throw e;
+      }
+    }
+  }
+  throw new PhotoGalleryError("Názov sa nepodarilo uložiť.", 409);
+}
