@@ -12,7 +12,7 @@ export async function deletePhotoGallery(id:string,title:unknown) {
     const r=await requirePhotoGallery(id);
     if(title!==r.gallery.title)throw new PhotoGalleryError("Názov galérie sa zmenil.",409);
     if(r.gallery.deletionPending){claimed=true;break;}
-    if(r.gallery.status!=="draft")throw new PhotoGalleryError("Úplné mazanie je zatiaľ povolené iba pre koncept.",409);
+    if(r.gallery.status!=="draft" && r.gallery.status!=="archived")throw new PhotoGalleryError("Úplné mazanie je povolené iba pre koncept alebo skrytú galériu.",409);
     if(r.gallery.activeUploads?.length || r.gallery.items.some(i=>i.operation))throw new PhotoGalleryError("Prebieha nahrávanie alebo spracovanie. Počkaj na dokončenie. Pri prerušenom spracovaní treba skontrolovať stav.",409);
     r.gallery.status="archived";r.gallery.deletionPending=true;r.gallery.updatedAt=new Date().toISOString();
     try{await savePhotoGallery(r.gallery,r.etag);claimed=true;break;}catch(e){if(!(e instanceof PhotoGalleryError)||e.status!==409||n===4)throw e;}
