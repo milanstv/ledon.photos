@@ -163,7 +163,7 @@ export default function PhotoGalleryEditor({ galleryId }: { galleryId: string })
     const entered = window.prompt("Zadaj nový názov galérie:", expectedTitle);
     if (entered === null) return;
     const title = entered.trim();
-    if (!title || title.length > 160 || /[\\u0000-\\u001f\\u007f]/.test(title)) {
+    if (!title || title.length > 160 || /[\u0000-\u001f\u007f]/.test(title)) {
       setError("Zadaj názov galérie (najviac 160 znakov).");
       return;
     }
