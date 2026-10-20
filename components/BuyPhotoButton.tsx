@@ -1,6 +1,12 @@
 "use client";
 
 import {
+  REVOLUT_PAYMENTS_PAUSED,
+  paymentOutageMessage,
+} from "@/lib/payment-availability";
+
+
+import {
   FormEvent,
   useState,
 } from "react";
@@ -178,6 +184,14 @@ export default function BuyPhotoButton({
 
       setIsLoading(false);
     }
+  }
+
+  if (REVOLUT_PAYMENTS_PAUSED) {
+    return (
+      <p role="status" className="mt-4 text-sm leading-6 text-amber-200">
+        {paymentOutageMessage(language)}
+      </p>
+    );
   }
 
   if (!isOpen) {

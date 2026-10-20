@@ -1,5 +1,11 @@
 "use client";
 
+import {
+  REVOLUT_PAYMENTS_PAUSED,
+  paymentOutageMessage,
+} from "@/lib/payment-availability";
+
+
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -65,6 +71,10 @@ export default function CartPage({
   async function createOrder(
     paymentMethod: PaymentMethod,
   ) {
+    if (REVOLUT_PAYMENTS_PAUSED && paymentMethod === "online") {
+      setErrorMessage(paymentOutageMessage(language));
+      return;
+    }
     setErrorMessage("");
 
     if (items.length === 0) {
@@ -475,7 +485,7 @@ export default function CartPage({
 
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || REVOLUT_PAYMENTS_PAUSED}
                   className="mt-7 flex w-full flex-col overflow-hidden sm:flex-row border border-white bg-white text-black transition hover:bg-white/85 disabled:cursor-wait disabled:opacity-50"
                 >
                   <span className="flex min-h-[68px] flex-1 items-center justify-center px-4 text-xs font-semibold uppercase tracking-[0.18em]">
@@ -512,8 +522,8 @@ export default function CartPage({
                   </span>
                 </button>
 
-                <p className="mt-3 text-center text-[9px] uppercase tracking-[0.15em] text-white/25">
-                  {paymentMethodsText}
+                <p className="mt-3 text-center text-xs leading-5 text-amber-200">
+                  {REVOLUT_PAYMENTS_PAUSED ? paymentOutageMessage(language) : paymentMethodsText}
                 </p>
 
                 <button

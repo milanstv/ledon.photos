@@ -1,3 +1,7 @@
+import {
+  REVOLUT_PAYMENTS_PAUSED,
+  paymentOutageMessage,
+} from "@/lib/payment-availability";
 import crypto from "node:crypto";
 
 import {
@@ -906,6 +910,16 @@ export async function POST(
         {
           status: 400,
         },
+      );
+    }
+
+    if (
+      REVOLUT_PAYMENTS_PAUSED &&
+      (paymentMethod === "online" || paymentMethod === "revolut")
+    ) {
+      return NextResponse.json(
+        { error: paymentOutageMessage(language) },
+        { status: 503, headers: { "Cache-Control": "no-store" } }
       );
     }
 
