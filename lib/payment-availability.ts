@@ -1,5 +1,5 @@
 // Set to false after Revolut payment links have been verified.
-export const REVOLUT_PAYMENTS_PAUSED = true;
+export const REVOLUT_PAYMENTS_PAUSED = false;
 
 export function paymentOutageMessage(language: string): string {
   return language === "en"
